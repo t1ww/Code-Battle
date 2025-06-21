@@ -1,0 +1,33 @@
+{
+  "name": "code-battle",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CAMT SE65 `senior project` for my group",
+  "main": "index.js",
+  "workspaces": [
+    "backend",
+    "frontend/code-battle",
+    "ts-code-runner"
+  ],
+  "scripts": {
+    "be": "npm run dev --prefix backend",
+    "fe": "npm run dev --prefix frontend/code-battle",
+    "backend": "npm run be",
+    "frontend": "npm run fe",
+    "ts-code-runner": "npm run dev --prefix ts-code-runner",
+    "dev": "start \"Backend Server\" cmd /k \"npm run be\" && start \"Frontend Server\" cmd /k \"npm run fe\"",
+    "all": "start \"Backend Server\" cmd /k \"npm run be\" && start \"Frontend Server\" cmd /k \"npm run fe\" && start \"TS Runner\" cmd /k \"npm run ts-code-runner\"",
+    "stop": "taskkill /F /FI \"WindowTitle eq Backend Server\" /T && taskkill /F /FI \"WindowTitle eq Frontend Server\" /T && taskkill /F /FI \"WindowTitle eq TS Runner\" /T"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/t1ww/Code-Battle.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/t1ww/Code-Battle/issues"
+  },
+  "homepage": "https://github.com/t1ww/Code-Battle#readme"
+}
