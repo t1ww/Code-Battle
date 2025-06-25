@@ -1,15 +1,12 @@
 <script setup lang="ts">
-  import Counter from "@/components/Counter.vue"
   import Footer from "@/components/Footer.vue"
 
 </script>
 
 <template>
-  <h1>Learn C++ today</h1>
-  
-  <Counter/>
+  <h1>Welcome to CODE BATTLE</h1>
 
-  <Footer/>
+  <!-- <Footer/> -->
 </template>
 
 <style scoped>
