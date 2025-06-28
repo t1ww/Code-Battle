@@ -6,7 +6,7 @@
 <template>
   <h1>Welcome to CODE BATTLE</h1>
 
-  <!-- <Footer/> -->
+  <Footer/>
 </template>
 
 <style scoped>
