@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { AuthRequest } from "@/authMiddleware";
 
 export const getProfile = (req: AuthRequest, res: Response) => {

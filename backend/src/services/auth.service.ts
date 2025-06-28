@@ -19,13 +19,11 @@ export class AuthService {
     username: string,
     email: string,
     password: string,
-    role = "student"
   ): Promise<
     RegisterResponse & {
       id?: number;
       username?: string;
       email?: string;
-      role?: string;
     }
   > {
     if (!username || !email || !password) {
@@ -36,11 +34,11 @@ export class AuthService {
 
     try {
       const [result] = await pool.query(
-        "INSERT INTO players (player_name, email, password, role) VALUES (?, ?, ?, ?)",
+        "INSERT INTO players (player_name, email, password_hash) VALUES (?, ?, ?)",
         [username, email, hashed, "student"]
       );
 
-      return { id: (result as any).insertId, username, email, role: "student" };
+      return { id: (result as any).insertId, username, email };
     } catch (err) {
       return { errorMessage: (err as Error).message };
     }
