@@ -10,7 +10,7 @@ import jwt, { Secret } from "jsonwebtoken";
 import ms from "ms";
 import pool from "@/clients/database.client";
 
-const JWT_SECRET: Secret = process.env.JWT_SECRET || "changeme";
+const JWT_SECRET: Secret = process.env.JWT_SECRET!;
 const JWT_EXPIRES_IN: ms.StringValue =
   (process.env.JWT_EXPIRES_IN as ms.StringValue) || "1h";
 
@@ -18,7 +18,7 @@ export class AuthService {
   async register(
     username: string,
     email: string,
-    password: string,
+    password: string
   ): Promise<
     RegisterResponse & {
       id?: number;
@@ -35,7 +35,7 @@ export class AuthService {
     try {
       const [result] = await pool.query(
         "INSERT INTO players (player_name, email, password_hash) VALUES (?, ?, ?)",
-        [username, email, hashed, "student"]
+        [username, email, hashed]
       );
 
       return { id: (result as any).insertId, username, email };
@@ -55,7 +55,11 @@ export class AuthService {
     if (!rows.length) return { errorMessage: "Player not found" };
 
     const player = rows[0];
-    const match = await bcrypt.compare(password, player.password);
+    if (process.env.NODE_ENV !== "production") {
+      console.log("Fetched user from DB:", player);
+    }
+
+    const match = await bcrypt.compare(password, player.password_hash);
     if (!match) return { errorMessage: "Invalid credentials" };
 
     const token = jwt.sign(
