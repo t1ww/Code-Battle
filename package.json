@@ -14,9 +14,11 @@
     "be": "npm run dev --prefix backend",
     "fe": "npm run dev --prefix frontend/code-battle",
     "be:db:reset": "npm run database:reset --prefix backend",
+    "be:test": "npm test --prefix backend",
     "backend": "npm run be",
     "frontend": "npm run fe",
     "backend:database:reset": "npm run be:db:reset",
+    "backend:test": "npm run be:test",
     "ts-code-runner": "npm run dev --prefix ts-code-runner",
     "dev": "start \"Backend Server\" cmd /k \"npm run be\" && start \"Frontend Server\" cmd /k \"npm run fe\"",
     "all": "start \"Backend Server\" cmd /k \"npm run be\" && start \"Frontend Server\" cmd /k \"npm run fe\" && start \"TS Runner\" cmd /k \"npm run ts-code-runner\"",
@@ -32,5 +34,11 @@
   "bugs": {
     "url": "https://github.com/t1ww/Code-Battle/issues"
   },
-  "homepage": "https://github.com/t1ww/Code-Battle#readme"
+  "homepage": "https://github.com/t1ww/Code-Battle#readme",
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.0.4",
+    "mock-req-res": "^1.2.1",
+    "ts-jest": "^29.4.0"
+  }
 }

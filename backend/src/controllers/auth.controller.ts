@@ -2,9 +2,9 @@ import { Request, Response, RequestHandler } from "express";
 import { AuthService } from "@/services/auth.service";
 import { RegisterRequest } from "@/dtos/auth.dto";
 
-const authService = new AuthService();
+export const authService = new AuthService();
 
-export const register: RequestHandler = async (req, res) => {
+export const register = async (req: Request, res: Response) => {
   const { username, email, password, confirmPassword } = req.body as RegisterRequest;
 
   if (password !== confirmPassword) {
@@ -21,7 +21,7 @@ export const register: RequestHandler = async (req, res) => {
   res.status(201).json(result);
 };
 
-export const login: RequestHandler = async (req, res) => {
+export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
   const result = await authService.login(email, password);
   if (result.errorMessage) {
