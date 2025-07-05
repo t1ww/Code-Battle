@@ -48,38 +48,43 @@ export class AuthService {
     email: string,
     password: string
   ): Promise<(LoginResponse & PlayerResponse) | LoginResponse> {
-    const [rows]: any = await pool.query(
-      "SELECT * FROM players WHERE email = ?",
-      [email]
-    );
-    if (!rows.length) return { errorMessage: "Player not found" };
+    try {
+      const [rows]: any = await pool.query(
+        "SELECT * FROM players WHERE email = ?",
+        [email]
+      );
+      if (!rows.length) return { errorMessage: "Player not found" };
 
-    const player = rows[0];
-    if (process.env.NODE_ENV !== "production") {
-      console.log("Fetched user from DB:", player);
-    }
+      const player = rows[0];
+      if (process.env.NODE_ENV !== "production") {
+        console.log("Fetched user from DB:", player);
+      }
 
-    const match = await bcrypt.compare(password, player.password_hash);
-    if (!match) return { errorMessage: "Invalid credentials" };
+      const match = await bcrypt.compare(password, player.password_hash);
+      if (!match) return { errorMessage: "Invalid credentials" };
 
-    const token = jwt.sign(
-      {
-        playerId: player.id,
-        player_name: player.player_name,
+      const token = jwt.sign(
+        {
+          playerId: player.id,
+          player_name: player.player_name,
+          email: player.email,
+          role: player.role,
+        },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRES_IN }
+      );
+
+      return {
+        token,
+        errorMessage: undefined,
+        id: player.id,
+        username: player.player_name,
         email: player.email,
-        role: player.role,
-      },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
-    );
-
-    return {
-      token,
-      errorMessage: undefined,
-      id: player.id,
-      username: player.player_name,
-      email: player.email,
-      createdAt: new Date(player.created_at),
-    };
+        createdAt: new Date(player.created_at),
+      };
+    } catch (err) {
+      console.error("Database error during login:", err);
+      return { errorMessage: "Database unavailable. Please try again later." };
+    }
   }
 }
