@@ -11,11 +11,12 @@
   ],
   "scripts": {
     "jwt": "node jwt.generator.js --prefix utility",
-    "reset:data": "npm run reset:data --prefix backend",
     "be": "npm run dev --prefix backend",
     "fe": "npm run dev --prefix frontend/code-battle",
+    "be:db:reset": "npm run database:reset --prefix backend",
     "backend": "npm run be",
     "frontend": "npm run fe",
+    "backend:database:reset": "npm run be:db:reset",
     "ts-code-runner": "npm run dev --prefix ts-code-runner",
     "dev": "start \"Backend Server\" cmd /k \"npm run be\" && start \"Frontend Server\" cmd /k \"npm run fe\"",
     "all": "start \"Backend Server\" cmd /k \"npm run be\" && start \"Frontend Server\" cmd /k \"npm run fe\" && start \"TS Runner\" cmd /k \"npm run ts-code-runner\"",
