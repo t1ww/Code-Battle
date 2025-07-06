@@ -38,6 +38,7 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
+import router from "@/router";
 import api from "@/clients/api";
 
 const email = ref("");
@@ -61,6 +62,7 @@ async function handleLogin() {
     successMessage.value = "Login successful.";
     failMessage.value = "";
     console.log("res:", response.data);
+    router.push("/");
   } catch (err) {
     failMessage.value = "Login service unavailable. Please try again later.";
     successMessage.value = "";
