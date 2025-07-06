@@ -2,9 +2,9 @@ import { createRouter, createWebHistory } from "vue-router";
 
 // Importing all page components
 import Home from "@/pages/Home.vue";
-import Login from "@/pages/Login.vue";
+import Login from "@/pages/LoginForm.vue";
 import Logout from "@/pages/Logout.vue";
-import Register from "@/pages/Register.vue";
+import Register from "@/pages/RegisterForm.vue";
 
 /**
  * Meta Field Usage:

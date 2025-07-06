@@ -13,7 +13,6 @@ export function getPlayerData(): PlayerData | null {
     id: localStorage.getItem("player_id"),
     name: localStorage.getItem("player_name"),
     email: localStorage.getItem("player_email"),
-    role: localStorage.getItem("player_role"),
   };
 }
 
@@ -28,7 +27,6 @@ export function loginPlayer(player: {
   localStorage.setItem("player_id", player.id);
   localStorage.setItem("player_name", player.name);
   localStorage.setItem("player_email", player.email);
-  localStorage.setItem("player_role", player.role);
   isAuthenticated.value = true;
 
   console.log("Logged in player data:", player);
@@ -39,7 +37,6 @@ export function logoutPlayer() {
   localStorage.removeItem("player_id");
   localStorage.removeItem("player_name");
   localStorage.removeItem("player_email");
-  localStorage.removeItem("player_role");
 
   isAuthenticated.value = false;
 

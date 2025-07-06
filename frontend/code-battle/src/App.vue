@@ -1,15 +1,15 @@
 <script setup lang="ts">
-  import Navbar from "@/components/Navbar.vue";
+  // import Navbar from "@/components/Navbar.vue";
   import { RouterView } from "vue-router";
 </script>
 
 <template>
-  <Navbar />
+  <!-- <Navbar /> -->
   <RouterView />
 </template>
 
 <style scoped>
-.logo {
+/* .logo {
   height: 6em;
   padding: 1.5em;
   will-change: filter;
@@ -22,5 +22,5 @@
 
 .logo.vue:hover {
   filter: drop-shadow(0 0 2em #42b883aa);
-}
+} */
 </style>

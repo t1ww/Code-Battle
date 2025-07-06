@@ -1,23 +1,10 @@
 <template>
   <div class="container">
-    <form @submit.prevent="handleRegister" class="form-box">
-      <h2 class="form-title">Register</h2>
-
-      <label>Username :</label>
-      <input
-        type="text"
-        v-model="username"
-        placeholder="Type your Username"
-        required
-      />
+    <form @submit.prevent="handleLogin" class="form-box">
+      <h2 class="form-title">Login</h2>
 
       <label>Email :</label>
-      <input
-        type="email"
-        v-model="email"
-        placeholder="Type your Email"
-        required
-      />
+      <input type="email" v-model="email" placeholder="Type your Email" required />
 
       <label>Password :</label>
       <div class="password-container">
@@ -30,27 +17,20 @@
         <button type="button" @click="showPassword = !showPassword">👁️</button>
       </div>
 
-      <label>Confirm Password :</label>
-      <div class="password-container">
-        <input
-          :type="showConfirm ? 'text' : 'password'"
-          v-model="confirmPassword"
-          placeholder="Type your Password"
-          required
-        />
-        <button type="button" @click="showConfirm = !showConfirm">👁️</button>
+      <div class="forgot-text">
+        <a href="#">Forgot password?</a>
       </div>
 
       <p class="success-message" v-if="successMessage">{{ successMessage }}</p>
       <p class="fail-message" v-if="failMessage">{{ failMessage }}</p>
 
       <button type="submit" class="submit-btn" :disabled="loading">
-        {{ loading ? "Registering..." : "Register" }}
+        {{ loading ? "Logging in..." : "Login" }}
       </button>
 
       <p class="small-text">
-        Already have account ?
-        <router-link to="/login">Login here</router-link>
+        Not have an account?
+        <router-link to="/register">Register here</router-link>
       </p>
     </form>
   </div>
@@ -60,28 +40,29 @@
 import { ref } from "vue";
 import api from "@/clients/api";
 
-const username = ref("");
 const email = ref("");
 const password = ref("");
-const confirmPassword = ref("");
 const showPassword = ref(false);
-const showConfirm = ref(false);
 
 const successMessage = ref("");
 const failMessage = ref("");
-
 const loading = ref(false);
 
-async function handleRegister() {
+async function handleLogin() {
+  if (!email.value || !password.value) {
+    failMessage.value = "Please enter both email and password.";
+    successMessage.value = "";
+    return;
+  }
+
   loading.value = true;
   try {
-    const response = await api.get("/register"); // placeholder
-    successMessage.value = "Registration successful.";
+    const response = await api.get("/login"); // placeholder
+    successMessage.value = "Login successful.";
     failMessage.value = "";
     console.log("res:", response.data);
   } catch (err) {
-    failMessage.value =
-      "Registration service unavailable. Please try again later.";
+    failMessage.value = "Login service unavailable. Please try again later.";
     successMessage.value = "";
     console.error(err);
   } finally {
@@ -120,7 +101,6 @@ input {
   color: black;
 }
 
-input[type="text"],
 input[type="email"],
 input[type="password"] {
   padding: 8px;
@@ -145,6 +125,11 @@ input[type="password"] {
   cursor: pointer;
 }
 
+.forgot-text {
+  text-align: right;
+  font-size: 13px;
+}
+
 .success-message {
   color: green;
   font-size: 13px;
@@ -167,11 +152,6 @@ input[type="password"] {
   cursor: pointer;
 }
 
-.small-text {
-  font-size: 13px;
-  text-align: center;
-}
-
 .submit-btn:disabled {
   color: #646464;
   background: #272727;
@@ -184,4 +164,8 @@ input[type="password"] {
   transform: scale(0.98);
 }
 
+.small-text {
+  font-size: 13px;
+  text-align: center;
+}
 </style>

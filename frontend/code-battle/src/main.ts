@@ -8,9 +8,6 @@ import axios from 'axios'
 // Auth
 import { isAuthenticated, getPlayerData } from '@/store/auth'
 
-// Set Axios base URL
-axios.defaults.baseURL = 'http://localhost:5000'
-
 const app = createApp(App)
 
 // Provide functions
