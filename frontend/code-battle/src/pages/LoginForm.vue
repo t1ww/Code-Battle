@@ -103,6 +103,7 @@ input {
   color: black;
 }
 
+input[type="text"],
 input[type="email"],
 input[type="password"] {
   padding: 8px;

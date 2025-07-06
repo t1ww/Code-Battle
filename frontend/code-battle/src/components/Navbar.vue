@@ -1,21 +1,15 @@
 <script setup lang="ts">
 import { computed } from "vue"
 import router from "@/router"
-import { getPlayerData, isAuthenticated } from "@/store/auth"
+import { isAuthenticated } from "@/store/auth"
 
 const filteredRoutes = computed(() => {
-  const userRole = getPlayerData()?.role
-
   // Filter routes for navbar display based on their meta fields in router.ts
   // (e.g., hidden, requiresAuth, hideAuth, allowedRoles)
   return router.getRoutes().filter(route => {
     if (route.meta?.hidden) return false
     if (route.meta?.requiresAuth && !isAuthenticated.value) return false
-    if (route.meta?.hideAuth && isAuthenticated.value) return false
-    if (route.meta?.allowedRoles?.length && userRole != null && !route.meta.allowedRoles.includes(userRole)) {
-      return false
-    }
-    return true
+    if (route.meta?.hideAuth && isAuthenticated.value) return false 
   })
 })
 </script>
