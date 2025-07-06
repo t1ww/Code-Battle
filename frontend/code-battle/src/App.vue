@@ -1,13 +1,22 @@
 <script setup lang="ts">
-  // import Navbar from "@/components/Navbar.vue";
-  import { RouterView } from "vue-router";
+// import Navbar from "@/components/Navbar.vue";
+import { RouterView } from "vue-router";
 </script>
 
 <template>
   <!-- <Navbar /> -->
-  <RouterView />
+  <div class="router-container">
+    <RouterView />
+  </div>
 </template>
 
 <style scoped>
-  /* Nothing */
+/* Main style.css */
+#nprogress .bar {
+  background: #42b983;
+}
+.router-container {
+  display: flex;
+  justify-content: center; /* horizontal center */
+}
 </style>

@@ -6,6 +6,9 @@ import Login from "@/pages/LoginForm.vue";
 import Logout from "@/pages/Logout.vue";
 import Register from "@/pages/RegisterForm.vue";
 
+import NProgress from "nprogress";
+import "nprogress/nprogress.css"; // import the style
+
 /**
  * Meta Field Usage:
  *
@@ -28,7 +31,18 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(),
-  routes,
+  routes, 
+});
+
+// ⏳ Start progress before route changes
+router.beforeEach((_to, _from, next) => {
+  NProgress.start();
+  next();
+});
+
+// Done progress after route fully loads
+router.afterEach(() => {
+  NProgress.done();
 });
 
 export default router;
