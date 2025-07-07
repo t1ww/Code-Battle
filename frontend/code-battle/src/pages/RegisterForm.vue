@@ -4,40 +4,22 @@
       <h2 class="form-title">Register</h2>
 
       <label>Username :</label>
-      <input
-        type="text"
-        v-model="username"
-        placeholder="Type your Username"
-        required
-      />
+      <input type="text" v-model="username" placeholder="Type your Username" required />
 
       <label>Email :</label>
-      <input
-        type="email"
-        v-model="email"
-        placeholder="Type your Email"
-        required
-      />
+      <input type="email" v-model="email" placeholder="Type your Email" required />
 
       <label>Password :</label>
       <div class="password-container">
-        <input
-          :type="showPassword ? 'text' : 'password'"
-          v-model="password"
-          placeholder="Type your Password"
-          required
-        />
+        <input :type="showPassword ? 'text' : 'password'" v-model="password" placeholder="Type your Password"
+          required />
         <button type="button" @click="showPassword = !showPassword">👁️</button>
       </div>
 
       <label>Confirm Password :</label>
       <div class="password-container">
-        <input
-          :type="showConfirm ? 'text' : 'password'"
-          v-model="confirmPassword"
-          placeholder="Type your Password"
-          required
-        />
+        <input :type="showConfirm ? 'text' : 'password'" v-model="confirmPassword" placeholder="Type your Password"
+          required />
         <button type="button" @click="showConfirm = !showConfirm">👁️</button>
       </div>
 
@@ -75,11 +57,21 @@ const loading = ref(false);
 async function handleRegister() {
   loading.value = true;
   try {
-    const response = await api.get("/register"); // placeholder
+    const response = await api.post(
+      "/players/register",
+      {
+        username: username.value,
+        email: email.value,
+        password: password.value,
+        confirmPassword: confirmPassword.value
+      },
+      { withCredentials: true }
+    );
+
     successMessage.value = "Registration successful.";
     failMessage.value = "";
     console.log("res:", response.data);
-  } catch (err) {
+  } catch (err: any) {
     failMessage.value =
       "Registration service unavailable. Please try again later.";
     successMessage.value = "";
@@ -183,5 +175,4 @@ input[type="password"] {
   background: #aaa;
   transform: scale(0.98);
 }
-
 </style>

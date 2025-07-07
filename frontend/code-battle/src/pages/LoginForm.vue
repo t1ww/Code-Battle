@@ -58,7 +58,15 @@ async function handleLogin() {
 
   loading.value = true;
   try {
-    const response = await api.get("/login"); // placeholder
+    const response = await api.post(
+      "/players/login",
+      {
+        email: email.value,
+        password: password.value,
+      },
+      { withCredentials: true }
+    );
+    
     successMessage.value = "Login successful.";
     failMessage.value = "";
     console.log("res:", response.data);
