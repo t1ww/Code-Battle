@@ -5,9 +5,12 @@ import Home from "@/pages/Home.vue";
 import Login from "@/pages/LoginForm.vue";
 import Logout from "@/pages/Logout.vue";
 import Register from "@/pages/RegisterForm.vue";
+import PveLevelSelect from "./pages/pve/PveLevelSelect.vue";
 
 import NProgress from "nprogress";
 import "nprogress/nprogress.css"; // import the style
+import PvpTypeSelect from "./pages/pve/PvpTypeSelect.vue";
+import PveLevelView from "./pages/pve/PveLevelView.vue";
 
 /**
  * Meta Field Usage:
@@ -18,7 +21,17 @@ import "nprogress/nprogress.css"; // import the style
  * - allowedRoles:   Restrict access to users with specific roles (e.g., professors only).
  */
 const routes = [
+  // root / home
   { name: "Home", path: "/", component: Home },
+
+  // pve
+  { name: "PveLevelSelect", path: "/pveSelect", component: PveLevelSelect },
+  { name: "PveLevelView", path: "/pveView", component: PveLevelView },
+  
+  // pvp
+  { name: "PvpTypeSelect", path: "/pvpSelect", component: PvpTypeSelect },
+  
+  // Account
   { name: "Login", path: "/login", component: Login, meta: { hideAuth: true } },
   { name: "Logout", path: "/logout", component: Logout, meta: { requiresAuth: true }},
   {

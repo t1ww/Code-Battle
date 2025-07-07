@@ -1,31 +1,18 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-const router = useRouter()
-
-function goToPve() {
-  router.push({ name: 'PveLevelSelect' })
-}
-
-function goToPvp() {
-  router.push({ name: 'PvpTypeSelect' })
-}
 </script>
 
 <template>
   <div class="container">
-    <h1>Welcome to CODE BATTLE</h1>
-
     <div class="button-wrapper">
-      <router-link :to="{ name: 'PveLevelSelect' }" id="pve-button" class="mode-button">
-        PVE
+      <router-link :to="{ name: '' }" id="pvp1v1-button" class="mode-button">
+        1v1
       </router-link>
-      <router-link :to="{ name: 'PvpTypeSelect' }" id="pvp-button" class="mode-button">
-        PVP
+      <router-link :to="{ name: '' }" id="pvp3v3-button" class="mode-button">
+        3v3
       </router-link>
     </div>
   </div>
 </template>
-
 
 <style scoped>
 .container {
@@ -48,11 +35,11 @@ h1 {
   gap: 20px;
 }
 
-#pve-button {
+#pvp1v1-button {
   margin-right: 6rem;
 }
 
-#pvp-button {
+#pvp3v3-button {
   margin-left: 6rem;
 }
 
