@@ -1,14 +1,4 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-const router = useRouter()
-
-function goToPve() {
-  router.push({ name: 'PveLevelSelect' })
-}
-
-function goToPvp() {
-  router.push({ name: 'PvpTypeSelect' })
-}
 </script>
 
 <template>

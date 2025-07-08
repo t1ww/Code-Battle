@@ -6,7 +6,7 @@ import { RouterView } from "vue-router";
 <template>
   <Navbar />
   <div class="router-container">
-    <RouterView />
+    <router-view :key="$route.fullPath" />
   </div>
 </template>
 

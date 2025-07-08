@@ -3,6 +3,7 @@ export interface PlayerData {
   id: string | null;
   name: string | null;
   email: string | null;
+  avatarUrl?: string;
 }
 
 export interface Question {
@@ -18,3 +19,14 @@ export interface Question {
     estimatedRuntime: string;
     timeComplexity: string;
 }
+
+// Matchmaking
+export const MatchState = {
+  Searching:   'searching',
+  Found:       'found',
+  ShowingTeams:'showingTeams',
+  Countdown:   'countdown',
+  Started:     'started',
+} as const
+
+export type MatchState = typeof MatchState[keyof typeof MatchState]
