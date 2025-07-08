@@ -3,6 +3,7 @@ export interface PlayerData {
   id: string | null;
   name: string | null;
   email: string | null;
+  avatarUrl?: string;
 }
 
 export interface Question {
