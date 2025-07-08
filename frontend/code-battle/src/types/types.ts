@@ -18,3 +18,14 @@ export interface Question {
     estimatedRuntime: string;
     timeComplexity: string;
 }
+
+// Matchmaking
+export const MatchState = {
+  Searching:   'searching',
+  Found:       'found',
+  ShowingTeams:'showingTeams',
+  Countdown:   'countdown',
+  Started:     'started',
+} as const
+
+export type MatchState = typeof MatchState[keyof typeof MatchState]

@@ -11,6 +11,7 @@ import NProgress from "nprogress";
 import "nprogress/nprogress.css"; // import the style
 import PvpTypeSelect from "./pages/pvp/PvpTypeSelect.vue";
 import PveLevelView from "./pages/pve/PveLevelView.vue";
+import Matchmaking from "./pages/pvp/Matchmaking.vue";
 
 /**
  * Meta Field Usage:
@@ -30,6 +31,7 @@ const routes = [
   
   // pvp
   { name: "PvpTypeSelect", path: "/pvpSelect", component: PvpTypeSelect },
+  { name: "Matchmaking", path: "/matchmaking", component: Matchmaking },
   
   // Account
   { name: "Login", path: "/login", component: Login, meta: { hideAuth: true } },

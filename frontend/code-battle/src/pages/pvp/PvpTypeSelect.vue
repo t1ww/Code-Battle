@@ -4,11 +4,14 @@
 <template>
   <div class="container">
     <div class="button-wrapper">
-      <router-link :to="{ name: '' }" id="pvp1v1-button" class="mode-button">
+      <router-link :to="{ name: 'Matchmaking' }" id="pvp1v1-button" class="mode-button">
         1v1
       </router-link>
-      <router-link :to="{ name: '' }" id="pvp3v3-button" class="mode-button">
+      <router-link :to="{ name: 'Matchmaking' }" id="pvp3v3-button" class="mode-button">
         3v3
+      </router-link>
+      <router-link :to="{ name: '' }" id="pvp-private-button" class="mode-button">
+        Private custom match
       </router-link>
     </div>
   </div>
@@ -43,6 +46,10 @@ h1 {
   margin-left: 6rem;
 }
 
+#pvp-private-button {
+  margin-left: 12rem;
+}
+
 .mode-button {
   display: flex;
   align-items: center;
@@ -51,8 +58,8 @@ h1 {
   color: inherit;
   border-radius: .5em;
   outline: none;
-  width: 150px;
-  height: 40px;
+  width: 12rem;
+  height: 2.5rem;
   background-color: #ddd;
   border: none;
   cursor: pointer;
