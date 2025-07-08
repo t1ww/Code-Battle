@@ -9,7 +9,7 @@ import PveLevelSelect from "./pages/pve/PveLevelSelect.vue";
 
 import NProgress from "nprogress";
 import "nprogress/nprogress.css"; // import the style
-import PvpTypeSelect from "./pages/pve/PvpTypeSelect.vue";
+import PvpTypeSelect from "./pages/pvp/PvpTypeSelect.vue";
 import PveLevelView from "./pages/pve/PveLevelView.vue";
 
 /**
