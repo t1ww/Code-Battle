@@ -23,10 +23,8 @@ const filteredRoutes = computed(() => {
     </router-link>
     <ul class="nav-links">
       <li v-for="item in filteredRoutes" :key="item.path">
-
-
         <router-link :to="item.path">
-          <div :class="{ 'green-text': item.path === $route.path }">
+          <div :class="{ 'highlight-text': item.path === $route.path }">
             {{ item.name }}
           </div>
         </router-link>
@@ -36,7 +34,7 @@ const filteredRoutes = computed(() => {
 </template>
 
 <style scoped>
-.green-text {
+.highlight-text {
   color: #7b6e5a;
 }
 
@@ -46,7 +44,7 @@ const filteredRoutes = computed(() => {
   left: 0;
   width: 100%;
   max-width: 100%;
-  background: #ff9233;
+  background: #dadada;
   padding: 1rem 2rem;
   color: rgb(255, 255, 255);
   z-index: 1000;
@@ -60,6 +58,9 @@ const filteredRoutes = computed(() => {
   width: 50px;
   height: 50px;
   object-fit: contain;
+}
+.logo:active{
+  background-color: #d3d3d3;
 }
 
 .nav-links {
