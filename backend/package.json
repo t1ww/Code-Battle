@@ -6,7 +6,9 @@
     "database:reset": "ts-node -r tsconfig-paths/register src/scripts/resetData.ts",
     "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
     "start": "node dist/server.js",
-    "test": "jest"
+    "test": "jest",
+    "migrate:latest": "npx knex migrate:latest --knexfile knexfile.ts",
+    "migrate:rollback": "npx knex migrate:rollback --all --knexfile knexfile.ts"
   },
   "keywords": [],
   "author": "",

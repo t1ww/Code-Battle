@@ -1,6 +1,7 @@
 import { Knex } from "knex";
 
 export async function up(knex: Knex): Promise<void> {
+  // Players table
   await knex.schema.createTable("players", (table) => {
     table.increments("player_id").primary();
     table.string("player_name").notNullable();
@@ -9,34 +10,44 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp("created_at").defaultTo(knex.fn.now());
   });
 
-  await knex.schema.createTable("levels", (table) => {
-    table.increments("level_id").primary();
-    table.string("level_name").notNullable();
-    table.text("level_description");
-    table.string("difficulty");
-    table.integer("time_limit");
+  // Questions table
+  await knex.schema.createTable("questions", (table) => {
+    table.increments("question_id").primary();
+    table.string("question_name").notNullable();
+    table.text("description").notNullable();
+    table.integer("time_limit").notNullable(); // seconds
+    table.enum("level", ["Easy", "Medium", "Hard"]).notNullable(); // enum for difficulty
   });
 
+  // Test Cases table
   await knex.schema.createTable("test_cases", (table) => {
     table.increments("test_case_id").primary();
     table
-      .integer("level_id")
+      .integer("question_id")
       .unsigned()
-      .references("level_id")
-      .inTable("levels")
+      .references("question_id")
+      .inTable("questions")
       .onDelete("CASCADE");
-    table.text("input_data").notNullable();
-    table.text("output_data").notNullable();
-    table.integer("score_value").notNullable();
+    table.text("input").notNullable();
+    table.text("expected_output").notNullable();
+    table.integer("score").notNullable();
   });
 
+  // Scores table
   await knex.schema.createTable("scores", (table) => {
     table.increments("score_id").primary();
+    table
+      .integer("player_id")
+      .unsigned()
+      .references("player_id")
+      .inTable("players")
+      .onDelete("CASCADE"); // optional but recommended
     table.integer("total_score").notNullable();
-    table.integer("time_taken").notNullable(); // assuming in seconds
+    table.integer("time_taken").notNullable(); // seconds
     table.timestamp("created_at").defaultTo(knex.fn.now());
   });
 
+  // Leaderboard entries table
   await knex.schema.createTable("leaderboard_entries", (table) => {
     table.increments("leaderboard_id").primary();
     table
@@ -46,10 +57,10 @@ export async function up(knex: Knex): Promise<void> {
       .inTable("players")
       .onDelete("CASCADE");
     table
-      .integer("level_id")
+      .integer("question_id")
       .unsigned()
-      .references("level_id")
-      .inTable("levels")
+      .references("question_id")
+      .inTable("questions")
       .onDelete("CASCADE");
     table
       .integer("score_id")
@@ -64,6 +75,6 @@ export async function down(knex: Knex): Promise<void> {
   await knex.schema.dropTableIfExists("leaderboard_entries");
   await knex.schema.dropTableIfExists("scores");
   await knex.schema.dropTableIfExists("test_cases");
-  await knex.schema.dropTableIfExists("levels");
+  await knex.schema.dropTableIfExists("questions");
   await knex.schema.dropTableIfExists("players");
 }
