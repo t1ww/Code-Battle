@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import router from '@/router'
 import { ref, onMounted } from 'vue'
 
 interface TestCase {
@@ -42,10 +43,6 @@ function cylcleModifier(direction: 'left' | 'right') {
       ? (current - 1 + options.length) % options.length
       : (current + 1) % options.length
   selectedModifier.value = options[next]
-}
-
-function startLevel() {
-  alert('Starting level: ' + levelData.value?.levelTitle)
 }
 
 onMounted(async () => {
@@ -92,8 +89,9 @@ onMounted(async () => {
             <button @click="cylcleModifier('right')">&gt;</button>
           </div>
         </div>
-
-        <button class="start-button" @click="startLevel">Start!</button>
+        <router-link :to="{ name: 'PveGameplay' }" class="start-button">
+          Start
+        </router-link>
       </div>
     </div>
   </div>
@@ -218,15 +216,27 @@ p {
 .start-button {
   align-self: flex-end;
   margin-top: 1.5rem;
-  padding: 0.5rem 1rem;
-  background-color: #aaa;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
+  padding: 0.5rem 1.25rem;
+  background-color: #666;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 0.4rem;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #444;
 }
 
 .start-button:hover {
-  background-color: #888;
+  background-color: #555;
+  transform: scale(1.02);
+}
+
+.start-button:active {
+  transform: scale(0.98);
 }
 
 </style>

@@ -43,5 +43,9 @@
     "jest": "^30.0.4",
     "mock-req-res": "^1.2.1",
     "ts-jest": "^29.4.0"
+  },
+  "dependencies": {
+    "monaco-editor": "^0.52.2",
+    "monaco-editor-vue3": "^0.1.10"
   }
 }

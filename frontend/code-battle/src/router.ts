@@ -12,6 +12,7 @@ import "nprogress/nprogress.css"; // import the style
 import PvpTypeSelect from "./pages/pvp/PvpTypeSelect.vue";
 import PveLevelView from "./pages/pve/PveLevelView.vue";
 import Matchmaking from "./pages/pvp/Matchmaking.vue";
+import PveGameplay from "./pages/pve/PveGameplay.vue";
 
 /**
  * Meta Field Usage:
@@ -28,6 +29,7 @@ const routes = [
   // pve
   { name: "PveLevelSelect", path: "/pveSelect", component: PveLevelSelect },
   { name: "PveLevelView", path: "/pveView", component: PveLevelView },
+  { name: "PveGameplay", path: "/pveGameplay", component: PveGameplay },
   
   // pvp
   { name: "PvpTypeSelect", path: "/pvpSelect", component: PvpTypeSelect },
