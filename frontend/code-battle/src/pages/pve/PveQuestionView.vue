@@ -227,8 +227,9 @@ onMounted(async () => {
 
 .test-cases {
   display: flex;
-  justify-content: space-between;
+  justify-content: left;
   font-family: monospace;
+  gap: .5rem;
 }
 
 .test-cases>div {
@@ -236,7 +237,7 @@ onMounted(async () => {
   border: 1px solid #aaa;
   border-radius: 0.4rem;
   padding: 0.5rem;
-  width: 15vw;
+  width: 12vw;
 }
 
 
