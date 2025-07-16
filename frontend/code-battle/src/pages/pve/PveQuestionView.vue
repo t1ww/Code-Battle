@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import api from '@/clients/api'
+import api from '@/clients/crud.api'
 import type { Question, LeaderboardEntry } from '@/types/types'
 
 const route = useRoute()

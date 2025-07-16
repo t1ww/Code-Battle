@@ -68,7 +68,7 @@
 // =============================
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import api from '@/clients/api'
+import api from '@/clients/crud.api'
 import type { Question } from '@/types/types'
 import CodeEditor from '@/components/pve/CodeEditor.vue'
 

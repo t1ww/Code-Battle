@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import api from "@/clients/api";
+import api from "@/clients/crud.api";
 
 const username = ref("");
 const email = ref("");

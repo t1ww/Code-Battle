@@ -39,7 +39,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import router from "@/router";
-import api from "@/clients/api";
+import api from "@/clients/crud.api";
 
 const email = ref("");
 const password = ref("");
