@@ -114,13 +114,13 @@
             </div>
         </div>
     </template>
-    
+
     <!-- By confident lost -->
     <template v-if="showConfidentLostPopup">
         <div class="popup-backdrop">
             <div class="popup-content">
                 <h2>Your submission failed</h2>
-                <h2 :style="{ color: 'red'}">Confident Modifer on</h2>
+                <h2 :style="{ color: 'red' }">Confident Modifer on</h2>
                 <p>Your final score: {{ testResults?.totalScore }}</p>
                 <router-link :to="{ name: 'PveLevelSelect' }">
                     <button>Select New Level</button>
@@ -178,6 +178,9 @@ const testResults = ref<{
 
 // Clear
 const showClearedPopup = ref(false)
+
+// Sabotage
+let sabotageTimer: ReturnType<typeof setInterval> | null = null
 
 // Confident
 const showConfidentLostPopup = ref(false)
@@ -240,7 +243,7 @@ const submitCode = async () => {
         if (data.passed) {
             showClearedPopup.value = true
         } else {
-            if (selectedModifier === 'Confident'){
+            if (selectedModifier === 'Confident') {
                 showConfidentLostPopup.value = true;
             } else {
                 showResultPopup.value = true
@@ -262,8 +265,20 @@ const restartPage = () => {
 // 🚀 Lifecycle Hooks
 // =============================
 onMounted(async () => {
+    // Fetch question
     const response = await api.get(`/questions?level=${level}`)
     questionData.value = response.data as Question
+
+    // Sabotage modifer handling
+    if (selectedModifier === 'Sabotage') {
+        sabotageTimer = setInterval(() => {
+            if (code.value.length > 0) {
+                // Remove a random character
+                const index = Math.floor(Math.random() * code.value.length)
+                code.value = code.value.slice(0, index) + code.value.slice(index + 1)
+            }
+        }, 2 * 60 * 1000) // every 2 minutes
+    }
 })
 
 
@@ -293,7 +308,9 @@ watch(questionData, (newVal) => {
 
 onUnmounted(() => {
     if (timer) clearInterval(timer)
+    if (sabotageTimer) clearInterval(sabotageTimer)
 })
+
 </script>
 
 <style scoped>
