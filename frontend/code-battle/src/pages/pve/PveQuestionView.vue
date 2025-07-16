@@ -1,42 +1,26 @@
 <script setup lang="ts">
-import router from '@/router'
 import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import api from '@/clients/api'
+import type { Question } from '@/types/types'
 
-interface TestCase {
-  name: string
-  input: string
-  output: string
-}
+const route = useRoute()
+const level = route.query.mode as string || 'Easy'
 
-interface LevelData {
-  levelTitle: string
-  description: string
-  testCases: TestCase[]
-  difficultyOptions: string[]
-}
-
-const levelData = ref<LevelData | null>(null)
+const questionData = ref<Question | null>(null)
 const selectedModifier = ref('None')
 const timeLimitEnabled = ref(true)
 
-// Mock API call
-async function fetchLevelData(): Promise<LevelData> {
-  // Replace with real API later
-  return {
-    levelTitle: 'Level 1: Hello world',
-    description: `Write a C++ program that takes a name input and prints a greeting message in the format: hello <name>.
-If no name is provided, print the default message: hello world.`,
-    testCases: [
-      { name: 'Test Case 1', input: '(no input)', output: 'hello world' },
-      { name: 'Test Case 2', input: 'alice', output: 'hello alice' }
-    ],
-    difficultyOptions: ['None', 'Sabotage', 'Confident']
-  }
+// Modifier options
+const modifierOptions = ['None', 'Sabotage', 'Confident']
+
+async function fetchLevelData(): Promise<Question> {
+  const response = await api.get(`/questions?level=${level}`)
+  return response.data as Question
 }
 
 function cylcleModifier(direction: 'left' | 'right') {
-  if (!levelData.value) return
-  const options = levelData.value.difficultyOptions
+  const options = modifierOptions
   const current = options.indexOf(selectedModifier.value)
   const next =
     direction === 'left'
@@ -46,12 +30,12 @@ function cylcleModifier(direction: 'left' | 'right') {
 }
 
 onMounted(async () => {
-  levelData.value = await fetchLevelData()
+  questionData.value = await fetchLevelData()
 })
 </script>
 
 <template>
-  <div class="level-container" v-if="levelData">
+  <div class="level-container" v-if="questionData">
     <div class="panel leaderboard">
       <h3>Leaderboard</h3>
       <div class="leaderboard-empty">
@@ -63,16 +47,16 @@ onMounted(async () => {
     <div class="panel description">
       <h3>Description</h3>
       <div class="desc-content">
-        <h4>{{ levelData.levelTitle }}</h4>
+        <h4>{{ questionData.questionName }}</h4>
 
-        <p><strong>Description:</strong><br />{{ levelData.description }}</p>
+        <p><strong>Description:</strong><br />{{ questionData.questionDescription }}</p>
 
         <p><strong>Test Cases:</strong></p>
         <div class="test-cases">
-          <div v-for="(test, index) in levelData.testCases" :key="index">
-            <strong>{{ test.name }}</strong><br />
+          <div v-for="(test, index) in questionData.testCases" :key="index">
+            <strong>Test Case {{ index + 1 }}</strong><br />
             Input: {{ test.input }}<br />
-            Output: {{ test.output }}<br /><br />
+            Output: {{ test.expectedOutput }}<br /><br />
           </div>
         </div>
 
@@ -89,6 +73,7 @@ onMounted(async () => {
             <button @click="cylcleModifier('right')">&gt;</button>
           </div>
         </div>
+
         <router-link :to="{ name: 'PveGameplay' }" class="start-button">
           Start
         </router-link>
