@@ -69,9 +69,8 @@
             <div v-if="showResultPopup" class="overlay" @click.self="showResultPopup = false">
                 <div class="popup">
                     <h2>Test Results</h2>
-                    <p><strong>Final Score:</strong> {{ testResults?.totalScore }} / {{
+                    <p><strong>Final Score:</strong> {{ finalScore }} / {{
                         questionData?.testCases?.reduce((acc, test) => acc + (test.score ?? 0), 0) ?? 0
-
                     }}</p>
                     <div v-for="(result, i) in testResults?.results" :key="i" class="test-result"
                         :style="{ color: result.passed ? 'green' : 'red' }">
@@ -106,7 +105,7 @@
         <div class="popup-backdrop">
             <div class="popup-content">
                 <h2>Level Cleared!</h2>
-                <p>Your final score: {{ testResults?.totalScore }}</p>
+                <p>Your final score: {{ finalScore }}</p>
                 <button @click="restartPage">Restart</button>
                 <router-link :to="{ name: 'PveLevelSelect' }">
                     <button>Select New Level</button>
@@ -121,7 +120,7 @@
             <div class="popup-content">
                 <h2>Your submission failed</h2>
                 <h2 :style="{ color: 'red' }">Confident Modifer on</h2>
-                <p>Your final score: {{ testResults?.totalScore }}</p>
+                <p>Your final score: {{ finalScore }}</p>
                 <router-link :to="{ name: 'PveLevelSelect' }">
                     <button>Select New Level</button>
                 </router-link>
@@ -167,6 +166,7 @@ const code = ref('// Write code here')
 const showDescriptionPopup = ref(false)
 const questionData = ref<Question | null>(null)
 const isLoading = ref(false)
+const MODIFIER_BONUS = 1.25
 
 // Timer
 const timeLeft = ref(0)
@@ -182,6 +182,7 @@ const testResults = ref<{
     results: { passed: boolean; output: string; expectedOutput: string; input: string }[]
     totalScore: number
 } | null>(null)
+const finalScore = ref(0);
 
 // Clear
 const showClearedPopup = ref(false)
@@ -256,6 +257,11 @@ const submitCode = async () => {
             totalScore: data.totalScore ?? 0,
         }
         console.log(testResults.value)
+        if (selectedModifier === 'Sabotage' || selectedModifier === 'Confident'){
+            finalScore.value = +(testResults.value.totalScore * MODIFIER_BONUS).toFixed(3);
+        } else {
+            finalScore.value = testResults.value.totalScore;
+        }
 
         if (data.passed) {
             showClearedPopup.value = true
