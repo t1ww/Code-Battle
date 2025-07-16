@@ -58,10 +58,20 @@ onMounted(async () => {
     <!-- Leaderboard -->
     <div class="panel leaderboard">
       <h3>Leaderboard</h3>
+      <hr>
       <div v-if="leaderboard.length">
         <table class="leaderboard-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Lang</th>
+              <th>Mod</th>
+              <th>Score</th>
+            </tr>
+          </thead>
           <tbody>
-            <tr v-for="(entry, i) in leaderboard" :key="i">
+            <tr v-for="(entry, i) in leaderboard" :key="i" :class="{ top1: i === 0 }">
               <td>{{ i + 1 }}#</td>
               <td>{{ entry.name }}</td>
               <td>{{ entry.language }}</td>
@@ -71,6 +81,7 @@ onMounted(async () => {
           </tbody>
         </table>
       </div>
+      <!-- No data -->
       <div v-else class="leaderboard-empty">
         <div class="face">:(</div>
         <p>No leaderboard data<br />available at the moment</p>
@@ -112,7 +123,10 @@ onMounted(async () => {
         </div>
         <hr />
 
-        <router-link :to="{ name: 'PveGameplay' }" class="start-button">Start!</router-link>
+        <div class="start-button-container">
+          <router-link :to="{ name: 'PveGameplay' }" class="start-button">Start!</router-link>
+        </div>
+
       </div>
     </div>
   </div>
@@ -123,7 +137,6 @@ onMounted(async () => {
   display: flex;
   padding-top: 5rem;
   width: 100vw;
-  height: 100vh;
   background-color: #bbb;
   font-family: sans-serif;
   color: #000;
@@ -131,53 +144,70 @@ onMounted(async () => {
 
 /* Panels */
 .panel {
-  border: 1px solid #444;
+  border: none;
+  border-radius: 1rem;
+  margin: .5rem;
+  margin-top: 1rem;
   background: #ddd;
-  padding: 1rem;
   box-sizing: border-box;
   overflow-y: auto;
+  overflow-x: none;
+  height: 85vh;
 }
+
 
 /* Left: Leaderboard */
 .leaderboard {
-  width: 35%;
+  width: 36vw;
+  padding: 1rem;
+}
+
+.leaderboard h3 {
+  text-align: left;
+}
+
+.leaderboard hr {
+  color: black;
 }
 
 .leaderboard-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 0.5rem;
+  font-size: 1rem;
+  table-layout: fixed;
 }
 
 .leaderboard-table th,
 .leaderboard-table td {
-  border: 1px solid #888;
-  padding: 4px 8px;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
   text-align: center;
+  border-bottom: 1px solid #999;
+  background-color: #eee;
+  font-weight: 500;
+  
 }
 
-.leaderboard-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  opacity: 0.6;
+.leaderboard-table th {
+  background-color: #ddd;
+  border-bottom: 2px solid #666;
 }
 
-.leaderboard-empty .face {
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
+.leaderboard-table tr:hover {
+  background-color: #bbb;
+  font-weight: bold;
 }
 
 
 /* Right: Description Panel */
 .description {
-  width: 65%;
+  margin-left: 0;
+  width: 70vw;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
   text-align: left;
-  padding-right: 4vw;
 }
 
 .desc-content hr {
@@ -199,6 +229,7 @@ onMounted(async () => {
   padding: 0.5rem;
   min-width: 45%;
 }
+
 
 /* Options Section */
 .options {
@@ -235,7 +266,12 @@ onMounted(async () => {
   font-weight: bold;
 }
 
+
 /* Start Button */
+.start-button-container {
+  display: flex;
+}
+
 .start-button {
   align-self: flex-end;
   margin-top: 1.5rem;
