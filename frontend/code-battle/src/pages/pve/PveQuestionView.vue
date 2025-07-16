@@ -16,6 +16,7 @@ const difficultyOptions = ['None', 'Sabotage', 'Confident']
 
 async function fetchLevelData(): Promise<Question> {
   const response = await api.get(`/questions?level=${level}`)
+  console.log(response.data);
   return response.data as Question
 }
 
@@ -71,7 +72,7 @@ onMounted(async () => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(entry, i) in leaderboard" :key="i" :class="{ top1: i === 0 }">
+            <tr v-for="(entry, i) in leaderboard" :key="i">
               <td>{{ i + 1 }}#</td>
               <td>{{ entry.name }}</td>
               <td>{{ entry.language }}</td>
@@ -92,10 +93,10 @@ onMounted(async () => {
     <div class="panel description">
       <h3>Description</h3>
       <div class="desc-content">
-        <h4>Level 1: {{ questionData.questionName }}</h4>
+        <h4>Level {{ questionData.level }}: {{ questionData.questionName }}</h4>
         <hr />
 
-        <p><strong>Description:</strong><br />{{ questionData.questionDescription }}</p>
+        <p><strong>Description:</strong><br />{{ questionData.description }}</p>
         <hr />
 
         <p><strong>Test Cases:</strong></p>
@@ -178,23 +179,22 @@ onMounted(async () => {
   table-layout: fixed;
 }
 
-.leaderboard-table th,
-.leaderboard-table td {
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  text-align: center;
-  border-bottom: 1px solid #999;
-  background-color: #eee;
-  font-weight: 500;
-  
-}
-
 .leaderboard-table th {
   background-color: #ddd;
   border-bottom: 2px solid #666;
+  font-weight: bold;
+  padding: 0.5rem;
 }
 
-.leaderboard-table tr:hover {
+.leaderboard-table td {
+  text-align: center;
+  padding: 0.5rem;
+  border-bottom: 1px solid #999;
+  font-weight: 500;
+}
+
+/* ✅ Hover fix */
+.leaderboard-table tbody tr:hover {
   background-color: #bbb;
   font-weight: bold;
 }
@@ -261,7 +261,7 @@ onMounted(async () => {
 }
 
 .modifier span {
-  width: 6rem;
+  width: 10rem;
   text-align: center;
   font-weight: bold;
 }
@@ -269,15 +269,20 @@ onMounted(async () => {
 
 /* Start Button */
 .start-button-container {
+  margin-right: 4rem;
   display: flex;
+  justify-content: flex-end; /* ✅ Add this */
 }
+
 
 .start-button {
   align-self: flex-end;
   margin-top: 1.5rem;
   padding: 0.4rem 1rem;
+  width: 8rem;
   background-color: #666;
   color: #fff;
+  text-align: center;
   text-decoration: none;
   font-weight: bold;
   font-size: 1rem;
