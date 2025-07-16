@@ -25,8 +25,6 @@
             <span v-if="isLoading" class="loading-spinner">Loading...</span>
         </div>
 
-        <!-- Popup Modal (only when triggered) -->
-
         <!-- Slide Panel Toggle -->
         <transition name="slide-down">
             <div v-if="showPopup" class="popup-panel">
@@ -87,6 +85,19 @@
             </div>
         </transition>
     </div>
+
+    <template v-if="showTimeoutPopup">
+        <div class="popup-backdrop">
+            <div class="popup-content">
+                <h2>Time's up!</h2>
+                <p>Your time limit has expired.</p>
+                <button @click="restartPage">Restart</button>
+                <router-link :to="{ name: 'PveLevelSelect' }">
+                    <button>Select New Level</button>
+                </router-link>
+            </div>
+        </div>
+    </template>
 </template>
 
 <script setup lang="ts">
@@ -113,21 +124,26 @@ const timeLimitEnabled = route.query.timeLimit === 'true'
 // =============================
 // 🔁 Reactive State
 // =============================
+// Base
 const code = ref('// Write code here')
 const showPopup = ref(false)
 const questionData = ref<Question | null>(null)
 const isLoading = ref(false)
 
+// Timer
 const timeLeft = ref(0)
 let timer: ReturnType<typeof setInterval> | null = null
 
+// Time out
+const showTimeoutPopup = ref(false)
+
+// Result
 const showResultPopup = ref(false)
 const testResults = ref<{
     passed: boolean
     results: { passed: boolean; output: string; expectedOutput: string; input: string }[]
     totalScore: number
 } | null>(null)
-
 
 // =============================
 // ⏱️ Computed
@@ -190,6 +206,10 @@ const submitCode = async () => {
     }
 }
 
+const restartPage = () => {
+    window.location.reload()
+}
+
 
 // =============================
 // 🚀 Lifecycle Hooks
@@ -212,8 +232,12 @@ watch(questionData, (newVal) => {
     if (timer) clearInterval(timer)
     timer = setInterval(() => {
         if (timeLimitEnabled) {
-            if (timeLeft.value > 0) timeLeft.value--
-            else clearInterval(timer!)
+            if (timeLeft.value > 0) {
+                timeLeft.value--
+            } else {
+                clearInterval(timer!)
+                showTimeoutPopup.value = true // ⏱️ trigger popup
+            }
         } else {
             timeLeft.value++
         }
@@ -451,5 +475,30 @@ onUnmounted(() => {
     font-size: 12px;
     font-style: italic;
     color: #555;
+}
+
+/* Time out */
+.popup-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.popup-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.popup-content button {
+    margin: 0.5rem;
 }
 </style>
