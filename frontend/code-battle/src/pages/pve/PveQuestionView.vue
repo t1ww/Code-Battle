@@ -125,7 +125,17 @@ onMounted(async () => {
         <hr />
 
         <div class="start-button-container">
-          <router-link :to="{ name: 'PveGameplay' }" class="start-button">Start!</router-link>
+          <router-link :to="{
+            name: 'PveGameplay',
+            query: {
+              modifier: selectedModifier,
+              // ‼️Idk why its red / wrong type?
+              timeLimit: timeLimitEnabled
+            }
+          }" class="start-button">
+            Start!
+          </router-link>
+
         </div>
 
       </div>

@@ -6,6 +6,7 @@
             <div v-if="!showPopup" class="popup-toggle fixed">
                 <button @click="showPopup = true">▼</button>
             </div>
+            <!-- ‼️ Should be time counter if disabled -->
             <div class="timer">Time Left : {{ formattedTime }}</div>
         </div>
 
@@ -42,12 +43,13 @@
                     <div class="section">
                         <label>
                             Time limit:
+                            <!-- ‼️ Should not be clickable -->
                             <input type="checkbox" v-model="timeLimitEnabled" />
                         </label>
                     </div>
                     <div class="section modifier">
-                        <span>Difficulty modifier:</span>
-                        <span class="modifier-value">None</span>
+                        <span>Modifier:</span>
+                        <span class="modifier-value">{{ selectedModifier }}</span>
                     </div>
                 </div>
                 <!-- Button inside sliding panel -->
@@ -60,17 +62,45 @@
 </template>
 
 <script setup lang="ts">
+// =============================
+// 📦 Imports
+// =============================
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/clients/api'
 import type { Question } from '@/types/types'
-
 import CodeEditor from '@/components/pve/CodeEditor.vue'
-import { ref, computed, onMounted } from 'vue'
 
-const timeLimitEnabled = ref(true)
-const showPopup = ref(false)
+// =============================
+// 📍 Route & Query Params
+// =============================
+const route = useRoute()
+const level = route.query.mode as string || 'Easy'
+const selectedModifier = route.query.modifier as string || 'None'
+const timeLimitEnabled = route.query.timeLimit === 'true'
+
+// =============================
+// 🔁 Reactive State
+// =============================
 const code = ref('// Write code here')
+const showPopup = ref(false)
+const questionData = ref<Question | null>(null)
 
+const totalTime = 180
+const timeLeft = ref(totalTime)
+
+// =============================
+// ⏱️ Computed
+// =============================
+const formattedTime = computed(() => {
+    const minutes = String(Math.floor(timeLeft.value / 60)).padStart(2, '0')
+    const seconds = String(timeLeft.value % 60).padStart(2, '0')
+    return `00:${minutes}:${seconds}`
+})
+
+// =============================
+// 🧪 Code Actions
+// =============================
 const runCode = () => {
     console.log('Running code:', code.value)
 }
@@ -79,25 +109,13 @@ const submitCode = () => {
     console.log('Submitting code:', code.value)
 }
 
-const totalTime = 180
-const timeLeft = ref(totalTime)
-
-const formattedTime = computed(() => {
-    const minutes = String(Math.floor(timeLeft.value / 60)).padStart(2, '0')
-    const seconds = String(timeLeft.value % 60).padStart(2, '0')
-    return `00:${minutes}:${seconds}`
-})
-
-// Description
-const route = useRoute()
-const level = route.query.mode as string || 'Easy'
-const questionData = ref<Question | null>(null)
-
+// =============================
+// 🚀 Lifecycle Hooks
+// =============================
 onMounted(async () => {
     const response = await api.get(`/questions?level=${level}`)
     questionData.value = response.data as Question
 })
-
 
 onMounted(() => {
     const timer = setInterval(() => {
@@ -106,6 +124,7 @@ onMounted(() => {
     }, 1000)
 })
 </script>
+
 
 <style scoped>
 .container {
@@ -303,6 +322,7 @@ onMounted(() => {
     padding: 0.5rem;
     border-radius: 4px;
     font-family: monospace;
+    width: 15vw;
 }
 
 .modifier {
