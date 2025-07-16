@@ -2,25 +2,43 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/clients/api'
-import type { Question } from '@/types/types'
+import type { Question, LeaderboardEntry } from '@/types/types'
 
 const route = useRoute()
 const level = route.query.mode as string || 'Easy'
 
 const questionData = ref<Question | null>(null)
+const leaderboard = ref<LeaderboardEntry[]>([])
 const selectedModifier = ref('None')
 const timeLimitEnabled = ref(true)
 
-// Modifier options
-const modifierOptions = ['None', 'Sabotage', 'Confident']
+const difficultyOptions = ['None', 'Sabotage', 'Confident']
 
 async function fetchLevelData(): Promise<Question> {
   const response = await api.get(`/questions?level=${level}`)
   return response.data as Question
 }
 
+async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
+  // mock data for now
+  return [
+    { name: 'Name 1', language: 'java', modifier: 'Confident', score: 1000 },
+    { name: 'Name 2', language: 'java', modifier: 'Confident', score: 999 },
+    { name: 'Name 3', language: 'java', modifier: 'Confident', score: 980 },
+    { name: 'Name 4', language: 'java', modifier: 'Confident', score: 978 },
+    { name: 'Name 5', language: 'java', modifier: 'Confident', score: 969 },
+    { name: 'Name 6', language: 'java', modifier: 'Confident', score: 965 },
+    { name: 'Name 7', language: 'java', modifier: 'Confident', score: 960 },
+    { name: 'Name 8', language: 'java', modifier: 'Confident', score: 959 },
+    { name: 'Name 9', language: 'java', modifier: 'Confident', score: 958 },
+    { name: 'Name 10', language: 'java', modifier: 'Confident', score: 940 },
+    { name: 'Name 11', language: 'java', modifier: 'Confident', score: 938 },
+    { name: 'Name 12', language: 'java', modifier: 'Confident', score: 727 },
+  ]
+}
+
 function cylcleModifier(direction: 'left' | 'right') {
-  const options = modifierOptions
+  const options = difficultyOptions
   const current = options.indexOf(selectedModifier.value)
   const next =
     direction === 'left'
@@ -31,52 +49,70 @@ function cylcleModifier(direction: 'left' | 'right') {
 
 onMounted(async () => {
   questionData.value = await fetchLevelData()
+  leaderboard.value = await fetchLeaderboard()
 })
 </script>
 
 <template>
   <div class="level-container" v-if="questionData">
+    <!-- Leaderboard -->
     <div class="panel leaderboard">
       <h3>Leaderboard</h3>
-      <div class="leaderboard-empty">
+      <div v-if="leaderboard.length">
+        <table class="leaderboard-table">
+          <tbody>
+            <tr v-for="(entry, i) in leaderboard" :key="i">
+              <td>{{ i + 1 }}#</td>
+              <td>{{ entry.name }}</td>
+              <td>{{ entry.language }}</td>
+              <td>{{ entry.modifier }}</td>
+              <td>{{ entry.score }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-else class="leaderboard-empty">
         <div class="face">:(</div>
         <p>No leaderboard data<br />available at the moment</p>
       </div>
     </div>
 
+    <!-- Description -->
     <div class="panel description">
       <h3>Description</h3>
       <div class="desc-content">
-        <h4>{{ questionData.questionName }}</h4>
+        <h4>Level 1: {{ questionData.questionName }}</h4>
+        <hr />
 
         <p><strong>Description:</strong><br />{{ questionData.questionDescription }}</p>
+        <hr />
 
         <p><strong>Test Cases:</strong></p>
         <div class="test-cases">
-          <div v-for="(test, index) in questionData.testCases" :key="index">
-            <strong>Test Case {{ index + 1 }}</strong><br />
+          <div v-for="(test, i) in questionData.testCases" :key="i">
+            <strong>Test Case {{ i + 1 }}</strong><br />
             Input: {{ test.input }}<br />
-            Output: {{ test.expectedOutput }}<br /><br />
+            Output: {{ test.expectedOutput }}
           </div>
         </div>
+        <hr />
 
         <div class="options">
-          <label>
+          <label class="checkbox-line">
+            <span>Time limit :</span>
             <input type="checkbox" v-model="timeLimitEnabled" />
-            Time limit
           </label>
 
           <div class="modifier">
-            Difficulty modifier:
+            <span>Difficulty modifier :</span>
             <button @click="cylcleModifier('left')">&lt;</button>
             <span>{{ selectedModifier }}</span>
             <button @click="cylcleModifier('right')">&gt;</button>
           </div>
         </div>
+        <hr />
 
-        <router-link :to="{ name: 'PveGameplay' }" class="start-button">
-          Start
-        </router-link>
+        <router-link :to="{ name: 'PveGameplay' }" class="start-button">Start!</router-link>
       </div>
     </div>
   </div>
@@ -85,6 +121,7 @@ onMounted(async () => {
 <style scoped>
 .level-container {
   display: flex;
+  padding-top: 5rem;
   width: 100vw;
   height: 100vh;
   background-color: #bbb;
@@ -104,14 +141,21 @@ onMounted(async () => {
 /* Left: Leaderboard */
 .leaderboard {
   width: 35%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: start;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+  border: 1px solid #888;
+  padding: 4px 8px;
   text-align: center;
 }
 
-/* Empty Leaderboard Message */
 .leaderboard-empty {
   display: flex;
   flex-direction: column;
@@ -126,6 +170,7 @@ onMounted(async () => {
   margin-bottom: 0.5rem;
 }
 
+
 /* Right: Description Panel */
 .description {
   width: 65%;
@@ -135,45 +180,39 @@ onMounted(async () => {
   padding-right: 4vw;
 }
 
-.desc-content {
-  margin-top: 0.5rem;
+.desc-content hr {
+  border: none;
+  border-bottom: 2px solid #aaa;
+  margin: 0.8rem 0;
 }
 
-h4 {
-  margin-bottom: 0.75rem;
-}
-
-p {
-  line-height: 1.4;
-  margin-bottom: 0.75rem;
-}
-
-/* Test case section */
 .test-cases {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+  justify-content: space-between;
   font-family: monospace;
-  margin-left: 1rem;
 }
 
-.test-cases > div {
-  padding: 0.5rem;
+.test-cases>div {
   background: #eee;
-  border: .2em solid #aaa;
-  border-radius: .5em;
-  min-width: 180px;
+  border: 1px solid #aaa;
+  border-radius: 0.4rem;
+  padding: 0.5rem;
+  min-width: 45%;
 }
 
 /* Options Section */
 .options {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1rem;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-/* Modifier Selector */
+.checkbox-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .modifier {
   display: flex;
   align-items: center;
@@ -182,9 +221,8 @@ p {
 
 .modifier button {
   width: 2rem;
-  height: 2rem; /* was 1.5rem, too tight */
-  font-size: 1rem; /* ensure arrow characters fit */
-  line-height: 1; /* prevent vertical misalignment */
+  height: 2rem;
+  font-size: 1rem;
   background: #ccc;
   border: 1px solid #888;
   cursor: pointer;
@@ -201,17 +239,14 @@ p {
 .start-button {
   align-self: flex-end;
   margin-top: 1.5rem;
-  padding: 0.5rem 1.25rem;
+  padding: 0.4rem 1rem;
   background-color: #666;
   color: #fff;
   text-decoration: none;
-  font-weight: 600;
+  font-weight: bold;
   font-size: 1rem;
   border-radius: 0.4rem;
   transition: background-color 0.2s ease, transform 0.1s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   border: 1px solid #444;
 }
 
@@ -223,5 +258,4 @@ p {
 .start-button:active {
   transform: scale(0.98);
 }
-
 </style>

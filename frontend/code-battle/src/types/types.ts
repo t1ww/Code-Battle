@@ -6,6 +6,7 @@ export interface PlayerData {
   avatarUrl?: string;
 }
 
+// Level select
 export interface Question {
     id: number;
     questionName: string;
@@ -18,6 +19,13 @@ export interface Question {
     testCases: { input: string; expectedOutput: string }[];
     estimatedRuntime: string;
     timeComplexity: string;
+}
+
+export interface LeaderboardEntry {
+  name: string;
+  language: string;
+  modifier: string;
+  score: number;
 }
 
 // Matchmaking
