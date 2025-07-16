@@ -129,8 +129,7 @@ onMounted(async () => {
             name: 'PveGameplay',
             query: {
               modifier: selectedModifier,
-              // ‼️Idk why its red / wrong type?
-              timeLimit: timeLimitEnabled
+              timeLimit: timeLimitEnabled.toString() // ✅ convert to string
             }
           }" class="start-button">
             Start!

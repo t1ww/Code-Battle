@@ -6,8 +6,10 @@
             <div v-if="!showPopup" class="popup-toggle fixed">
                 <button @click="showPopup = true">▼</button>
             </div>
-            <!-- ‼️ Should be time counter if disabled -->
-            <div class="timer">Time Left : {{ formattedTime }}</div>
+            <div class="timer">
+                Time Left:
+                <span>{{ formattedTime }}</span>
+            </div>
         </div>
 
         <!-- Code editor and run/submit buttons -->
@@ -43,8 +45,7 @@
                     <div class="section">
                         <label>
                             Time limit:
-                            <!-- ‼️ Should not be clickable -->
-                            <input type="checkbox" v-model="timeLimitEnabled" />
+                            <input type="checkbox" v-model="timeLimitEnabled" disabled />
                         </label>
                     </div>
                     <div class="section modifier">
@@ -87,15 +88,17 @@ const showPopup = ref(false)
 const questionData = ref<Question | null>(null)
 
 const totalTime = 180
-const timeLeft = ref(totalTime)
+const timeLeft = ref(timeLimitEnabled ? totalTime : 0)
 
 // =============================
 // ⏱️ Computed
 // =============================
 const formattedTime = computed(() => {
-    const minutes = String(Math.floor(timeLeft.value / 60)).padStart(2, '0')
-    const seconds = String(timeLeft.value % 60).padStart(2, '0')
-    return `00:${minutes}:${seconds}`
+    const totalSeconds = timeLeft.value
+    const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0')
+    const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0')
+    const seconds = String(totalSeconds % 60).padStart(2, '0')
+    return `${hours}:${minutes}:${seconds}`
 })
 
 // =============================
@@ -117,12 +120,20 @@ onMounted(async () => {
     questionData.value = response.data as Question
 })
 
+
 onMounted(() => {
     const timer = setInterval(() => {
-        if (timeLeft.value > 0) timeLeft.value--
-        else clearInterval(timer)
+        if (timeLimitEnabled) {
+            // Countdown
+            if (timeLeft.value > 0) timeLeft.value--
+            else clearInterval(timer)
+        } else {
+            // Count up indefinitely
+            timeLeft.value++
+        }
     }, 1000)
 })
+
 </script>
 
 
