@@ -17,12 +17,28 @@
 
         <!-- Popup Modal (only when triggered) -->
         <div v-if="showPopup" class="overlay" @click.self="showPopup = false">
-            <div class="popup">Hello</div>
+            <div class="popup" v-if="questionData">
+                <h2>{{ questionData.questionName }}</h2>
+                <hr>
+                <p><strong>Description:</strong></p>
+                <p>{{ questionData.description }}</p>
+                <p><strong>Test Cases:</strong></p>
+                <ul>
+                    <li v-for="(test, i) in questionData.testCases" :key="i">
+                        <p>Input: {{ test.input }}</p>
+                        <p>Output: {{ test.expectedOutput }}</p>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
+import api from '@/clients/api'
+import type { Question } from '@/types/types'
+
 import CodeEditor from '@/components/pve/CodeEditor.vue'
 import { ref, computed, onMounted } from 'vue'
 
@@ -45,6 +61,17 @@ const formattedTime = computed(() => {
     const seconds = String(timeLeft.value % 60).padStart(2, '0')
     return `00:${minutes}:${seconds}`
 })
+
+// Description
+const route = useRoute()
+const level = route.query.mode as string || 'Easy'
+const questionData = ref<Question | null>(null)
+
+onMounted(async () => {
+    const response = await api.get(`/questions?level=${level}`)
+    questionData.value = response.data as Question
+})
+
 
 onMounted(() => {
     const timer = setInterval(() => {
