@@ -3,8 +3,8 @@
         <!-- Top bar -->
         <div class="top-bar">
             <!-- Toggle Button when hidden -->
-            <div v-if="!showPopup" class="popup-toggle fixed">
-                <button @click="showPopup = true">▼</button>
+            <div v-if="!showDescriptionPopup" class="popup-toggle fixed">
+                <button @click="showDescriptionPopup = true">▼</button>
             </div>
             <div class="timer">
                 Time Left:
@@ -27,7 +27,7 @@
 
         <!-- Slide Panel Toggle -->
         <transition name="slide-down">
-            <div v-if="showPopup" class="description-popup-panel">
+            <div v-if="showDescriptionPopup" class="description-popup-panel">
                 <div class="description-popup-content" v-if="questionData">
                     <h3>Description</h3>
                     <hr />
@@ -59,7 +59,7 @@
                 </div>
                 <!-- Button inside sliding panel -->
                 <div class="description-popup-toggle">
-                    <button @click="showPopup = false">▲</button>
+                    <button @click="showDescriptionPopup = false">▲</button>
                 </div>
             </div>
         </transition>
@@ -114,6 +114,20 @@
             </div>
         </div>
     </template>
+    
+    <!-- By confident lost -->
+    <template v-if="showConfidentLostPopup">
+        <div class="popup-backdrop">
+            <div class="popup-content">
+                <h2>Your submission failed</h2>
+                <h2 :style="{ color: 'red'}">Confident Modifer on</h2>
+                <p>Your final score: {{ testResults?.totalScore }}</p>
+                <router-link :to="{ name: 'PveLevelSelect' }">
+                    <button>Select New Level</button>
+                </router-link>
+            </div>
+        </div>
+    </template>
 
 </template>
 
@@ -143,7 +157,7 @@ const timeLimitEnabled = route.query.timeLimit === 'true'
 // =============================
 // Base
 const code = ref('// Write code here')
-const showPopup = ref(false)
+const showDescriptionPopup = ref(false)
 const questionData = ref<Question | null>(null)
 const isLoading = ref(false)
 
@@ -164,6 +178,10 @@ const testResults = ref<{
 
 // Clear
 const showClearedPopup = ref(false)
+
+// Confident
+const showConfidentLostPopup = ref(false)
+
 
 // =============================
 // ⏱️ Computed
@@ -222,7 +240,11 @@ const submitCode = async () => {
         if (data.passed) {
             showClearedPopup.value = true
         } else {
-            showResultPopup.value = true
+            if (selectedModifier === 'Confident'){
+                showConfidentLostPopup.value = true;
+            } else {
+                showResultPopup.value = true
+            }
         }
     } catch (error) {
         console.error('Code run failed:', (error as any).customMessage || error)
