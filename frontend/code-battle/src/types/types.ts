@@ -11,9 +11,10 @@ export interface Question {
     id: number;
     questionName: string;
     description: string;
+    level: string;
     hint?: string;
-    exampleInput: string;
-    exampleOutput: string;
+    exampleInput?: string;
+    exampleOutput?: string;
     startingCode: string;
     correctAnswerCode: string;
     testCases: { input: string; expectedOutput: string }[];
