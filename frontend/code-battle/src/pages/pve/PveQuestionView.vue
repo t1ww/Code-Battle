@@ -175,7 +175,7 @@ onMounted(async () => {
   width: 100%;
   border-collapse: collapse;
   margin-top: 0.5rem;
-  font-size: 1rem;
+  font-size: clamp(.8rem, 1.1vw, 1.2vw);
   table-layout: fixed;
 }
 
@@ -227,7 +227,7 @@ onMounted(async () => {
   border: 1px solid #aaa;
   border-radius: 0.4rem;
   padding: 0.5rem;
-  min-width: 45%;
+  width: 15vw;
 }
 
 
@@ -271,7 +271,8 @@ onMounted(async () => {
 .start-button-container {
   margin-right: 4rem;
   display: flex;
-  justify-content: flex-end; /* ✅ Add this */
+  justify-content: flex-end;
+  /* ✅ Add this */
 }
 
 
@@ -298,5 +299,36 @@ onMounted(async () => {
 
 .start-button:active {
   transform: scale(0.98);
+}
+
+/* Reactive */
+@media (max-width: 900px) {
+  .level-container {
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 1rem;
+  }
+
+  .leaderboard,
+  .description {
+    margin: 0rem;
+    margin-top: 2rem;
+    width: 90vw;
+    height: auto;
+  }
+
+  .test-cases {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .test-cases>div {
+    width: 40%;
+  }
+
+  .start-button-container {
+    justify-content: center;
+    margin-right: 0;
+  }
 }
 </style>
