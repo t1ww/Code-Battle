@@ -59,6 +59,25 @@
                 </div>
             </div>
         </transition>
+
+        <!-- Submission result -->
+        <transition name="fade">
+            <div v-if="showResultPopup" class="overlay" @click.self="showResultPopup = false">
+                <div class="popup">
+                    <h2>Test Results</h2>
+                    <p><strong>Final Score:</strong> {{ testResults?.totalScore }} / {{ questionData?.testCases.length
+                        }}</p>
+                    <div v-for="(result, i) in testResults?.results" :key="i" class="test-result"
+                        :style="{ color: result.passed ? 'green' : 'red' }">
+                        <p><strong>Test Case {{ i + 1 }}:</strong> {{ result.passed ? 'Passed' : 'Failed' }}</p>
+                        <p>Input: {{ result.input || '(no input)' }}</p>
+                        <p>Expected Output: {{ result.expectedOutput }}</p>
+                        <p>Actual Output: {{ result.output }}</p>
+                    </div>
+                    <button @click="showResultPopup = false">Close</button>
+                </div>
+            </div>
+        </transition>
     </div>
 </template>
 
@@ -91,6 +110,14 @@ const questionData = ref<Question | null>(null)
 const totalTime = 180
 const timeLeft = ref(timeLimitEnabled ? totalTime : 0)
 
+const showResultPopup = ref(false)
+const testResults = ref<{
+    passed: boolean
+    results: { passed: boolean; output: string; expectedOutput: string; input: string }[]
+    totalScore: number
+} | null>(null)
+
+
 // =============================
 // ⏱️ Computed
 // =============================
@@ -117,22 +144,30 @@ const submitCode = async () => {
     const payload = {
         code: code.value,
         testCases: questionData.value.testCases,
-        scorePct: 1, // default, adjust later if needed
+        scorePct: 1,
     }
 
     try {
         const res = await codeRunnerApi.post('/run', payload)
         const data = res.data as CodeRunResponse
 
-        console.log('Code run results:', data.results)
-        console.log('Total score:', data.totalScore ?? 'N/A')
+        testResults.value = {
+            passed: data.totalScore === questionData.value.testCases.length,
+            results: data.results.map((r, i) => ({
+                passed: r.passed,
+                output: r.output,
+                expectedOutput: questionData.value!.testCases[i].expectedOutput,
+                input: questionData.value!.testCases[i].input,
+            })),
+            totalScore: data.totalScore ?? 0,
+        }
 
-        // Handle results (e.g. display pass/fail, score)
+        showResultPopup.value = true
     } catch (error) {
         console.error('Code run failed:', (error as any).customMessage || error)
-        // Show user-friendly error if you want
     }
 }
+
 
 // =============================
 // 🚀 Lifecycle Hooks
