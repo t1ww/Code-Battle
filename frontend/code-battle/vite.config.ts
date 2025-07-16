@@ -8,5 +8,8 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, 'src')  // important
     }
-  }
+  },
+  optimizeDeps: {
+    include: ['monaco-editor/esm/vs/editor/editor.worker.js', 'monaco-editor/esm/vs/language/typescript/ts.worker.js'],
+  },
 });

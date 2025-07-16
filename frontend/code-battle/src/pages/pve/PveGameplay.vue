@@ -69,7 +69,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/clients/crud.api'
-import type { Question } from '@/types/types'
+import codeRunnerApi from '@/clients/coderunner.api'
+import type { CodeRunResponse, Question } from '@/types/types'
 import CodeEditor from '@/components/pve/CodeEditor.vue'
 
 // =============================
@@ -104,12 +105,33 @@ const formattedTime = computed(() => {
 // =============================
 // 🧪 Code Actions
 // =============================
-const runCode = () => {
+const runCode = async () => {
     console.log('Running code:', code.value)
 }
 
-const submitCode = () => {
+const submitCode = async () => {
     console.log('Submitting code:', code.value)
+    console.log('Test cases:', questionData.value?.testCases)
+    if (!questionData.value) return
+
+    const payload = {
+        code: code.value,
+        testCases: questionData.value.testCases,
+        scorePct: 1, // default, adjust later if needed
+    }
+
+    try {
+        const res = await codeRunnerApi.post('/run', payload)
+        const data = res.data as CodeRunResponse
+
+        console.log('Code run results:', data.results)
+        console.log('Total score:', data.totalScore ?? 'N/A')
+
+        // Handle results (e.g. display pass/fail, score)
+    } catch (error) {
+        console.error('Code run failed:', (error as any).customMessage || error)
+        // Show user-friendly error if you want
+    }
 }
 
 // =============================

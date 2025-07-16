@@ -7,6 +7,12 @@ export interface PlayerData {
 }
 
 // Level select
+export interface TestCase {
+  input: string
+  expectedOutput: string
+  score: number
+}
+
 export interface Question {
     id: number;
     questionName: string;
@@ -17,7 +23,7 @@ export interface Question {
     exampleOutput?: string;
     startingCode: string;
     correctAnswerCode: string;
-    testCases: { input: string; expectedOutput: string }[];
+    testCases: TestCase[];
     estimatedRuntime: string;
     timeComplexity: string;
 }
@@ -39,3 +45,23 @@ export const MatchState = {
 } as const
 
 export type MatchState = typeof MatchState[keyof typeof MatchState]
+
+// Gameplay
+export interface CodeRunRequest {
+  code: string
+  testCases: TestCase[]
+  scorePct: number
+}
+
+export interface CodeRunResult {
+  input: string
+  output: string
+  expected: string
+  passed: boolean
+  score: number // Optional: echoed back for convenience
+}
+
+export interface CodeRunResponse {
+  results: CodeRunResult[]
+  totalScore: number // Optional
+}
