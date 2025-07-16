@@ -14,10 +14,15 @@
 
         <!-- Code editor and run/submit buttons -->
         <CodeEditor v-model="code" />
-        
+
         <div class="buttons">
-            <button @click="runCode">Run code</button>
-            <button @click="submitCode">Submit</button>
+            <button @click="runCode" :disabled="isLoading">Run code</button>
+            <button @click="submitCode" :disabled="isLoading">
+                Submit
+            </button>
+        </div>
+        <div class="buttons">
+            <span v-if="isLoading" class="loading-spinner">Loading...</span>
         </div>
 
         <!-- Popup Modal (only when triggered) -->
@@ -66,8 +71,9 @@
             <div v-if="showResultPopup" class="overlay" @click.self="showResultPopup = false">
                 <div class="popup">
                     <h2>Test Results</h2>
-                    <p><strong>Final Score:</strong> {{ testResults?.totalScore }} / {{ questionData?.testCases.length
-                        }}</p>
+                    <p><strong>Final Score:</strong> {{ testResults?.totalScore }} / {{ questionData?.testCases?.reduce((acc, test) => acc + (test.score ?? 0), 0) ?? 0
+
+                    }}</p>
                     <div v-for="(result, i) in testResults?.results" :key="i" class="test-result"
                         :style="{ color: result.passed ? 'green' : 'red' }">
                         <p><strong>Test Case {{ i + 1 }}:</strong> {{ result.passed ? 'Passed' : 'Failed' }}</p>
@@ -93,6 +99,7 @@ import codeRunnerApi from '@/clients/coderunner.api'
 import type { CodeRunResponse, Question } from '@/types/types'
 import CodeEditor from '@/components/pve/CodeEditor.vue'
 
+
 // =============================
 // 📍 Route & Query Params
 // =============================
@@ -101,12 +108,14 @@ const level = route.query.mode as string || 'Easy'
 const selectedModifier = route.query.modifier as string || 'None'
 const timeLimitEnabled = route.query.timeLimit === 'true'
 
+
 // =============================
 // 🔁 Reactive State
 // =============================
 const code = ref('// Write code here')
 const showPopup = ref(false)
 const questionData = ref<Question | null>(null)
+const isLoading = ref(false)
 
 const totalTime = 180
 const timeLeft = ref(timeLimitEnabled ? totalTime : 0)
@@ -130,6 +139,7 @@ const formattedTime = computed(() => {
     return `${hours}:${minutes}:${seconds}`
 })
 
+
 // =============================
 // 🧪 Code Actions
 // =============================
@@ -138,18 +148,14 @@ const runCode = async () => {
 }
 
 const submitCode = async () => {
-    console.log('Submitting code:', code.value)
-    console.log('Test cases:', questionData.value?.testCases)
     if (!questionData.value) return
-
-    const payload = {
-        code: code.value,
-        testCases: questionData.value.testCases,
-        scorePct: 1,
-    }
-
+    isLoading.value = true
     try {
-        const res = await codeRunnerApi.post('/run', payload)
+        const res = await codeRunnerApi.post('/run', {
+            code: code.value,
+            testCases: questionData.value.testCases,
+            scorePct: 1,
+        })
         const data = res.data as CodeRunResponse
 
         testResults.value = {
@@ -162,10 +168,11 @@ const submitCode = async () => {
             })),
             totalScore: data.totalScore ?? 0,
         }
-
         showResultPopup.value = true
     } catch (error) {
         console.error('Code run failed:', (error as any).customMessage || error)
+    } finally {
+        isLoading.value = false
     }
 }
 
@@ -177,7 +184,6 @@ onMounted(async () => {
     const response = await api.get(`/questions?level=${level}`)
     questionData.value = response.data as Question
 })
-
 
 onMounted(() => {
     const timer = setInterval(() => {
@@ -191,7 +197,6 @@ onMounted(() => {
         }
     }, 1000)
 })
-
 </script>
 
 
@@ -412,5 +417,14 @@ onMounted(() => {
     padding: 2px 6px;
     border-radius: 3px;
     font-weight: bold;
+}
+
+/* Loading submit */
+.loading-spinner {
+    justify-self: flex-end;
+    margin-left: 8px;
+    font-size: 12px;
+    font-style: italic;
+    color: #555;
 }
 </style>
