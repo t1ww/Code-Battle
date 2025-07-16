@@ -49,14 +49,3 @@ npx knex migrate:rollback --all
 > ℹ️ You can also use `npx knex migrate:rollback` to undo the last batch only.
 
 ---
-
-
-
-
-
-
-
-### Notes:
-- Clarified commands and formatting for readability.
-- Fixed `migrate:rollback all` → `migrate:rollback --all` (official syntax).
-- Added optional `--all` tip for clarity.
