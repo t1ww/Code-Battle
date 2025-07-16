@@ -5,6 +5,7 @@ import path from "path";
 import { exec, spawn } from "child_process";
 
 import { fileURLToPath } from "url";
+import { _parseDecimal } from "monaco-editor-vue3";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -78,14 +79,14 @@ app.post("/run", async (req, res): Promise<any> => {
         );
 
         const totalScore = results.reduce((acc, test) => {
-            return test.passed ? acc + Math.round(test.score * scoreMultiplier) : acc;
+            return test.passed ? acc + test.score * scoreMultiplier : acc;
         }, 0);
 
         const allPassed = results.every((test) => test.passed);
 
         res.json({
             passed: allPassed,
-            totalScore,
+            totalScore: totalScore.toFixed(3),
             results: results.map(({ passed, output, expectedOutput, input }) => ({
                 passed,
                 output,
@@ -97,8 +98,8 @@ app.post("/run", async (req, res): Promise<any> => {
     } catch (error: unknown) {
         res.status(500).json({ error: (error as Error).toString() });
     } finally {
-        fs.remove(cppFilePath).catch(() => {});
-        fs.remove(exeFilePath).catch(() => {});
+        fs.remove(cppFilePath).catch(() => { });
+        fs.remove(exeFilePath).catch(() => { });
     }
 });
 
