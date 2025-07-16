@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import MonacoEditor from 'monaco-editor-vue3'
-
+import { inject } from 'vue';
+const DEV = inject('DEV') as boolean
 const props = defineProps<{
     modelValue: string
 }>()

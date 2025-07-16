@@ -56,6 +56,7 @@ export interface CodeRunResult {
 }
 
 export interface CodeRunResponse {
+  passed: boolean;
   results: CodeRunResult[]
   totalScore: number // Optional
 }

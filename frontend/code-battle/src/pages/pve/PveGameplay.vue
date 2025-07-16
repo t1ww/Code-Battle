@@ -86,6 +86,8 @@
         </transition>
     </div>
 
+    <!-- Game ends -->
+    <!-- By timer -->
     <template v-if="showTimeoutPopup">
         <div class="popup-backdrop">
             <div class="popup-content">
@@ -98,6 +100,21 @@
             </div>
         </div>
     </template>
+
+    <!-- By clear -->
+    <template v-if="showClearedPopup">
+        <div class="popup-backdrop">
+            <div class="popup-content">
+                <h2>Level Cleared!</h2>
+                <p>Your final score: {{ testResults?.totalScore }}</p>
+                <button @click="restartPage">Restart</button>
+                <router-link :to="{ name: 'PveLevelSelect' }">
+                    <button>Select New Level</button>
+                </router-link>
+            </div>
+        </div>
+    </template>
+
 </template>
 
 <script setup lang="ts">
@@ -144,6 +161,9 @@ const testResults = ref<{
     results: { passed: boolean; output: string; expectedOutput: string; input: string }[]
     totalScore: number
 } | null>(null)
+
+// Clear
+const showClearedPopup = ref(false)
 
 // =============================
 // ⏱️ Computed
@@ -198,7 +218,12 @@ const submitCode = async () => {
             totalScore: data.totalScore ?? 0,
         }
         console.log(testResults.value)
-        showResultPopup.value = true
+
+        if (data.passed) {
+            showClearedPopup.value = true
+        } else {
+            showResultPopup.value = true
+        }
     } catch (error) {
         console.error('Code run failed:', (error as any).customMessage || error)
     } finally {
