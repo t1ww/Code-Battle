@@ -129,6 +129,13 @@
         </div>
     </template>
 
+    <!-- Notifications -->
+    <transition name="notif-slide">
+        <div v-if="showNotification" class="notification">
+            ℹ️ {{ notificationMessage }}
+        </div>
+    </transition>
+
 </template>
 
 <script setup lang="ts">
@@ -184,6 +191,16 @@ let sabotageTimer: ReturnType<typeof setInterval> | null = null
 
 // Confident
 const showConfidentLostPopup = ref(false)
+
+// Notifications
+const showNotification = ref(false)
+const notificationMessage = ref('')
+
+function triggerNotification(message: string, duration = 3000) {
+    notificationMessage.value = message
+    showNotification.value = true
+    setTimeout(() => (showNotification.value = false), duration)
+}
 
 
 // =============================
@@ -269,10 +286,19 @@ onMounted(async () => {
     const response = await api.get(`/questions?level=${level}`)
     questionData.value = response.data as Question
 
+    // Modifiers on notifications
+    if (selectedModifier === 'Confident') {
+        triggerNotification('Confident mode you can only submit once, use it wisely.')
+    }
+
     // Sabotage modifer handling
     if (selectedModifier === 'Sabotage') {
+        triggerNotification('Sabotage modifier is active, your code will get one of its character removed every 2 minutes.')
         sabotageTimer = setInterval(() => {
             if (code.value.length > 0) {
+                // Notify the sabotage
+                triggerNotification('Your code have been sabotage, find it and fix it!')
+
                 // Remove a random character
                 const index = Math.floor(Math.random() * code.value.length)
                 code.value = code.value.slice(0, index) + code.value.slice(index + 1)
@@ -280,7 +306,6 @@ onMounted(async () => {
         }, 2 * 60 * 1000) // every 2 minutes
     }
 })
-
 
 watch(questionData, (newVal) => {
     if (!newVal) return
@@ -310,7 +335,6 @@ onUnmounted(() => {
     if (timer) clearInterval(timer)
     if (sabotageTimer) clearInterval(sabotageTimer)
 })
-
 </script>
 
 <style scoped>
@@ -564,5 +588,52 @@ onUnmounted(() => {
 
 .popup-content button {
     margin: 0.5rem;
+}
+
+/* Notifications */
+.notification {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    background-color: #1f2937;
+    color: #f9fafb;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    z-index: 1100;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Slide in from top-left */
+.notif-slide-enter-active {
+    animation: notifIn 0.3s ease-out forwards;
+}
+
+.notif-slide-leave-active {
+    animation: notifOut 0.2s ease-in forwards;
+}
+
+@keyframes notifIn {
+    from {
+        transform: translate(-100%, 0);
+        opacity: 0;
+    }
+
+    to {
+        transform: translate(0, 0);
+        opacity: 1;
+    }
+}
+
+@keyframes notifOut {
+    from {
+        transform: translate(0, 0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translate(-100%, 0);
+        opacity: 0;
+    }
 }
 </style>
