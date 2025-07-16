@@ -138,20 +138,23 @@ onMounted(() => {
 
 
 <style scoped>
+/* Page's screen container */
 .container {
     background-color: #d1d5db;
-    /* gray-300 */
     padding: 2rem;
     padding-top: 6rem;
-    min-height: 100vh;
-    min-width: 100vw;
+    padding-bottom: .5rem;
+    width: 100%;
+    max-width: 100vw;
+    max-height: 100vh;
     box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 /* Top bar with button and timer */
 .top-bar {
     position: relative;
-    margin-bottom: 16px;
+    margin-bottom: 2rem;
     height: 40px;
 }
 

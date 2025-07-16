@@ -20,13 +20,15 @@ const editorOptions = {
 
 <template>
     <MonacoEditor :value="props.modelValue" @update:value="emit('update:modelValue', $event)" language="javascript"
-        theme="vs-dark" :options="editorOptions" class="monaco-editor" :style="{ height: '20rem' }" />
+        theme="vs-dark" :options="editorOptions" class="monaco-editor" :style="{ height: '60vh' }" />
 </template>
 
 <style scoped>
 .monaco-editor {
+    padding-top: 1rem;
     border: 1px solid #ccc;
     border-radius: 8px;
     overflow: hidden;
+    margin-bottom: 1rem;
 }
 </style>
