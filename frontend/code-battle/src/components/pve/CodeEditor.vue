@@ -1,9 +1,3 @@
-<template>
-    <MonacoEditor :value="modelValue" @update:value="emit('update:modelValue', $event)" language="javascript"
-        theme="vs-dark" :options="editorOptions" class="monaco-editor" :style="{ height: '20rem' }" />
-</template>
-
-
 <script setup lang="ts">
 import MonacoEditor from 'monaco-editor-vue3'
 
@@ -23,6 +17,11 @@ const editorOptions = {
     automaticLayout: true,
 }
 </script>
+
+<template>
+    <MonacoEditor :value="props.modelValue" @update:value="emit('update:modelValue', $event)" language="javascript"
+        theme="vs-dark" :options="editorOptions" class="monaco-editor" :style="{ height: '20rem' }" />
+</template>
 
 <style scoped>
 .monaco-editor {
