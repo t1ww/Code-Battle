@@ -27,8 +27,8 @@
 
         <!-- Slide Panel Toggle -->
         <transition name="slide-down">
-            <div v-if="showPopup" class="popup-panel">
-                <div class="popup-content" v-if="questionData">
+            <div v-if="showPopup" class="description-popup-panel">
+                <div class="description-popup-content" v-if="questionData">
                     <h3>Description</h3>
                     <hr />
                     <h4>Level {{ questionData.level }}: {{ questionData.questionName }}</h4>
@@ -58,7 +58,7 @@
                     </div>
                 </div>
                 <!-- Button inside sliding panel -->
-                <div class="popup-toggle">
+                <div class="description-popup-toggle">
                     <button @click="showPopup = false">▲</button>
                 </div>
             </div>
@@ -418,7 +418,7 @@ onUnmounted(() => {
 
 /* Popup panel styling */
 /* Popup panel */
-.popup-panel {
+.description-popup-panel {
     position: fixed;
     top: 0;
     left: 0;
@@ -431,19 +431,19 @@ onUnmounted(() => {
     text-align: left;
 }
 
-.popup-content {
+.description-popup-content {
     max-width: 1000px;
     margin: 0 auto;
 }
 
 /* Button inside the panel */
-.popup-toggle {
+.description-popup-toggle {
     display: flex;
     justify-content: center;
     margin-bottom: 1rem;
 }
 
-.popup-toggle button {
+.description-popup-toggle button {
     background-color: #9ca3af;
     border: none;
     padding: 8px 12px;
@@ -453,7 +453,7 @@ onUnmounted(() => {
 }
 
 /* Button when panel is hidden */
-.popup-toggle.fixed {
+.description-popup-toggle.fixed {
     display: flex;
     justify-content: center;
     padding: 0.5rem;
