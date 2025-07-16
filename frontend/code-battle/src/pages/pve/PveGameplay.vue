@@ -14,6 +14,7 @@
 
         <!-- Code editor and run/submit buttons -->
         <CodeEditor v-model="code" />
+        
         <div class="buttons">
             <button @click="runCode">Run code</button>
             <button @click="submitCode">Submit</button>
@@ -198,12 +199,11 @@ onMounted(() => {
 /* Page's screen container */
 .container {
     background-color: #d1d5db;
-    padding: 2rem;
+    padding: 6rem;
     padding-top: 6rem;
-    padding-bottom: .5rem;
+    padding-bottom: 2.6rem;
     width: 100%;
     max-width: 100vw;
-    max-height: 100vh;
     box-sizing: border-box;
     overflow-x: hidden;
 }
@@ -253,16 +253,15 @@ onMounted(() => {
 
 /* Buttons */
 .buttons {
-    max-width: 800px;
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
-    margin-bottom: 32px;
+    gap: 1rem;
 }
 
 .buttons button {
     background-color: #9ca3af;
     border: none;
+    width: 6rem;
     padding: 8px 16px;
     border-radius: 6px;
     cursor: pointer;
