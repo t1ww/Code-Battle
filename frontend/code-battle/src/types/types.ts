@@ -10,8 +10,8 @@ export interface PlayerData {
 export interface Question {
     id: number;
     questionName: string;
-    questionDescription: string;
-    hint: string;
+    description: string;
+    hint?: string;
     exampleInput: string;
     exampleOutput: string;
     startingCode: string;
