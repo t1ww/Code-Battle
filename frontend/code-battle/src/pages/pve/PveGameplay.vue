@@ -211,10 +211,15 @@ onMounted(() => {
     cursor: pointer;
     font-weight: 600;
     font-size: 14px;
+    outline: none;
 }
 
 .buttons button:hover {
     background-color: #6b7280;
+}
+
+.buttons button:active {
+    background-color: #9fb2a4;
 }
 
 /* Overlay */
