@@ -17,15 +17,9 @@ export interface Question {
     id: number;
     questionName: string;
     description: string;
+    timeLimit: number;
     level: string;
-    hint?: string;
-    exampleInput?: string;
-    exampleOutput?: string;
-    startingCode: string;
-    correctAnswerCode: string;
     testCases: TestCase[];
-    estimatedRuntime: string;
-    timeComplexity: string;
 }
 
 export interface LeaderboardEntry {

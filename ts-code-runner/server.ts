@@ -21,11 +21,13 @@ const TEMP_DIR = path.join(__dirname, "temp");
 fs.ensureDirSync(TEMP_DIR);
 
 app.post("/run", async (req, res): Promise<any> => {
-    const { code, testCases } = req.body;
+    const { code, testCases, scorePct } = req.body;
 
     if (!code || !Array.isArray(testCases)) {
         return res.status(400).json({ error: "Invalid input" });
     }
+
+    const scoreMultiplier = typeof scorePct === "number" ? scorePct : 1;
 
     const fileName = `temp_${Date.now()}`;
     const cppFilePath = path.join(TEMP_DIR, `${fileName}.cpp`);
@@ -75,7 +77,10 @@ app.post("/run", async (req, res): Promise<any> => {
             })
         );
 
-        const totalScore = results.reduce((acc, test) => test.passed ? acc + test.score : acc, 0);
+        const totalScore = results.reduce((acc, test) => {
+            return test.passed ? acc + Math.round(test.score * scoreMultiplier) : acc;
+        }, 0);
+
         const allPassed = results.every((test) => test.passed);
 
         res.json({
@@ -92,10 +97,9 @@ app.post("/run", async (req, res): Promise<any> => {
     } catch (error: unknown) {
         res.status(500).json({ error: (error as Error).toString() });
     } finally {
-        fs.remove(cppFilePath).catch(() => { });
-        fs.remove(exeFilePath).catch(() => { });
+        fs.remove(cppFilePath).catch(() => {});
+        fs.remove(exeFilePath).catch(() => {});
     }
 });
-
 
 app.listen(5001, () => console.log("Server running on port 5001"));

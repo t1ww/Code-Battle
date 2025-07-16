@@ -71,7 +71,8 @@
             <div v-if="showResultPopup" class="overlay" @click.self="showResultPopup = false">
                 <div class="popup">
                     <h2>Test Results</h2>
-                    <p><strong>Final Score:</strong> {{ testResults?.totalScore }} / {{ questionData?.testCases?.reduce((acc, test) => acc + (test.score ?? 0), 0) ?? 0
+                    <p><strong>Final Score:</strong> {{ testResults?.totalScore }} / {{
+                        questionData?.testCases?.reduce((acc, test) => acc + (test.score ?? 0), 0) ?? 0
 
                     }}</p>
                     <div v-for="(result, i) in testResults?.results" :key="i" class="test-result"
@@ -92,7 +93,7 @@
 // =============================
 // 📦 Imports
 // =============================
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/clients/crud.api'
 import codeRunnerApi from '@/clients/coderunner.api'
@@ -117,8 +118,8 @@ const showPopup = ref(false)
 const questionData = ref<Question | null>(null)
 const isLoading = ref(false)
 
-const totalTime = 180
-const timeLeft = ref(timeLimitEnabled ? totalTime : 0)
+const timeLeft = ref(0)
+let timer: ReturnType<typeof setInterval> | null = null
 
 const showResultPopup = ref(false)
 const testResults = ref<{
@@ -154,7 +155,7 @@ const submitCode = async () => {
         const res = await codeRunnerApi.post('/run', {
             code: code.value,
             testCases: questionData.value.testCases,
-            scorePct: 1,
+            scorePct: .1,
         })
         const data = res.data as CodeRunResponse
 
@@ -185,20 +186,31 @@ onMounted(async () => {
     questionData.value = response.data as Question
 })
 
-onMounted(() => {
-    const timer = setInterval(() => {
+
+watch(questionData, (newVal) => {
+    if (!newVal) return
+
+    if (timeLimitEnabled) {
+        timeLeft.value = newVal.timeLimit || 0
+    } else {
+        timeLeft.value = 0
+    }
+
+    if (timer) clearInterval(timer)
+    timer = setInterval(() => {
         if (timeLimitEnabled) {
-            // Countdown
             if (timeLeft.value > 0) timeLeft.value--
-            else clearInterval(timer)
+            else clearInterval(timer!)
         } else {
-            // Count up indefinitely
             timeLeft.value++
         }
     }, 1000)
 })
-</script>
 
+onUnmounted(() => {
+    if (timer) clearInterval(timer)
+})
+</script>
 
 <style scoped>
 /* Page's screen container */
