@@ -152,10 +152,22 @@ const submitCode = async () => {
     if (!questionData.value) return
     isLoading.value = true
     try {
+        console.log('Submitting code:', code.value)
+        const baseLimit = questionData.value.timeLimit || 1 // fallback to 1 to avoid division by 0
+        let scorePct = 1
+
+        if (timeLimitEnabled) {
+            scorePct = timeLeft.value / baseLimit
+        } else {
+            const timeUsed = baseLimit - timeLeft.value
+            scorePct = timeUsed / baseLimit
+        }
+        console.log('Timer pct:', scorePct)
         const res = await codeRunnerApi.post('/run', {
             code: code.value,
             testCases: questionData.value.testCases,
-            scorePct: .1,
+            // Score percentage based on timer, if its enabled check from time left, if disabled find time taken which would've left from based timer limit.
+            scorePct: scorePct,
         })
         const data = res.data as CodeRunResponse
 
@@ -169,6 +181,7 @@ const submitCode = async () => {
             })),
             totalScore: data.totalScore ?? 0,
         }
+        console.log(testResults.value)
         showResultPopup.value = true
     } catch (error) {
         console.error('Code run failed:', (error as any).customMessage || error)
