@@ -51,11 +51,13 @@ export async function up(knex: Knex): Promise<void> {
       .inTable("questions")
       .onDelete("CASCADE");
 
-    table.integer("score").notNullable(); // replaces 'total_score'
+    table.integer("score").notNullable();
     table.string("language").notNullable().defaultTo("unknown");
-    table.string("modifier_state").notNullable().defaultTo("default");
+    table
+      .enum("modifier_state", ["None", "Sabotage", "Confident"])
+      .notNullable()
+      .defaultTo("None");
 
-    table.integer("time_taken").notNullable(); // if you're still tracking it
     table.timestamp("created_at").defaultTo(knex.fn.now());
 
     table.unique(["player_id", "question_id"]); // one score per player per question
