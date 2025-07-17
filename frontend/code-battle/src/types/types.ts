@@ -23,10 +23,10 @@ export interface Question {
 }
 
 export interface LeaderboardEntry {
-  name: string;
-  language: string;
-  modifier: string;
+  playerName: string;
   score: number;
+  language: string;
+  modifierState: string;
 }
 
 // Matchmaking

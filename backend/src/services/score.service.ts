@@ -29,25 +29,43 @@ export class ScoreService {
 
     async getLeaderboard(question_id: string): Promise<PlayerScore[]> {
         const [rows] = await pool.query<RowDataPacket[]>(
-            `SELECT player_id AS playerId, question_id AS questionId, score, language, modifier_state AS modifierState
-       FROM scores
-       WHERE question_id = ?
-       ORDER BY score DESC
-       LIMIT 100`,
+            `SELECT 
+            s.player_id AS playerId,
+            p.player_name AS playerName,
+            s.question_id AS questionId,
+            s.score,
+            s.language,
+            s.modifier_state AS modifierState
+            FROM scores s
+            JOIN players p ON s.player_id = p.player_id
+            WHERE s.question_id = ?
+            ORDER BY s.score DESC
+            LIMIT 100`,
             [question_id]
         );
 
         return rows as PlayerScore[];
     }
 
+
     async getTopScore(question_id: string, player_id: string): Promise<PlayerScore | null> {
         const [rows] = await pool.query<RowDataPacket[]>(
-            `SELECT player_id AS playerId, question_id AS questionId, score, language, modifier_state AS modifierState
-       FROM scores
-       WHERE question_id = ? AND player_id = ?`,
+            `SELECT 
+            s.player_id AS playerId,
+            p.player_name AS playerName,
+            s.question_id AS questionId,
+            s.score,
+            s.language,
+            s.modifier_state AS modifierState
+            FROM scores s
+            JOIN players p ON s.player_id = p.player_id
+            WHERE s.question_id = ? AND s.player_id = ?
+            ORDER BY s.score DESC
+            LIMIT 1`,
             [question_id, player_id]
         );
 
         return rows.length ? (rows[0] as PlayerScore) : null;
     }
+
 }
