@@ -283,8 +283,9 @@ const submitCode = async () => {
             };
 
             try {
-                await api.post("/scores/submit", scorePayload);
+                const response = await api.post("/scores/submit", scorePayload);
                 console.log("Score submitted:", scorePayload);
+                console.log("Res:", response);
             } catch (submitError) {
                 console.error("Score submission failed:", submitError);
             }

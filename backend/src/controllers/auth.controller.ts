@@ -35,12 +35,9 @@ export const login = async (req: Request, res: Response) => {
     return;
   }
 
-  const { token, ...playerInfo } = result;
-
   res.status(200).json({
     success: true,
-    token,
-    playerInfo,
+    ...result,
     errorMessage: null,
   });
 };

@@ -66,10 +66,9 @@ async function handleLogin() {
     if (data.success && data.token && data.playerInfo) {
       loginPlayer({
         token: data.token,
-        id: data.playerInfo.username,  // Using username as id
+        id: data.playerInfo.id,
         name: data.playerInfo.username,
         email: data.playerInfo.email,
-        role: "user", // if you don't have role from backend, set default
       });
 
       successMessage.value = "Login successful.";
