@@ -8,12 +8,8 @@
 
       <label>Password :</label>
       <div class="password-container">
-        <input
-          :type="showPassword ? 'text' : 'password'"
-          v-model="password"
-          placeholder="Type your Password"
-          required
-        />
+        <input :type="showPassword ? 'text' : 'password'" v-model="password" placeholder="Type your Password"
+          required />
         <button type="button" @click="showPassword = !showPassword">👁️</button>
       </div>
 
@@ -49,6 +45,8 @@ const successMessage = ref("");
 const failMessage = ref("");
 const loading = ref(false);
 
+import { loginPlayer } from "@/stores/auth";
+
 async function handleLogin() {
   if (!email.value || !password.value) {
     failMessage.value = "Please enter both email and password.";
@@ -58,19 +56,29 @@ async function handleLogin() {
 
   loading.value = true;
   try {
-    const response = await api.post(
-      "/players/login",
-      {
-        email: email.value,
-        password: password.value,
-      },
-      { withCredentials: true }
-    );
-    
-    successMessage.value = "Login successful.";
-    failMessage.value = "";
-    console.log("res:", response.data);
-    router.push("/");
+    const response = await api.post("/players/login", {
+      email: email.value,
+      password: password.value,
+    }, { withCredentials: true });
+
+    const data = response.data;
+
+    if (data.success && data.token && data.playerInfo) {
+      loginPlayer({
+        token: data.token,
+        id: data.playerInfo.username,  // Using username as id
+        name: data.playerInfo.username,
+        email: data.playerInfo.email,
+        role: "user", // if you don't have role from backend, set default
+      });
+
+      successMessage.value = "Login successful.";
+      failMessage.value = "";
+      router.push("/");
+    } else {
+      failMessage.value = data.errorMessage || "Invalid login response.";
+      successMessage.value = "";
+    }
   } catch (err) {
     failMessage.value = "Login service unavailable. Please try again later.";
     successMessage.value = "";
@@ -79,6 +87,7 @@ async function handleLogin() {
     loading.value = false;
   }
 }
+
 </script>
 
 <style scoped>

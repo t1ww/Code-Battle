@@ -6,7 +6,7 @@ import router from './router'
 import axios from 'axios'
 
 // Auth
-import { isAuthenticated, getPlayerData } from '@/store/auth'
+import { isAuthenticated, getPlayerData } from '@/stores/auth'
 
 const app = createApp(App)
 

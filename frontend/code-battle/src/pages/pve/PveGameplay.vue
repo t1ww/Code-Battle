@@ -71,7 +71,7 @@
                     <h2>Test Results</h2>
                     <p><strong>Final Score:</strong> {{ finalScore }} / {{
                         questionData?.testCases?.reduce((acc, test) => acc + (test.score ?? 0), 0) ?? 0
-                    }}</p>
+                        }}</p>
                     <div v-for="(result, i) in testResults?.results" :key="i" class="test-result"
                         :style="{ color: result.passed ? 'green' : 'red' }">
                         <p><strong>Test Case {{ i + 1 }}:</strong> {{ result.passed ? 'Passed' : 'Failed' }}</p>
@@ -145,8 +145,9 @@ import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/clients/crud.api'
 import codeRunnerApi from '@/clients/coderunner.api'
-import type { CodeRunResponse, Question } from '@/types/types'
+import type { CodeRunResponse, Question, ScoreSubmitRequest } from '@/types/types'
 import CodeEditor from '@/components/pve/CodeEditor.vue'
+import { getPlayerData } from '@/stores/auth'
 
 
 // =============================
@@ -167,6 +168,8 @@ const showDescriptionPopup = ref(false)
 const questionData = ref<Question | null>(null)
 const isLoading = ref(false)
 const MODIFIER_BONUS = 1.25
+// get player ID from auth
+const player = getPlayerData();
 
 // Timer
 const timeLeft = ref(0)
@@ -257,14 +260,34 @@ const submitCode = async () => {
             totalScore: data.totalScore ?? 0,
         }
         console.log(testResults.value)
-        if (selectedModifier === 'Sabotage' || selectedModifier === 'Confident'){
+        if (selectedModifier === 'Sabotage' || selectedModifier === 'Confident') {
             finalScore.value = +(testResults.value.totalScore * MODIFIER_BONUS).toFixed(3);
         } else {
             finalScore.value = testResults.value.totalScore;
         }
 
         if (data.passed) {
+            if (!player) {
+                console.warn("Player is null; skipping score submission.");
+                return;
+            }
+            console.log(player)
+
             showClearedPopup.value = true
+            const scorePayload: ScoreSubmitRequest = {
+                player_id: player.id!, // replace with actual player ID from state/store if dynamic
+                question_id: questionData.value.id.toString(),
+                score: finalScore.value,
+                language: "c++", // optionally make this reactive if you're tracking language
+                modifier_state: selectedModifier as "None" | "Sabotage" | "Confident",
+            };
+
+            try {
+                await api.post("/scores/submit", scorePayload);
+                console.log("Score submitted:", scorePayload);
+            } catch (submitError) {
+                console.error("Score submission failed:", submitError);
+            }
         } else {
             if (selectedModifier === 'Confident') {
                 showConfidentLostPopup.value = true;
