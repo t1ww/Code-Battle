@@ -36,15 +36,29 @@ export async function up(knex: Knex): Promise<void> {
   // Scores table
   await knex.schema.createTable("scores", (table) => {
     table.increments("score_id").primary();
+
     table
       .integer("player_id")
       .unsigned()
       .references("player_id")
       .inTable("players")
-      .onDelete("CASCADE"); // optional but recommended
-    table.integer("total_score").notNullable();
-    table.integer("time_taken").notNullable(); // seconds
+      .onDelete("CASCADE");
+
+    table
+      .integer("question_id")
+      .unsigned()
+      .references("question_id")
+      .inTable("questions")
+      .onDelete("CASCADE");
+
+    table.integer("score").notNullable(); // replaces 'total_score'
+    table.string("language").notNullable().defaultTo("unknown");
+    table.string("modifier_state").notNullable().defaultTo("default");
+
+    table.integer("time_taken").notNullable(); // if you're still tracking it
     table.timestamp("created_at").defaultTo(knex.fn.now());
+
+    table.unique(["player_id", "question_id"]); // one score per player per question
   });
 
   // Leaderboard entries table
