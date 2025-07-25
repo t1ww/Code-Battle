@@ -1,10 +1,7 @@
 import {
-  RegisterRequest,
   RegisterResponse,
-  LoginRequest,
   LoginResponse,
 } from "@/dtos/auth.dto";
-import { PlayerResponse } from "@/dtos/player.dto";
 import bcrypt from "bcrypt";
 import jwt, { Secret } from "jsonwebtoken";
 import ms from "ms";
@@ -19,35 +16,40 @@ export class AuthService {
     username: string,
     email: string,
     password: string
-  ): Promise<
-    RegisterResponse & {
-      id?: number;
-      username?: string;
-      email?: string;
-    }
-  > {
+  ): Promise<RegisterResponse> {
+    // ✅ UTC-09 ID 3: Handle empty fields 
     if (!username || !email || !password) {
-      return { errorMessage: "Missing required fields" };
+      return { error_message: "All fields are required" };
     }
-
-    const hashed = await bcrypt.hash(password, 10);
 
     try {
-      const [result] = await pool.query(
+      // ✅ UTC-09 ID 2: Check for existing email
+      const [existing] = await pool.query(
+        "SELECT id FROM players WHERE email = ? LIMIT 1",
+        [email]
+      );
+      if (Array.isArray(existing) && existing.length > 0) {
+        return { error_message: "Email already registered" };
+      }
+
+      const hashed = await bcrypt.hash(password, 10);
+
+      //✅ UTC-09 ID 1: Insert new user
+      await pool.query(
         "INSERT INTO players (player_name, email, password_hash) VALUES (?, ?, ?)",
         [username, email, hashed]
       );
 
-      return { id: (result as any).insertId, username, email };
+      return { error_message: null };
     } catch (err) {
-      return { errorMessage: (err as Error).message };
+      return { error_message: "Registration failed" };
     }
   }
 
   async login(
     email: string,
     password: string
-  ): Promise<{ errorMessage: string }| LoginResponse> {
+  ): Promise<{ errorMessage: string } | LoginResponse> {
     try {
       const [rows]: any = await pool.query(
         "SELECT * FROM players WHERE email = ?",
