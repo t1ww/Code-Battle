@@ -47,7 +47,7 @@ export class AuthService {
   async login(
     email: string,
     password: string
-  ): Promise<(LoginResponse & PlayerResponse) | LoginResponse> {
+  ): Promise<{ errorMessage: string }| LoginResponse> {
     try {
       const [rows]: any = await pool.query(
         "SELECT * FROM players WHERE email = ?",
@@ -65,7 +65,7 @@ export class AuthService {
 
       const token = jwt.sign(
         {
-          playerId: player.id,
+          playerId: player.player_id,
           player_name: player.player_name,
           email: player.email,
           role: player.role,
@@ -75,12 +75,15 @@ export class AuthService {
       );
 
       return {
+        success: true,
         token,
         errorMessage: undefined,
-        id: player.id,
-        username: player.player_name,
-        email: player.email,
-        createdAt: new Date(player.created_at),
+        playerInfo: {
+          id: player.player_id,
+          username: player.player_name,
+          email: player.email,
+          createdAt: new Date(player.created_at),
+        }
       };
     } catch (err) {
       console.error("Database error during login:", err);

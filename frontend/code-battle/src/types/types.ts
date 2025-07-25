@@ -14,28 +14,28 @@ export interface TestCase {
 }
 
 export interface Question {
-    id: number;
-    questionName: string;
-    description: string;
-    timeLimit: number;
-    level: string;
-    testCases: TestCase[];
+  id: number;
+  questionName: string;
+  description: string;
+  timeLimit: number;
+  level: string;
+  testCases: TestCase[];
 }
 
 export interface LeaderboardEntry {
-  name: string;
-  language: string;
-  modifier: string;
+  playerName: string;
   score: number;
+  language: string;
+  modifierState: string;
 }
 
 // Matchmaking
 export const MatchState = {
-  Searching:   'searching',
-  Found:       'found',
-  ShowingTeams:'showingTeams',
-  Countdown:   'countdown',
-  Started:     'started',
+  Searching: 'searching',
+  Found: 'found',
+  ShowingTeams: 'showingTeams',
+  Countdown: 'countdown',
+  Started: 'started',
 } as const
 
 export type MatchState = typeof MatchState[keyof typeof MatchState]
@@ -59,4 +59,13 @@ export interface CodeRunResponse {
   passed: boolean;
   results: CodeRunResult[]
   totalScore: number // Optional
+}
+
+// Score
+export interface ScoreSubmitRequest {
+  player_id: string;
+  question_id: string;
+  score: number;
+  language: string;
+  modifier_state: "None" | "Sabotage" | "Confident";
 }

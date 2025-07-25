@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue"
 import router from "@/router"
-import { isAuthenticated } from "@/store/auth"
+import { isAuthenticated } from "@/stores/auth"
 
 const filteredRoutes = computed(() => {
   // Filter routes for navbar display based on their meta fields in router.ts

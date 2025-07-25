@@ -1,3 +1,5 @@
+import { PlayerResponse } from "./player.dto";
+
 export interface RegisterRequest {
   username: string;
   email: string;
@@ -15,6 +17,8 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
+  success?: boolean;
   token?: string;
   errorMessage?: string;
+  playerInfo: PlayerResponse;
 }

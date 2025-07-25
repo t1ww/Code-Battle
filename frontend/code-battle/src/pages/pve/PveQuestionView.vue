@@ -22,20 +22,9 @@ async function fetchLevelData(): Promise<Question> {
 
 async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
   // mock data for now
-  return [
-    { name: 'Name 1', language: 'java', modifier: 'Confident', score: 1000 },
-    { name: 'Name 2', language: 'java', modifier: 'Confident', score: 999 },
-    { name: 'Name 3', language: 'java', modifier: 'Confident', score: 980 },
-    { name: 'Name 4', language: 'java', modifier: 'Confident', score: 978 },
-    { name: 'Name 5', language: 'java', modifier: 'Confident', score: 969 },
-    { name: 'Name 6', language: 'java', modifier: 'Confident', score: 965 },
-    { name: 'Name 7', language: 'java', modifier: 'Confident', score: 960 },
-    { name: 'Name 8', language: 'java', modifier: 'Confident', score: 959 },
-    { name: 'Name 9', language: 'java', modifier: 'Confident', score: 958 },
-    { name: 'Name 10', language: 'java', modifier: 'Confident', score: 940 },
-    { name: 'Name 11', language: 'java', modifier: 'Confident', score: 938 },
-    { name: 'Name 12', language: 'java', modifier: 'Confident', score: 727 },
-  ]
+  const response = await api.get(`/scores/leaderboard?question_id=${questionData.value?.id}`);
+  console.log( response.data.value)
+  return response.data as LeaderboardEntry[];
 }
 
 function cylcleModifier(direction: 'left' | 'right') {
@@ -74,9 +63,9 @@ onMounted(async () => {
           <tbody>
             <tr v-for="(entry, i) in leaderboard" :key="i">
               <td>{{ i + 1 }}#</td>
-              <td>{{ entry.name }}</td>
+              <td>{{ entry.playerName }}</td>
               <td>{{ entry.language }}</td>
-              <td>{{ entry.modifier }}</td>
+              <td>{{ entry.modifierState }}</td>
               <td>{{ entry.score }}</td>
             </tr>
           </tbody>
