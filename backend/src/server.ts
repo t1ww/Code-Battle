@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import playerRoutes from "@/routes/players.route";
+import questionRoutes from "@/routes/question.route"
+import scoreRoutes from "@/routes/score.route"
 
 dotenv.config();
 
@@ -14,6 +16,8 @@ app.use(cors({
 }));
 app.use(express.json()); // Parse JSON
 app.use("/players", playerRoutes); // Mount player routes
+app.use("/questions", questionRoutes); // Mount question routes
+app.use("/scores", scoreRoutes); // Mount score routes
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);

@@ -21,7 +21,6 @@ export function loginPlayer(player: {
   id: string;
   name: string;
   email: string;
-  role: string;
 }) {
   localStorage.setItem("player_token", player.token);
   localStorage.setItem("player_id", player.id);

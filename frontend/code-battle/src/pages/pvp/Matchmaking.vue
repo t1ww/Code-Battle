@@ -5,9 +5,9 @@ import { useRoute } from 'vue-router'
 import { findMatch } from '@/services/matchmaking'
 import type { PlayerData } from '@/types/types'
 
-import SearchIcon from '@/components/SearchIcon.vue'
-import MatchFoundIcon from '@/components/MatchFoundIcon.vue'
-import TeamList from '@/components/TeamList.vue'
+import SearchIcon from '@/components/pvp/SearchIcon.vue'
+import MatchFoundIcon from '@/components/pvp/MatchFoundIcon.vue'
+import TeamList from '@/components/pvp/TeamList.vue'
 
 type MatchState = 'searching' | 'found' | 'showingTeams' | 'countdown' | 'started'
 

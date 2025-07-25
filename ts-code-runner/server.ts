@@ -5,6 +5,7 @@ import path from "path";
 import { exec, spawn } from "child_process";
 
 import { fileURLToPath } from "url";
+import { _parseDecimal } from "monaco-editor-vue3";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,21 +22,21 @@ const TEMP_DIR = path.join(__dirname, "temp");
 fs.ensureDirSync(TEMP_DIR);
 
 app.post("/run", async (req, res): Promise<any> => {
-    const { code, testCases } = req.body;
+    const { code, testCases, scorePct } = req.body;
 
     if (!code || !Array.isArray(testCases)) {
         return res.status(400).json({ error: "Invalid input" });
     }
+
+    const scoreMultiplier = typeof scorePct === "number" ? scorePct : 1;
 
     const fileName = `temp_${Date.now()}`;
     const cppFilePath = path.join(TEMP_DIR, `${fileName}.cpp`);
     const exeFilePath = path.join(TEMP_DIR, fileName);
 
     try {
-        // Save C++ code to file
         await fs.writeFile(cppFilePath, code);
 
-        // Compile the C++ code
         await new Promise((resolve, reject) => {
             exec(`g++ "${cppFilePath}" -o "${exeFilePath}"`, (err, stdout, stderr) => {
                 if (err) return reject(stderr || err.message);
@@ -44,11 +45,17 @@ app.post("/run", async (req, res): Promise<any> => {
         });
 
         const results = await Promise.all(
-            testCases.map(({ input, expectedOutput }: { input: string; expectedOutput: string }) => {
-                return new Promise<{ input: string; output: string; expected: string; passed: boolean }>((resolve) => {
+            testCases.map(({ input, expectedOutput, score }: { input: string; expectedOutput: string; score: number }) => {
+                return new Promise<{
+                    input: string;
+                    output: string;
+                    expectedOutput: string;
+                    passed: boolean;
+                    score: number;
+                }>((resolve) => {
                     const child = spawn(exeFilePath, []);
-
                     let output = "";
+
                     child.stdout.on("data", (data: Buffer) => {
                         output += data.toString();
                     });
@@ -59,15 +66,10 @@ app.post("/run", async (req, res): Promise<any> => {
 
                     child.on("close", () => {
                         output = output.trim();
-                        resolve({
-                            input,
-                            output,
-                            expected: expectedOutput,
-                            passed: output === expectedOutput,
-                        });
+                        const passed = output === expectedOutput;
+                        resolve({ input, output, expectedOutput, passed, score });
                     });
 
-                    // Write input to the child process via stdin
                     if (child.stdin) {
                         child.stdin.write(input);
                         child.stdin.end();
@@ -76,15 +78,29 @@ app.post("/run", async (req, res): Promise<any> => {
             })
         );
 
-        res.json({ results });
+        const totalScore = results.reduce((acc, test) => {
+            return test.passed ? acc + test.score * scoreMultiplier : acc;
+        }, 0);
+
+        const allPassed = results.every((test) => test.passed);
+
+        res.json({
+            passed: allPassed,
+            totalScore: totalScore.toFixed(3),
+            results: results.map(({ passed, output, expectedOutput, input }) => ({
+                passed,
+                output,
+                expectedOutput,
+                input
+            }))
+        });
 
     } catch (error: unknown) {
         res.status(500).json({ error: (error as Error).toString() });
     } finally {
-        // Cleanup
-        fs.remove(cppFilePath).catch(() => {});
-        fs.remove(exeFilePath).catch(() => {});
+        fs.remove(cppFilePath).catch(() => { });
+        fs.remove(exeFilePath).catch(() => { });
     }
 });
 
-app.listen(3000, () => console.log("Server running on port 3000"));
+app.listen(5001, () => console.log("Server running on port 5001"));

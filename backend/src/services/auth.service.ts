@@ -1,10 +1,7 @@
 import {
-  RegisterRequest,
   RegisterResponse,
-  LoginRequest,
   LoginResponse,
 } from "@/dtos/auth.dto";
-import { PlayerResponse } from "@/dtos/player.dto";
 import bcrypt from "bcrypt";
 import jwt, { Secret } from "jsonwebtoken";
 import ms from "ms";
@@ -19,53 +16,69 @@ export class AuthService {
     username: string,
     email: string,
     password: string
-  ): Promise<
-    RegisterResponse & {
-      id?: number;
-      username?: string;
-      email?: string;
-    }
-  > {
+  ): Promise<RegisterResponse> {
+    // ✅ UTC-09 ID 3: Handle empty fields 
     if (!username || !email || !password) {
-      return { errorMessage: "Missing required fields" };
+      return { error_message: "All fields are required" };
     }
-
-    const hashed = await bcrypt.hash(password, 10);
 
     try {
-      const [result] = await pool.query(
+      // ✅ UTC-09 ID 2: Check for existing email
+      const [existing] = await pool.query(
+        "SELECT id FROM players WHERE email = ? LIMIT 1",
+        [email]
+      );
+      if (Array.isArray(existing) && existing.length > 0) {
+        return { error_message: "Email already registered" };
+      }
+
+      const hashed = await bcrypt.hash(password, 10);
+
+      //✅ UTC-09 ID 1: Insert new user
+      await pool.query(
         "INSERT INTO players (player_name, email, password_hash) VALUES (?, ?, ?)",
         [username, email, hashed]
       );
 
-      return { id: (result as any).insertId, username, email };
+      return { error_message: null };
     } catch (err) {
-      return { errorMessage: (err as Error).message };
+      return { error_message: "Registration failed" };
     }
   }
 
   async login(
     email: string,
     password: string
-  ): Promise<(LoginResponse & PlayerResponse) | LoginResponse> {
+  ): Promise<LoginResponse> {
+    // ✅ UTC-10 ID 4: Empty fields
+    if (!email || !password) {
+      return { error_message: "All fields are required", token: null, player_info: null };
+    }
+
     try {
       const [rows]: any = await pool.query(
         "SELECT * FROM players WHERE email = ?",
         [email]
       );
-      if (!rows.length) return { errorMessage: "Player not found" };
 
-      const player = rows[0];
-      if (process.env.NODE_ENV !== "production") {
-        console.log("Fetched user from DB:", player);
+      // ✅ UTC-10 ID 3: Email not found
+      if (!rows.length) {
+        return { error_message: "Incorrect email or password", token: null, player_info: null };
       }
 
-      const match = await bcrypt.compare(password, player.password_hash);
-      if (!match) return { errorMessage: "Invalid credentials" };
+      const player = rows[0];
 
+      const match = await bcrypt.compare(password, player.password_hash);
+
+      // ✅ UTC-10 ID 2: Wrong password
+      if (!match) {
+        return { error_message: "Incorrect email or password", token: null, player_info: null };
+      }
+
+      // ✅ UTC-10 ID 1: Valid login
       const token = jwt.sign(
         {
-          playerId: player.id,
+          playerId: player.player_id,
           player_name: player.player_name,
           email: player.email,
           role: player.role,
@@ -75,16 +88,21 @@ export class AuthService {
       );
 
       return {
+        error_message: null,
         token,
-        errorMessage: undefined,
-        id: player.id,
-        username: player.player_name,
-        email: player.email,
-        createdAt: new Date(player.created_at),
+        player_info: {
+          id: player.player_id.toString(),
+          username: player.player_name,
+          email: player.email,
+          created_at: new Date(player.created_at),
+        },
       };
     } catch (err) {
-      console.error("Database error during login:", err);
-      return { errorMessage: "Database unavailable. Please try again later." };
+      return {
+        error_message: "Database unavailable. Please try again later.",
+        token: null,
+        player_info: null,
+      };
     }
   }
 }

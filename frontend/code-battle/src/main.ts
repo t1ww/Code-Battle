@@ -6,13 +6,14 @@ import router from './router'
 import axios from 'axios'
 
 // Auth
-import { isAuthenticated, getPlayerData } from '@/store/auth'
+import { isAuthenticated, getPlayerData } from '@/stores/auth'
 
 const app = createApp(App)
 
 // Provide functions
 app.provide('isAuthenticated', isAuthenticated)
 app.provide('getPlayerData', getPlayerData)
+app.provide('DEV', true)
 
 app.use(createPinia())
     .use(router)

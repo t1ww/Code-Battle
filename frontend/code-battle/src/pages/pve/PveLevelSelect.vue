@@ -4,13 +4,13 @@
 <template>
   <div class="container">
     <div class="button-wrapper">
-      <router-link :to="{ name: 'PveLevelView' }" id="easy-button" class="mode-button">
+      <router-link :to="{ name: 'PveLevelView', query: { mode: 'Easy' } }" id="easy-button" class="mode-button">
         Easy
       </router-link>
-      <router-link :to="{ name: 'PveLevelView' }" id="medium-button" class="mode-button">
+      <router-link :to="{ name: 'PveLevelView', query: { mode: 'Medium' } }" id="medium-button" class="mode-button">
         Medium
       </router-link>
-      <router-link :to="{ name: 'PveLevelView' }" id="hard-button" class="mode-button">
+      <router-link :to="{ name: 'PveLevelView', query: { mode: 'Hard' } }" id="hard-button" class="mode-button">
         Hard
       </router-link>
     </div>
