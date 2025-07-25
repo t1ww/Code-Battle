@@ -3,15 +3,18 @@ import { SubmitScoreDTO, PlayerScore } from "@/dtos/score.dto";
 import { RowDataPacket } from "mysql2";
 
 export class ScoreService {
-    async submitScore(data: SubmitScoreDTO): Promise<void> {
-        // Upsert pattern — one score per player per question
+    async submitScore(data: SubmitScoreDTO): Promise<{ message?: string; error_message?: string }> {
+        // ✅ UTC-18 ID 2: Empty fields
+        if (!data.player_id || !data.question_id || data.score == null) {
+            return { error_message: "All fields are required" };
+        }
+
         const [existing] = await pool.query<RowDataPacket[]>(
             `SELECT * FROM scores WHERE player_id = ? AND question_id = ?`,
             [data.player_id, data.question_id]
         );
 
         if (existing.length > 0) {
-            // Update if new score is higher
             const prevScore = existing[0].score;
             if (data.score > prevScore) {
                 await pool.query(
@@ -25,7 +28,11 @@ export class ScoreService {
                 [data.player_id, data.question_id, data.score, data.language, data.modifier_state]
             );
         }
+
+        // ✅ UTC-18 ID 1: Valid score submission
+        return { message: "Score successfully submitted" };
     }
+
 
     async getLeaderboard(question_id: string): Promise<PlayerScore[]> {
         const [rows] = await pool.query<RowDataPacket[]>(
