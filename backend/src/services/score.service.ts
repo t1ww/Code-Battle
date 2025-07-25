@@ -68,7 +68,23 @@ export class ScoreService {
         };
     }
 
-    async getLeaderboard(question_id: string): Promise<PlayerScore[]> {
+    async getLeaderboard(question_id: string): Promise<PlayerScore[] | { error_message: string }> {
+        // ✅ UTC-20 ID 3: Empty question ID
+        if (!question_id) {
+            return { error_message: "Question ID is required" };
+        }
+
+        // Check if question exists
+        const [questionRows] = await pool.query<RowDataPacket[]>(
+            "SELECT question_id FROM questions WHERE question_id = ?",
+            [question_id]
+        );
+        if (questionRows.length === 0) {
+            // ✅ UTC-20 ID 2: Unknown question ID
+            return { error_message: "Question not found" };
+        }
+
+        // ✅ UTC-20 ID 1: Valid leaderboard
         const [rows] = await pool.query<RowDataPacket[]>(
             `SELECT 
             s.player_id AS playerId,
@@ -77,11 +93,11 @@ export class ScoreService {
             s.score,
             s.language,
             s.modifier_state AS modifierState
-            FROM scores s
-            JOIN players p ON s.player_id = p.player_id
-            WHERE s.question_id = ?
-            ORDER BY s.score DESC
-            LIMIT 100`,
+        FROM scores s
+        JOIN players p ON s.player_id = p.player_id
+        WHERE s.question_id = ?
+        ORDER BY s.score DESC
+        LIMIT 100`,
             [question_id]
         );
 
