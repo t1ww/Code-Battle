@@ -55,7 +55,7 @@ export const login = async (
   req: Request<{}, {}, LoginRequest>,
   res: Response<LoginResponse>
 ) => {
-  // ✅ ID 5: Invalid input format
+  // ✅ UTC-02 ID 5: Invalid input format
   if (
     !req.body ||
     typeof req.body !== "object" ||
@@ -71,7 +71,7 @@ export const login = async (
   }
   const { email, password } = req.body;
 
-  // ✅ ID 4: Empty email or password
+  // ✅ UTC-02 ID 4: Empty email or password
   if (!email || !password) {
     res.status(400).json({
       error_message: "All fields are required",
@@ -83,7 +83,7 @@ export const login = async (
 
   const result = await authService.login(email, password);
 
-  // ✅ ID 2 & 3: Wrong password or email not found
+  // ✅ UTC-02 ID 2, 3: Wrong password, Email not found
   if (result.error_message) {
     res.status(400).json({
       error_message: result.error_message,
@@ -93,7 +93,7 @@ export const login = async (
     return;
   }
 
-  // ✅ ID 1: Valid login
+  // ✅ UTC-02 ID 1: Valid login
   res.status(200).json({
     error_message: null,
     token: result.token,
