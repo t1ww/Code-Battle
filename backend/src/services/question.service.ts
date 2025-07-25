@@ -8,27 +8,37 @@ import {
 } from "@/dtos/question.dto";
 
 export class QuestionService {
-    async getQuestionById(id: string): Promise<QuestionResponse> {
+    async getQuestionById(question_id: string): Promise<QuestionResponse> {
+        // ✅ UTC-16 ID 3: Empty question ID
+        if (!question_id) {
+            throw new Error("Question ID is required");
+        }
+
         const [questionRows] = await pool.query<RowDataPacket[]>(
             "SELECT * FROM questions WHERE question_id = ?",
-            [id]
+            [question_id]
         );
 
-        if (questionRows.length === 0) throw new Error("Question not found");
+        // ✅ UTC-16 ID 2: Question not found
+        if (questionRows.length === 0) {
+            throw new Error("Question not found");
+        }
+
         const question = questionRows[0];
 
         const [testCaseRows] = await pool.query<RowDataPacket[]>(
             "SELECT * FROM test_cases WHERE question_id = ?",
-            [id]
+            [question_id]
         );
 
+        // ✅ UTC-16 ID 1: Valid question ID
         return {
             id: question.question_id,
             question_name: question.question_name,
             description: question.description,
             time_limit: question.time_limit,
             level: question.level,
-            test_cases: testCaseRows.map((tc): TestCaseResponse => ({
+            test_cases: testCaseRows.map(tc => ({
                 id: tc.test_case_id,
                 input: tc.input,
                 expectedOutput: tc.expected_output,
@@ -36,6 +46,7 @@ export class QuestionService {
             })),
         };
     }
+
 
     async getAQuestion(level: "Easy" | "Medium" | "Hard"): Promise<QuestionResponse> {
         const [questionRows] = await pool.query<RowDataPacket[]>(
