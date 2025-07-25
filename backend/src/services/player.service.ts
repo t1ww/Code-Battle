@@ -53,11 +53,36 @@ export class PlayerService {
     };
   }
 
-  async getPlayerByEmail(email: string): Promise<any | null> {
+  async getPlayerByEmail(email: string): Promise<PlayerResponse | { error_message: string }> {
+    // ✅ UTC-13 ID 4: Empty email
+    if (!email) {
+      return { error_message: "Email is required" };
+    }
+
+    // ✅ UTC-13 ID 3: Invalid email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return { error_message: "Invalid email format" };
+    }
+
     const [rows] = await pool.query<RowDataPacket[]>(
-      "SELECT * FROM players WHERE email = ?",
+      "SELECT id, player_name, email, created_at FROM players WHERE email = ?",
       [email]
     );
-    return rows.length ? rows[0] : null;
+
+    // ✅ UTC-13 ID 2: Email not registered
+    if (rows.length === 0) {
+      return { error_message: "Player not found" };
+    }
+
+    const player = rows[0];
+
+    // ✅ UTC-13 ID 1: Valid email
+    return {
+      id: player.id.toString(),
+      username: player.player_name,
+      email: player.email,
+      created_at: new Date(player.created_at),
+    };
   }
 }
