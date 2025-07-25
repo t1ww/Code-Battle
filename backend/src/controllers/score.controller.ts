@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { ScoreService } from "@/services/score.service";
-import { SubmitScoreDTO } from "@/dtos/score.dto";
+import { PlayerScore, SubmitScoreDTO } from "@/dtos/score.dto";
 
 const scoreService = new ScoreService();
 
@@ -94,15 +94,47 @@ export const getTopScore = async (req: Request, res: Response) => {
     }
 };
 
-
 export const getLeaderboard = async (req: Request, res: Response) => {
-    try {
-        const { question_id } = req.query;
-        if (typeof question_id !== "string") return res.status(400).json({ error: "Missing question_id" });
+    const query = req.query;
 
-        const leaderboard = await scoreService.getLeaderboard(question_id);
-        res.json(leaderboard);
-    } catch (err) {
-        res.status(500).json({ error: "Failed to get leaderboard", details: err });
+    // ✅ UTC-08 ID 4: Invalid input format
+    if (
+        !query ||
+        typeof query !== "object" ||
+        !("question_id" in query)
+    ) {
+        res.status(400).json({
+            error_message: "Invalid input format, required question_id",
+        });
+        return;
+    }
+
+    const question_id = query.question_id;
+
+    // ✅ UTC-08 ID 3: Empty question ID
+    if (typeof question_id !== "string" || !question_id.trim()) {
+        res.status(400).json({
+            error_message: "Question ID is required",
+        });
+        return;
+    }
+
+    try {
+        const leaderboard: PlayerScore[] | null = await scoreService.getLeaderboard(question_id);
+
+        // ✅ UTC-08 ID 2: Unknown question ID
+        if (!leaderboard || leaderboard.length === 0) {
+            res.status(404).json({
+                error_message: "Question not found",
+            });
+            return;
+        }
+
+        // ✅ UTC-08 ID 1: Valid leaderboard
+        res.status(200).json(leaderboard);
+    } catch {
+        res.status(500).json({
+            error_message: "Failed to get leaderboard",
+        });
     }
 };
