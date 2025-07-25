@@ -7,11 +7,13 @@ import {
     UpdateQuestionInput,
 } from "@/dtos/question.dto";
 
+type QuestionResponseWithError = QuestionResponse | { error_message: string };
+
 export class QuestionService {
-    async getQuestionById(question_id: string): Promise<QuestionResponse> {
+    async getQuestionById(question_id: string): Promise<QuestionResponseWithError> {
         // ✅ UTC-16 ID 3: Empty question ID
         if (!question_id) {
-            throw new Error("Question ID is required");
+            return { error_message: "Question ID is required" };
         }
 
         const [questionRows] = await pool.query<RowDataPacket[]>(
@@ -21,7 +23,7 @@ export class QuestionService {
 
         // ✅ UTC-16 ID 2: Question not found
         if (questionRows.length === 0) {
-            throw new Error("Question not found");
+            return { error_message: "Question not found" };
         }
 
         const question = questionRows[0];
@@ -47,14 +49,27 @@ export class QuestionService {
         };
     }
 
+    async getAQuestion(level: "Easy" | "Medium" | "Hard"): Promise<QuestionResponseWithError> {
+        // ✅ UTC-17 ID 3: Empty input
+        if (!level) {
+            return { error_message: "Level input must not be empty" };
+        }
 
-    async getAQuestion(level: "Easy" | "Medium" | "Hard"): Promise<QuestionResponse> {
+        // ✅ UTC-17 ID 2: Invalid level
+        const validLevels = ["Easy", "Medium", "Hard"];
+        if (!validLevels.includes(level)) {
+            return { error_message: "Invalid level input" };
+        }
+
         const [questionRows] = await pool.query<RowDataPacket[]>(
             "SELECT * FROM questions WHERE level = ? ORDER BY RAND() LIMIT 1",
             [level]
         );
 
-        if (questionRows.length === 0) throw new Error("No questions found");
+        // No questions found for the level
+        if (questionRows.length === 0) {
+            return { error_message: "No questions found" };
+        }
         const question = questionRows[0];
 
         const [testCaseRows] = await pool.query<RowDataPacket[]>(
@@ -77,62 +92,74 @@ export class QuestionService {
         };
     }
 
-    async createQuestion(data: CreateQuestionInput): Promise<QuestionResponse> {
-        const [result] = await pool.query<any>(
-            "INSERT INTO questions (question_name, description, time_limit, level) VALUES (?, ?, ?, ?)",
-            [data.question_name, data.description, data.time_limit, data.level]
-        );
+    async createQuestion(data: CreateQuestionInput): Promise<QuestionResponseWithError> {
+        if (!data.question_name || !data.description || !data.time_limit || !data.level) {
+            return { error_message: "All fields are required" };
+        }
 
-        const questionId = result.insertId;
-
-        for (const tc of data.test_cases) {
-            await pool.query(
-                "INSERT INTO test_cases (question_id, input, expected_output, score) VALUES (?, ?, ?, ?)",
-                [questionId, tc.input, tc.expectedOutput, tc.score]
+        try {
+            const [result] = await pool.query<any>(
+                "INSERT INTO questions (question_name, description, time_limit, level) VALUES (?, ?, ?, ?)",
+                [data.question_name, data.description, data.time_limit, data.level]
             );
-        }
 
-        return this.getQuestionById(questionId);
-    }
+            const questionId = result.insertId;
 
-    async updateQuestion(id: string, data: UpdateQuestionInput): Promise<QuestionResponse> {
-        const fields: string[] = [];
-        const values: any[] = [];
-
-        if (data.question_name) {
-            fields.push("question_name = ?");
-            values.push(data.question_name);
-        }
-        if (data.description) {
-            fields.push("description = ?");
-            values.push(data.description);
-        }
-        if (data.time_limit) {
-            fields.push("time_limit = ?");
-            values.push(data.time_limit);
-        }
-        if (data.level) {
-            fields.push("level = ?");
-            values.push(data.level);
-        }
-
-        if (fields.length) {
-            await pool.query(
-                `UPDATE questions SET ${fields.join(", ")} WHERE question_id = ?`,
-                [...values, id]
-            );
-        }
-
-        if (data.test_cases) {
-            await pool.query("DELETE FROM test_cases WHERE question_id = ?", [id]);
             for (const tc of data.test_cases) {
                 await pool.query(
                     "INSERT INTO test_cases (question_id, input, expected_output, score) VALUES (?, ?, ?, ?)",
-                    [id, tc.input, tc.expectedOutput, tc.score]
+                    [questionId, tc.input, tc.expectedOutput, tc.score]
                 );
             }
-        }
 
-        return this.getQuestionById(id);
+            return this.getQuestionById(questionId);
+        } catch {
+            return { error_message: "Failed to create question" };
+        }
+    }
+
+    async updateQuestion(id: string, data: UpdateQuestionInput): Promise<QuestionResponseWithError> {
+        try {
+            const fields: string[] = [];
+            const values: any[] = [];
+
+            if (data.question_name) {
+                fields.push("question_name = ?");
+                values.push(data.question_name);
+            }
+            if (data.description) {
+                fields.push("description = ?");
+                values.push(data.description);
+            }
+            if (data.time_limit) {
+                fields.push("time_limit = ?");
+                values.push(data.time_limit);
+            }
+            if (data.level) {
+                fields.push("level = ?");
+                values.push(data.level);
+            }
+
+            if (fields.length) {
+                await pool.query(
+                    `UPDATE questions SET ${fields.join(", ")} WHERE question_id = ?`,
+                    [...values, id]
+                );
+            }
+
+            if (data.test_cases) {
+                await pool.query("DELETE FROM test_cases WHERE question_id = ?", [id]);
+                for (const tc of data.test_cases) {
+                    await pool.query(
+                        "INSERT INTO test_cases (question_id, input, expected_output, score) VALUES (?, ?, ?, ?)",
+                        [id, tc.input, tc.expectedOutput, tc.score]
+                    );
+                }
+            }
+
+            return this.getQuestionById(id);
+        } catch {
+            return { error_message: "Failed to update question" };
+        }
     }
 }
