@@ -13,9 +13,9 @@ export interface SubmitScoreDTO {
 }
 
 export interface PlayerScore {
-    playerId: string;
-    questionId: string;
+    player_id: string;
+    question_id: string;
     score: number;
     language: string;
-    modifierState: ModifierState;
+    modifier_state: ModifierState;
 }

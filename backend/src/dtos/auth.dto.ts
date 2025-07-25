@@ -4,11 +4,11 @@ export interface RegisterRequest {
   username: string;
   email: string;
   password: string;
-  confirmPassword: string;
+  confirm_password: string;
 }
 
 export interface RegisterResponse {
-  errorMessage?: string;
+  error_message: string | null;
 }
 
 export interface LoginRequest {
@@ -17,8 +17,7 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  success?: boolean;
-  token?: string;
-  errorMessage?: string;
-  playerInfo: PlayerResponse;
+  error_message: string | null;
+  token: string | null;
+  player_info: PlayerResponse | null;
 }

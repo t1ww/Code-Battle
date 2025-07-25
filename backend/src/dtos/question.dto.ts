@@ -1,17 +1,3 @@
-export interface CreateQuestionInput {
-    questionName: string;
-    description: string;
-    timeLimit: number;
-    level: "Easy" | "Medium" | "Hard";
-    testCases: {
-        input: string;
-        expectedOutput: string;
-        score: number;
-    }[];
-}
-
-export interface UpdateQuestionInput extends Partial<CreateQuestionInput> { }
-
 export interface TestCaseResponse {
     id: number;
     input: string;
@@ -19,11 +5,21 @@ export interface TestCaseResponse {
     score: number;
 }
 
+export interface CreateQuestionInput {
+    question_name: string;
+    description: string;
+    time_limit: number;
+    level: "Easy" | "Medium" | "Hard";
+    test_cases: TestCaseResponse[];
+}
+
+export interface UpdateQuestionInput extends Partial<CreateQuestionInput> { }
+
 export interface QuestionResponse {
     id: number;
-    questionName: string;
+    question_name: string;
     description: string;
-    timeLimit: number;
+    time_limit: number;
     level: "Easy" | "Medium" | "Hard";
-    testCases: TestCaseResponse[];
+    test_cases: TestCaseResponse[];
 }

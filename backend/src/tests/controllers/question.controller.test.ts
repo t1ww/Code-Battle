@@ -9,11 +9,11 @@ describe("QuestionController", () => {
 
     const fullQuestionMock: QuestionResponse = {
         id: 1,
-        questionName: "Sample Question",
+        question_name: "Sample Question",
         description: "A simple question description",
-        timeLimit: 10,
+        time_limit: 10,
         level: "Easy",
-        testCases: [
+        test_cases: [
             {
                 id: 100,
                 input: "input1",
@@ -134,7 +134,7 @@ describe("QuestionController", () => {
 
             serviceMock.updateQuestion.mockResolvedValue({
                 ...fullQuestionMock,
-                questionName: "Updated Question",
+                question_name: "Updated Question",
             });
 
             await controller.updateQuestion(req, res);
