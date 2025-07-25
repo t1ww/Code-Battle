@@ -3,15 +3,18 @@ import { SubmitScoreDTO, PlayerScore } from "@/dtos/score.dto";
 import { RowDataPacket } from "mysql2";
 
 export class ScoreService {
-    async submitScore(data: SubmitScoreDTO): Promise<void> {
-        // Upsert pattern — one score per player per question
+    async submitScore(data: SubmitScoreDTO): Promise<{ message?: string; error_message?: string }> {
+        // ✅ UTC-18 ID 2: Empty fields
+        if (!data.player_id || !data.question_id || data.score == null) {
+            return { error_message: "All fields are required" };
+        }
+
         const [existing] = await pool.query<RowDataPacket[]>(
             `SELECT * FROM scores WHERE player_id = ? AND question_id = ?`,
             [data.player_id, data.question_id]
         );
 
         if (existing.length > 0) {
-            // Update if new score is higher
             const prevScore = existing[0].score;
             if (data.score > prevScore) {
                 await pool.query(
@@ -25,9 +28,63 @@ export class ScoreService {
                 [data.player_id, data.question_id, data.score, data.language, data.modifier_state]
             );
         }
+
+        // ✅ UTC-18 ID 1: Valid score submission
+        return { message: "Score successfully submitted" };
     }
 
-    async getLeaderboard(question_id: string): Promise<PlayerScore[]> {
+    async getTopScore(player_id: string, question_id: string): Promise<PlayerScore | { error_message: string }> {
+        // ✅ UTC-19 ID 4: Empty fields
+        if (!player_id || !question_id) {
+            return { error_message: "All fields are required" };
+        }
+
+        // Check if player exists
+        const [playerRows] = await pool.query<RowDataPacket[]>(
+            "SELECT id FROM players WHERE id = ?",
+            [player_id]
+        );
+        if (playerRows.length === 0) {
+            return { error_message: "Player not found" };
+        }
+
+        // Get score record
+        const [scoreRows] = await pool.query<RowDataPacket[]>(
+            "SELECT player_id, question_id, language, score, modifier_state FROM scores WHERE player_id = ? AND question_id = ?",
+            [player_id, question_id]
+        );
+        if (scoreRows.length === 0) {
+            return { error_message: "Score not found" };
+        }
+
+        const score = scoreRows[0];
+        // ✅ UTC-19 ID 1: Valid player and question query
+        return {
+            player_id: score.player_id,
+            question_id: score.question_id,
+            language: score.language,
+            score: score.score,
+            modifier_state: score.modifier_state,
+        };
+    }
+
+    async getLeaderboard(question_id: string): Promise<PlayerScore[] | { error_message: string }> {
+        // ✅ UTC-20 ID 3: Empty question ID
+        if (!question_id) {
+            return { error_message: "Question ID is required" };
+        }
+
+        // Check if question exists
+        const [questionRows] = await pool.query<RowDataPacket[]>(
+            "SELECT question_id FROM questions WHERE question_id = ?",
+            [question_id]
+        );
+        if (questionRows.length === 0) {
+            // ✅ UTC-20 ID 2: Unknown question ID
+            return { error_message: "Question not found" };
+        }
+
+        // ✅ UTC-20 ID 1: Valid leaderboard
         const [rows] = await pool.query<RowDataPacket[]>(
             `SELECT 
             s.player_id AS playerId,
@@ -36,36 +93,15 @@ export class ScoreService {
             s.score,
             s.language,
             s.modifier_state AS modifierState
-            FROM scores s
-            JOIN players p ON s.player_id = p.player_id
-            WHERE s.question_id = ?
-            ORDER BY s.score DESC
-            LIMIT 100`,
+        FROM scores s
+        JOIN players p ON s.player_id = p.player_id
+        WHERE s.question_id = ?
+        ORDER BY s.score DESC
+        LIMIT 100`,
             [question_id]
         );
 
         return rows as PlayerScore[];
-    }
-
-
-    async getTopScore(question_id: string, player_id: string): Promise<PlayerScore | null> {
-        const [rows] = await pool.query<RowDataPacket[]>(
-            `SELECT 
-            s.player_id AS playerId,
-            p.player_name AS playerName,
-            s.question_id AS questionId,
-            s.score,
-            s.language,
-            s.modifier_state AS modifierState
-            FROM scores s
-            JOIN players p ON s.player_id = p.player_id
-            WHERE s.question_id = ? AND s.player_id = ?
-            ORDER BY s.score DESC
-            LIMIT 1`,
-            [question_id, player_id]
-        );
-
-        return rows.length ? (rows[0] as PlayerScore) : null;
     }
 
 }
