@@ -33,6 +33,40 @@ export class ScoreService {
         return { message: "Score successfully submitted" };
     }
 
+    async getTopScore(player_id: string, question_id: string): Promise<PlayerScore | { error_message: string }> {
+        // ✅ UTC-19 ID 4: Empty fields
+        if (!player_id || !question_id) {
+            return { error_message: "All fields are required" };
+        }
+
+        // Check if player exists
+        const [playerRows] = await pool.query<RowDataPacket[]>(
+            "SELECT id FROM players WHERE id = ?",
+            [player_id]
+        );
+        if (playerRows.length === 0) {
+            return { error_message: "Player not found" };
+        }
+
+        // Get score record
+        const [scoreRows] = await pool.query<RowDataPacket[]>(
+            "SELECT player_id, question_id, language, score, modifier_state FROM scores WHERE player_id = ? AND question_id = ?",
+            [player_id, question_id]
+        );
+        if (scoreRows.length === 0) {
+            return { error_message: "Score not found" };
+        }
+
+        const score = scoreRows[0];
+        // ✅ UTC-19 ID 1: Valid player and question query
+        return {
+            player_id: score.player_id,
+            question_id: score.question_id,
+            language: score.language,
+            score: score.score,
+            modifier_state: score.modifier_state,
+        };
+    }
 
     async getLeaderboard(question_id: string): Promise<PlayerScore[]> {
         const [rows] = await pool.query<RowDataPacket[]>(
@@ -52,27 +86,6 @@ export class ScoreService {
         );
 
         return rows as PlayerScore[];
-    }
-
-
-    async getTopScore(question_id: string, player_id: string): Promise<PlayerScore | null> {
-        const [rows] = await pool.query<RowDataPacket[]>(
-            `SELECT 
-            s.player_id AS playerId,
-            p.player_name AS playerName,
-            s.question_id AS questionId,
-            s.score,
-            s.language,
-            s.modifier_state AS modifierState
-            FROM scores s
-            JOIN players p ON s.player_id = p.player_id
-            WHERE s.question_id = ? AND s.player_id = ?
-            ORDER BY s.score DESC
-            LIMIT 1`,
-            [question_id, player_id]
-        );
-
-        return rows.length ? (rows[0] as PlayerScore) : null;
     }
 
 }
