@@ -5,15 +5,39 @@ export class QuestionController {
     private questionService = new QuestionService();
 
     async getQuestionById(req: Request, res: Response) {
+        // ID 4: Invalid input format
+        if (!req.params || typeof req.params !== "object" || !("id" in req.params)) {
+            res.status(400).json({ error_message: "Invalid input format, required question_id" });
+            return;
+        }
+
+        const question_id = req.params.id;
+
+        // ID 3: Empty question ID
+        if (!question_id) {
+            res.status(400).json({ error_message: "Question ID is required" });
+            return;
+        }
+
         try {
-            const id = req.params.id;
-            const question = await this.questionService.getQuestionById(id);
-            res.json(question);
-        } catch (err) {
-            const message = err instanceof Error ? err.message : "Question not found";
-            res.status(404).json({ message });
+            const question = await this.questionService.getQuestionById(question_id);
+
+            // ID 2: Question not found
+            if (!question) {
+                res.status(404).json({ error_message: "Question not found" });
+                return;
+            }
+
+            // ID 1: Valid question ID — convert id to string for consistency
+            res.status(200).json({
+                ...question,
+                id: question.id.toString(),
+            });
+        } catch {
+            res.status(404).json({ error_message: "Question not found" });
         }
     }
+
 
     async getAQuestion(req: Request, res: Response) {
         try {
