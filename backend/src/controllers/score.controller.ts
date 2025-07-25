@@ -43,6 +43,57 @@ export const submitScore = async (req: Request, res: Response) => {
     }
 };
 
+export const getTopScore = async (req: Request, res: Response) => {
+    const query = req.query;
+
+    // ✅ UTC-07 ID 5: Invalid input format
+    if (
+        !query ||
+        typeof query !== "object" ||
+        !("player_id" in query) ||
+        !("question_id" in query)
+    ) {
+        res.status(400).json({
+            error_message: "Invalid input format, required player_id and question_id",
+        });
+        return;
+    }
+
+    const { player_id, question_id } = query;
+
+    // ✅ UTC-07 ID 4: Empty fields
+    if (
+        typeof player_id !== "string" ||
+        typeof question_id !== "string" ||
+        !player_id.trim() ||
+        !question_id.trim()
+    ) {
+        res.status(400).json({
+            error_message: "All fields are required",
+        });
+        return;
+    }
+
+    try {
+        const topScore = await scoreService.getTopScore(question_id, player_id);
+
+        // ✅ UTC-07 ID 2 & 3: Player or score not found
+        if (!topScore) {
+            res.status(404).json({
+                error_message: "Player not found or Score not found",
+            });
+            return;
+        }
+
+        // ✅ UTC-07 ID 1: Valid request
+        res.status(200).json(topScore);
+    } catch (err) {
+        res.status(500).json({
+            error_message: "Failed to get score",
+        });
+    }
+};
+
 
 export const getLeaderboard = async (req: Request, res: Response) => {
     try {
@@ -53,20 +104,5 @@ export const getLeaderboard = async (req: Request, res: Response) => {
         res.json(leaderboard);
     } catch (err) {
         res.status(500).json({ error: "Failed to get leaderboard", details: err });
-    }
-};
-
-export const getTopScore = async (req: Request, res: Response) => {
-    try {
-        const { question_id, player_id } = req.query;
-        if (typeof question_id !== "string" || typeof player_id !== "string")
-            return res.status(400).json({ error: "Missing question_id or player_id" });
-
-        const topScore = await scoreService.getTopScore(question_id, player_id);
-        if (!topScore) return res.status(404).json({ error: "Score not found" });
-
-        res.json(topScore);
-    } catch (err) {
-        res.status(500).json({ error: "Failed to get score", details: err });
     }
 };
