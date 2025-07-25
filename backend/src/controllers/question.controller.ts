@@ -20,25 +20,20 @@ export class QuestionController {
             return;
         }
 
-        try {
-            const question = await this.questionService.getQuestionById(question_id);
+        const question = await this.questionService.getQuestionById(question_id);
 
-            // ✅ UTC-04 ID 2: Question not found
-            if (!question) {
-                res.status(404).json({ error_message: "Question not found" });
-                return;
-            }
-
-            // ✅ UTC-04 ID 1: Valid question ID — convert id to string for consistency
-            res.status(200).json({
-                ...question,
-                id: question.id.toString(),
-            });
-        } catch {
-            res.status(404).json({ error_message: "Question not found" });
+        // ✅ UTC-04 ID 2: Question not found (handled via return structure)
+        if ("error_message" in question) {
+            res.status(404).json(question);
+            return;
         }
-    }
 
+        // ✅ UTC-04 ID 1: Valid question ID — convert id to string for consistency
+        res.status(200).json({
+            ...question,
+            id: question.id.toString(),
+        });
+    }
 
     async getAQuestion(req: Request, res: Response) {
         // ✅ UTC-05 ID 4: Invalid input format
@@ -72,7 +67,7 @@ export class QuestionController {
         }
 
         try {
-            const question: QuestionResponse | null = await this.questionService.getAQuestion(level as "Easy" | "Medium" | "Hard");
+            const question: QuestionResponse | null | { error_message: string } = await this.questionService.getAQuestion(level as "Easy" | "Medium" | "Hard");
 
             if (!question) {
                 res.status(404).json({ error_message: "Question not found" });
@@ -97,7 +92,7 @@ export class QuestionController {
 
         try {
             // Call service to create question
-            const newQuestion: QuestionResponse = await this.questionService.createQuestion(req.body);
+            const newQuestion: QuestionResponse | { error_message: string } = await this.questionService.createQuestion(req.body);
             res.status(201).json(newQuestion);
         } catch (err) {
             // Handle possible errors
@@ -135,7 +130,7 @@ export class QuestionController {
 
         try {
             // Call service to update question
-            const updated: QuestionResponse | null = await this.questionService.updateQuestion(question_id, req.body);
+            const updated: QuestionResponse | null | { error_message: string } = await this.questionService.updateQuestion(question_id, req.body);
 
             // Handle case where question does not exist
             if (!updated) {

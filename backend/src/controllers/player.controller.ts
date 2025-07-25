@@ -17,7 +17,7 @@ export const getProfile = async (req: Request, res: Response) => {
     return;
   }
 
-  const player: PlayerResponse | null = await playerService.getPlayerById(player_id);
+  const player: PlayerResponse | null | { error_message: string; } = await playerService.getPlayerById(player_id);
 
   if (!player) {
     res.status(404).json({ error_message: "Player not found" });
@@ -25,10 +25,15 @@ export const getProfile = async (req: Request, res: Response) => {
   }
 
   // Convert Date to ISO string if needed
+  if ("error_message" in player) {
+    res.status(404).json(player); // Already formatted error
+    return;
+  }
+
+  // Now `player` is definitely a PlayerResponse
   const response = {
     ...player,
     created_at: player.created_at instanceof Date ? player.created_at.toISOString() : player.created_at,
   };
-
   res.status(200).json(response);
 };

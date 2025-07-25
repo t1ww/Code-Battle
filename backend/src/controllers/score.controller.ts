@@ -98,11 +98,7 @@ export const getLeaderboard = async (req: Request, res: Response) => {
     const query = req.query;
 
     // ✅ UTC-08 ID 4: Invalid input format
-    if (
-        !query ||
-        typeof query !== "object" ||
-        !("question_id" in query)
-    ) {
+    if (!query || typeof query !== "object" || !("question_id" in query)) {
         res.status(400).json({
             error_message: "Invalid input format, required question_id",
         });
@@ -120,13 +116,11 @@ export const getLeaderboard = async (req: Request, res: Response) => {
     }
 
     try {
-        const leaderboard: PlayerScore[] | null = await scoreService.getLeaderboard(question_id);
+        const leaderboard = await scoreService.getLeaderboard(question_id);
 
         // ✅ UTC-08 ID 2: Unknown question ID
-        if (!leaderboard || leaderboard.length === 0) {
-            res.status(404).json({
-                error_message: "Question not found",
-            });
+        if ("error_message" in leaderboard) {
+            res.status(404).json(leaderboard);
             return;
         }
 
