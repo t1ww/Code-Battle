@@ -26,19 +26,30 @@ export class PlayerService {
     }
   }
 
-  async getPlayerById(id: string): Promise<PlayerResponse | null> {
+  async getPlayerById(id: string): Promise<PlayerResponse | { error_message: string }> {
+    // ✅ UTC-12 ID 3: Empty player ID
+    if (!id) {
+      return { error_message: "Player ID is required" };
+    }
+
     const [rows] = await pool.query<RowDataPacket[]>(
-      "SELECT id, username, email, created_at FROM players WHERE id = ?",
+      "SELECT id, player_name AS username, email, created_at FROM players WHERE id = ?",
       [id]
     );
 
-    if (rows.length === 0) return null;
+    // ✅ UTC-12 ID 2: Player not found
+    if (rows.length === 0) {
+      return { error_message: "Player not found" };
+    }
+
     const player = rows[0];
+
+    // ✅ UTC-12 ID 1: Valid player ID
     return {
-      id: player.id,
+      id: player.id.toString(),
       username: player.username,
       email: player.email,
-      createdAt: player.created_at,
+      created_at: new Date(player.created_at),
     };
   }
 
