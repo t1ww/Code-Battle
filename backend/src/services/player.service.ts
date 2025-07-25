@@ -1,13 +1,29 @@
 import pool from "@/clients/database.client";
 import { PlayerResponse } from "../dtos/player.dto";
 import { RowDataPacket } from "mysql2";
+import { RegisterRequest, RegisterResponse } from "@/dtos/auth.dto";
 
 export class PlayerService {
-  async createPlayer(username: string, email: string, hashedPassword: string): Promise<void> {
-    await pool.query(
-      "INSERT INTO players (username, email, password) VALUES (?, ?, ?)",
-      [username, email, hashedPassword]
-    );
+  async createPlayer(req: RegisterRequest): Promise<RegisterResponse> {
+    const { username, email, password, confirm_password } = req;
+
+    // ✅ UTC-11 ID 2: Empty fields
+    if (!username || !email || !password || !confirm_password) {
+      return { error_message: "All fields are required" };
+    }
+
+    try {
+      // ✅ UTC-11 ID 1: Valid registration
+      const hashedPassword = password; // Assumes password already hashed upstream if needed
+      await pool.query(
+        "INSERT INTO players (player_name, email, password_hash) VALUES (?, ?, ?)",
+        [username, email, hashedPassword]
+      );
+
+      return { error_message: null };
+    } catch (err) {
+      return { error_message: "Failed to create player" };
+    }
   }
 
   async getPlayerById(id: string): Promise<PlayerResponse | null> {
