@@ -9,7 +9,6 @@ Real-time code battle web app with live multiplayer functionality, built as a fu
 
 Detailed API endpoints and usage are documented in [API.md](API.md).
 
-
 ## 🧩 Project Structure
 
 This repo uses workspaces and is organized into 4 main components:
