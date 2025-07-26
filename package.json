@@ -7,13 +7,15 @@
   "workspaces": [
     "backend",
     "frontend/code-battle",
-    "ts-code-runner"
+    "ts-code-runner",
+    "socket-server"
   ],
   "scripts": {
     "jwt": "node jwt.generator.js --prefix utility",
     "be": "npm run dev --prefix backend",
     "fe": "npm run dev --prefix frontend/code-battle",
     "tcr": "npm run dev --prefix ts-code-runner",
+    "ss": "npm run dev --prefix socket-server",
     "be:db:reset": "npm run database:reset --prefix backend",
     "be:db:migrate": "npx knex migrate:latest --knexfile knexfile.ts --cwd backend",
     "be:db:rollback": "npx knex migrate:rollback --all --knexfile knexfile.ts --cwd backend",
@@ -23,8 +25,9 @@
     "backend:database:reset": "npm run be:db:reset",
     "backend:test": "npm run be:test",
     "ts-code-runner": "npm run tcr",
+    "socket-server": "npm run ss",
     "dev": "start \"Backend Server\" cmd /k \"npm run be\" && start \"Frontend Server\" cmd /k \"npm run fe\"",
-    "all": "start \"Backend Server\" cmd /k \"npm run be\" && start \"Frontend Server\" cmd /k \"npm run fe\" && start \"TS Runner\" cmd /k \"npm run ts-code-runner\"",
+    "all": "start \"Backend Server\" cmd /k \"npm run be\" && start \"Frontend Server\" cmd /k \"npm run fe\" && start \"TS Runner\" cmd /k \"npm run tcr\" && start \"Socket Server\" cmd /k \"npm run ss\"",
     "stop": "taskkill /F /IM cmd.exe /T"
   },
   "repository": {
