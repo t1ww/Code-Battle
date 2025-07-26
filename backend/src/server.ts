@@ -15,9 +15,9 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json()); // Parse JSON
-app.use("/players", playerRoutes); // Mount player routes
-app.use("/questions", questionRoutes); // Mount question routes
-app.use("/scores", scoreRoutes); // Mount score routes
+app.use("/api/players", playerRoutes); // Mount player routes
+app.use("/api/questions", questionRoutes); // Mount question routes
+app.use("/api/scores", scoreRoutes); // Mount score routes
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
