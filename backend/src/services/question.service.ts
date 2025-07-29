@@ -43,7 +43,7 @@ export class QuestionService {
             test_cases: testCaseRows.map(tc => ({
                 id: tc.test_case_id,
                 input: tc.input,
-                expectedOutput: tc.expected_output,
+                expected_output: tc.expected_output,
                 score: tc.score,
             })),
         };
@@ -86,7 +86,7 @@ export class QuestionService {
             test_cases: testCaseRows.map((tc): TestCaseResponse => ({
                 id: tc.test_case_id,
                 input: tc.input,
-                expectedOutput: tc.expected_output,
+                expected_output: tc.expected_output,
                 score: tc.score,
             })),
         };
@@ -108,7 +108,7 @@ export class QuestionService {
             for (const tc of data.test_cases) {
                 await pool.query(
                     "INSERT INTO test_cases (question_id, input, expected_output, score) VALUES (?, ?, ?, ?)",
-                    [questionId, tc.input, tc.expectedOutput, tc.score]
+                    [questionId, tc.input, tc.expected_output, tc.score]
                 );
             }
 
@@ -152,7 +152,7 @@ export class QuestionService {
                 for (const tc of data.test_cases) {
                     await pool.query(
                         "INSERT INTO test_cases (question_id, input, expected_output, score) VALUES (?, ?, ?, ?)",
-                        [id, tc.input, tc.expectedOutput, tc.score]
+                        [id, tc.input, tc.expected_output, tc.score]
                     );
                 }
             }

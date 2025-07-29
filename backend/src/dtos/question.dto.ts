@@ -1,7 +1,7 @@
 export interface TestCaseResponse {
     id: number;
     input: string;
-    expectedOutput: string;
+    expected_output: string;
     score: number;
 }
 

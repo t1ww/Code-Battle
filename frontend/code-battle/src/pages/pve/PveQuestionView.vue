@@ -7,7 +7,7 @@ import type { Question, LeaderboardEntry } from '@/types/types'
 const route = useRoute()
 const level = route.query.mode as string || 'Easy'
 
-const questionData = ref<Question | null>(null)
+const question_data = ref<Question | null>(null)
 const leaderboard = ref<LeaderboardEntry[]>([])
 const selectedModifier = ref('None')
 const timeLimitEnabled = ref(true)
@@ -22,7 +22,7 @@ async function fetchLevelData(): Promise<Question> {
 
 async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
   // mock data for now
-  const response = await api.get(`/scores/leaderboard?question_id=${questionData.value?.id}`);
+  const response = await api.get(`/scores/leaderboard?question_id=${question_data.value?.id}`);
   console.log( response.data.value)
   return response.data as LeaderboardEntry[];
 }
@@ -38,13 +38,13 @@ function cylcleModifier(direction: 'left' | 'right') {
 }
 
 onMounted(async () => {
-  questionData.value = await fetchLevelData()
+  question_data.value = await fetchLevelData()
   leaderboard.value = await fetchLeaderboard()
 })
 </script>
 
 <template>
-  <div class="level-container" v-if="questionData">
+  <div class="level-container" v-if="question_data">
     <!-- Leaderboard -->
     <div class="panel leaderboard">
       <h3>Leaderboard</h3>
@@ -63,9 +63,9 @@ onMounted(async () => {
           <tbody>
             <tr v-for="(entry, i) in leaderboard" :key="i">
               <td>{{ i + 1 }}#</td>
-              <td>{{ entry.playerName }}</td>
+              <td>{{ entry.player_name }}</td>
               <td>{{ entry.language }}</td>
-              <td>{{ entry.modifierState }}</td>
+              <td>{{ entry.modifier_state }}</td>
               <td>{{ entry.score }}</td>
             </tr>
           </tbody>
@@ -82,18 +82,18 @@ onMounted(async () => {
     <div class="panel description">
       <h3>Description</h3>
       <div class="desc-content">
-        <h4>Level {{ questionData.level }}: {{ questionData.questionName }}</h4>
+        <h4>Level {{ question_data.level }}: {{ question_data.question_name }}</h4>
         <hr />
 
-        <p><strong>Description:</strong><br />{{ questionData.description }}</p>
+        <p><strong>Description:</strong><br />{{ question_data.description }}</p>
         <hr />
 
         <p><strong>Test Cases:</strong></p>
         <div class="test-cases">
-          <div v-for="(test, i) in questionData.testCases" :key="i">
+          <div v-for="(test, i) in question_data.test_cases" :key="i">
             <strong>Test Case {{ i + 1 }}</strong><br />
             Input: {{ test.input }}<br />
-            Output: {{ test.expectedOutput }}
+            Output: {{ test.expected_output }}
           </div>
         </div>
         <hr />
@@ -118,7 +118,7 @@ onMounted(async () => {
             name: 'PveGameplay',
             query: {
               modifier: selectedModifier,
-              timeLimit: timeLimitEnabled.toString() // ✅ convert to string
+              timeLimitEnabled: timeLimitEnabled.toString() // ✅ convert to string
             }
           }" class="start-button">
             Start!

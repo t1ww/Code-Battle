@@ -28,21 +28,21 @@
         <!-- Slide Panel Toggle -->
         <transition name="slide-down">
             <div v-if="showDescriptionPopup" class="description-popup-panel">
-                <div class="description-popup-content" v-if="questionData">
+                <div class="description-popup-content" v-if="question_data">
                     <h3>Description</h3>
                     <hr />
-                    <h4>Level {{ questionData.level }}: {{ questionData.questionName }}</h4>
+                    <h4>Level {{ question_data.level }}: {{ question_data.question_name }}</h4>
                     <div class="section">
                         <p><strong>Description:</strong></p>
-                        <p>{{ questionData.description }}</p>
+                        <p>{{ question_data.description }}</p>
                     </div>
                     <div class="section">
                         <p><strong>Test Cases:</strong></p>
                         <div class="test-cases">
-                            <div v-for="(test, i) in questionData.testCases" :key="i" class="test-case">
+                            <div v-for="(test, i) in question_data.test_cases" :key="i" class="test-case">
                                 <strong>Test Case {{ i + 1 }}</strong><br />
                                 Input: {{ test.input || '(no input)' }}<br />
-                                Output: {{ test.expectedOutput }}
+                                Output: {{ test.expected_output }}
                             </div>
                         </div>
                     </div>
@@ -70,13 +70,13 @@
                 <div class="popup">
                     <h2>Test Results</h2>
                     <p><strong>Final Score:</strong> {{ finalScore }} / {{
-                        questionData?.testCases?.reduce((acc, test) => acc + (test.score ?? 0), 0) ?? 0
+                        question_data?.test_cases?.reduce((acc, test) => acc + (test.score ?? 0), 0) ?? 0
                         }}</p>
                     <div v-for="(result, i) in testResults?.results" :key="i" class="test-result"
                         :style="{ color: result.passed ? 'green' : 'red' }">
                         <p><strong>Test Case {{ i + 1 }}:</strong> {{ result.passed ? 'Passed' : 'Failed' }}</p>
                         <p>Input: {{ result.input || '(no input)' }}</p>
-                        <p>Expected Output: {{ result.expectedOutput }}</p>
+                        <p>Expected Output: {{ result.expected_output }}</p>
                         <p>Actual Output: {{ result.output }}</p>
                     </div>
                     <button @click="showResultPopup = false">Close</button>
@@ -161,7 +161,7 @@ import { useTimer } from '@/composables/useTimer'
 const route = useRoute()
 const level = route.query.mode as string || 'Easy'
 const selectedModifier = route.query.modifier as string || 'None'
-const timeLimitEnabled = route.query.timeLimit === 'true'
+const timeLimitEnabled = route.query.timeLimitEnabled === 'true'
 
 
 // =============================
@@ -170,7 +170,7 @@ const timeLimitEnabled = route.query.timeLimit === 'true'
 // Base
 const code = ref('// Write code here')
 const showDescriptionPopup = ref(false)
-const questionData = ref<Question | null>(null)
+const question_data = ref<Question | null>(null)
 const isLoading = ref(false)
 const MODIFIER_BONUS = 1.25
 // get player ID from auth
@@ -179,12 +179,9 @@ const player = getPlayerData();
 // Composables setup
 const { showNotification, notificationMessage, triggerNotification } = useNotification()
 const { startSabotage, stopSabotage } = useSabotage(code, triggerNotification)
-const { timeLeft, formattedTime, startTimer, stopTimer } = useTimer(timeLimitEnabled, questionData.value?.timeLimit ?? 0, () => {
+const { timeLeft, formattedTime, startTimer, stopTimer } = useTimer(timeLimitEnabled, question_data.value?.time_limit ?? 0, () => {
     showTimeoutPopup.value = true
 })
-
-// Timer
-let timer: ReturnType<typeof setInterval> | null = null
 
 // Time out
 const showTimeoutPopup = ref(false)
@@ -193,8 +190,8 @@ const showTimeoutPopup = ref(false)
 const showResultPopup = ref(false)
 const testResults = ref<{
     passed: boolean
-    results: { passed: boolean; output: string; expectedOutput: string; input: string }[]
-    totalScore: number
+    results: { passed: boolean; output: string; expected_output: string; input: string }[]
+    total_score: number
 } | null>(null)
 const finalScore = ref(0);
 
@@ -213,11 +210,11 @@ const runCode = async () => {
 }
 
 const submitCode = async () => {
-    if (!questionData.value) return
+    if (!question_data.value) return
     isLoading.value = true
     try {
         console.log('Submitting code:', code.value)
-        const baseLimit = questionData.value.timeLimit || 1 // fallback to 1 to avoid division by 0
+        const baseLimit = question_data.value.time_limit || 1 // fallback to 1 to avoid division by 0
         let scorePct = 1
 
         if (timeLimitEnabled) {
@@ -229,27 +226,27 @@ const submitCode = async () => {
         console.log('Timer pct:', scorePct)
         const res = await codeRunnerApi.post('/run', {
             code: code.value,
-            testCases: questionData.value.testCases,
+            test_cases: question_data.value.test_cases,
             // Score percentage based on timer, if its enabled check from time left, if disabled find time taken which would've left from based timer limit.
             scorePct: scorePct,
         })
         const data = res.data as CodeRunResponse
 
         testResults.value = {
-            passed: data.totalScore === questionData.value.testCases.length,
+            passed: data.total_score === question_data.value.test_cases.length,
             results: data.results.map((r, i) => ({
                 passed: r.passed,
                 output: r.output,
-                expectedOutput: questionData.value!.testCases[i].expectedOutput,
-                input: questionData.value!.testCases[i].input,
+                expected_output: question_data.value!.test_cases[i].expected_output,
+                input: question_data.value!.test_cases[i].input,
             })),
-            totalScore: data.totalScore ?? 0,
+            total_score: data.total_score ?? 0,
         }
         console.log(testResults.value)
         if (selectedModifier === 'Sabotage' || selectedModifier === 'Confident') {
-            finalScore.value = +(testResults.value.totalScore * MODIFIER_BONUS).toFixed(3);
+            finalScore.value = +(testResults.value.total_score * MODIFIER_BONUS).toFixed(3);
         } else {
-            finalScore.value = testResults.value.totalScore;
+            finalScore.value = testResults.value.total_score;
         }
 
         if (data.passed) {
@@ -262,7 +259,7 @@ const submitCode = async () => {
             showClearedPopup.value = true
             const scorePayload: ScoreSubmitRequest = {
                 player_id: player.id!, // replace with actual player ID from state/store if dynamic
-                question_id: questionData.value.id.toString(),
+                question_id: question_data.value.id.toString(),
                 score: finalScore.value,
                 language: "c++", // optionally make this reactive if you're tracking language
                 modifier_state: selectedModifier as "None" | "Sabotage" | "Confident",
@@ -300,7 +297,7 @@ const restartPage = () => {
 onMounted(async () => {
     // Fetch question
     const response = await api.get(`/questions?level=${level}`)
-    questionData.value = response.data as Question
+    question_data.value = response.data as Question
 
     // Modifiers on notifications
     if (selectedModifier === 'Confident') {
@@ -314,25 +311,10 @@ onMounted(async () => {
 
     // Set timeLeft only after questionData is loaded
     if (timeLimitEnabled) {
-        timeLeft.value = questionData.value.timeLimit || 0
+        timeLeft.value = question_data.value.time_limit || 0
     }
     // Start the timer
     startTimer();
-
-    // Clear existing timer before starting a new one (if re-entering component)
-    if (timer) clearInterval(timer)
-    timer = setInterval(() => {
-        if (timeLimitEnabled) {
-            if (timeLeft.value > 0) {
-                timeLeft.value--
-            } else {
-                clearInterval(timer!)
-                showTimeoutPopup.value = true
-            }
-        } else {
-            timeLeft.value++
-        }
-    }, 1000)
 })
 
 onUnmounted(() => {

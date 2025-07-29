@@ -3,30 +3,30 @@ export interface PlayerData {
   id: string | null;
   name: string | null;
   email: string | null;
-  avatarUrl?: string;
+  avatar_url?: string;
 }
 
 // Level select
 export interface TestCase {
-  input: string
-  expectedOutput: string
-  score: number
+  input: string;
+  expected_output: string;
+  score: number;
 }
 
 export interface Question {
   id: number;
-  questionName: string;
+  question_name: string;
   description: string;
-  timeLimit: number;
+  time_limit: number;
   level: string;
-  testCases: TestCase[];
+  test_cases: TestCase[];
 }
 
 export interface LeaderboardEntry {
-  playerName: string;
+  player_name: string;
   score: number;
   language: string;
-  modifierState: string;
+  modifier_state: string;
 }
 
 // Matchmaking
@@ -36,29 +36,29 @@ export const MatchState = {
   ShowingTeams: 'showingTeams',
   Countdown: 'countdown',
   Started: 'started',
-} as const
+} as const;
 
-export type MatchState = typeof MatchState[keyof typeof MatchState]
+export type MatchState = typeof MatchState[keyof typeof MatchState];
 
 // Gameplay
 export interface CodeRunRequest {
-  code: string
-  testCases: TestCase[]
-  scorePct: number
+  code: string;
+  test_cases: TestCase[];
+  score_pct: number;
 }
 
 export interface CodeRunResult {
-  input: string
-  output: string
-  expected: string
-  passed: boolean
-  score: number // Optional: echoed back for convenience
+  input: string;
+  output: string;
+  expected: string;
+  passed: boolean;
+  score: number;
 }
 
 export interface CodeRunResponse {
   passed: boolean;
-  results: CodeRunResult[]
-  totalScore: number // Optional
+  results: CodeRunResult[];
+  total_score: number;
 }
 
 // Score
