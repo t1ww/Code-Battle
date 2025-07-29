@@ -141,13 +141,18 @@
 // =============================
 // 📦 Imports
 // =============================
-import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/clients/crud.api'
 import codeRunnerApi from '@/clients/coderunner.api'
 import type { CodeRunResponse, Question, ScoreSubmitRequest } from '@/types/types'
 import CodeEditor from '@/components/pve/CodeEditor.vue'
 import { getPlayerData } from '@/stores/auth'
+
+// Composables
+import { useNotification } from '@/composables/useNotification'
+import { useSabotage } from '@/composables/useSabotage'
+import { useTimer } from '@/composables/useTimer'
 
 
 // =============================
@@ -171,8 +176,14 @@ const MODIFIER_BONUS = 1.25
 // get player ID from auth
 const player = getPlayerData();
 
+// Composables setup
+const { showNotification, notificationMessage, triggerNotification } = useNotification()
+const { startSabotage, stopSabotage } = useSabotage(code, triggerNotification)
+const { timeLeft, formattedTime, startTimer, stopTimer } = useTimer(timeLimitEnabled, questionData.value?.timeLimit ?? 0, () => {
+    showTimeoutPopup.value = true
+})
+
 // Timer
-const timeLeft = ref(0)
 let timer: ReturnType<typeof setInterval> | null = null
 
 // Time out
@@ -190,33 +201,8 @@ const finalScore = ref(0);
 // Clear
 const showClearedPopup = ref(false)
 
-// Sabotage
-let sabotageTimer: ReturnType<typeof setInterval> | null = null
-
 // Confident
 const showConfidentLostPopup = ref(false)
-
-// Notifications
-const showNotification = ref(false)
-const notificationMessage = ref('')
-
-function triggerNotification(message: string, duration = 3000) {
-    notificationMessage.value = message
-    showNotification.value = true
-    setTimeout(() => (showNotification.value = false), duration)
-}
-
-
-// =============================
-// ⏱️ Computed
-// =============================
-const formattedTime = computed(() => {
-    const totalSeconds = timeLeft.value
-    const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0')
-    const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0')
-    const seconds = String(totalSeconds % 60).padStart(2, '0')
-    return `${hours}:${minutes}:${seconds}`
-})
 
 
 // =============================
@@ -323,29 +309,17 @@ onMounted(async () => {
 
     // Sabotage modifer handling
     if (selectedModifier === 'Sabotage') {
-        triggerNotification('Sabotage modifier is active, your code will get one of its character removed every 2 minutes.')
-        sabotageTimer = setInterval(() => {
-            if (code.value.length > 0) {
-                // Notify the sabotage
-                triggerNotification('Your code have been sabotage, find it and fix it!')
-
-                // Remove a random character
-                const index = Math.floor(Math.random() * code.value.length)
-                code.value = code.value.slice(0, index) + code.value.slice(index + 1)
-            }
-        }, 2 * 60 * 1000) // every 2 minutes
+        startSabotage();
     }
-})
 
-watch(questionData, (newVal) => {
-    if (!newVal) return
-
+    // Set timeLeft only after questionData is loaded
     if (timeLimitEnabled) {
-        timeLeft.value = newVal.timeLimit || 0
-    } else {
-        timeLeft.value = 0
+        timeLeft.value = questionData.value.timeLimit || 0
     }
+    // Start the timer
+    startTimer();
 
+    // Clear existing timer before starting a new one (if re-entering component)
     if (timer) clearInterval(timer)
     timer = setInterval(() => {
         if (timeLimitEnabled) {
@@ -353,7 +327,7 @@ watch(questionData, (newVal) => {
                 timeLeft.value--
             } else {
                 clearInterval(timer!)
-                showTimeoutPopup.value = true // ⏱️ trigger popup
+                showTimeoutPopup.value = true
             }
         } else {
             timeLeft.value++
@@ -362,8 +336,8 @@ watch(questionData, (newVal) => {
 })
 
 onUnmounted(() => {
-    if (timer) clearInterval(timer)
-    if (sabotageTimer) clearInterval(sabotageTimer)
+    stopTimer()
+    stopSabotage()
 })
 </script>
 

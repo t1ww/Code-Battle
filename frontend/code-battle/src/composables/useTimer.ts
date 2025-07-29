@@ -26,11 +26,11 @@ export function useTimer(timeLimitEnabled: boolean, baseTime: number, onTimeout:
     }
 
     const formattedTime = computed(() => {
-        const total = timeLeft.value
-        const h = String(Math.floor(total / 3600)).padStart(2, '0')
-        const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0')
-        const s = String(total % 60).padStart(2, '0')
-        return `${h}:${m}:${s}`
+        const totalSeconds = timeLeft.value
+        const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0')
+        const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0')
+        const seconds = String(totalSeconds % 60).padStart(2, '0')
+        return `${hours}:${minutes}:${seconds}`
     })
 
     return {
