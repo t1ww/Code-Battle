@@ -22,13 +22,13 @@ const TEMP_DIR = path.join(__dirname, "temp");
 fs.ensureDirSync(TEMP_DIR);
 
 app.post("/run", async (req, res): Promise<any> => {
-    const { code, testCases, scorePct } = req.body;
+    const { code, test_cases: test_cases, score_pct } = req.body;
 
-    if (!code || !Array.isArray(testCases)) {
+    if (!code || !Array.isArray(test_cases)) {
         return res.status(400).json({ error: "Invalid input" });
     }
 
-    const scoreMultiplier = typeof scorePct === "number" ? scorePct : 1;
+    const scoreMultiplier = typeof score_pct === "number" ? score_pct : 1;
 
     const fileName = `temp_${Date.now()}`;
     const cppFilePath = path.join(TEMP_DIR, `${fileName}.cpp`);
@@ -45,11 +45,11 @@ app.post("/run", async (req, res): Promise<any> => {
         });
 
         const results = await Promise.all(
-            testCases.map(({ input, expectedOutput, score }: { input: string; expectedOutput: string; score: number }) => {
+            test_cases.map(({ input, expected_output, score }: { input: string; expected_output: string; score: number }) => {
                 return new Promise<{
                     input: string;
                     output: string;
-                    expectedOutput: string;
+                    expected_output: string;
                     passed: boolean;
                     score: number;
                 }>((resolve) => {
@@ -66,8 +66,8 @@ app.post("/run", async (req, res): Promise<any> => {
 
                     child.on("close", () => {
                         output = output.trim();
-                        const passed = output === expectedOutput;
-                        resolve({ input, output, expectedOutput, passed, score });
+                        const passed = output === expected_output;
+                        resolve({ input, output, expected_output: expected_output, passed, score });
                     });
 
                     if (child.stdin) {
@@ -78,7 +78,7 @@ app.post("/run", async (req, res): Promise<any> => {
             })
         );
 
-        const totalScore = results.reduce((acc, test) => {
+        const total_score = results.reduce((acc, test) => {
             return test.passed ? acc + test.score * scoreMultiplier : acc;
         }, 0);
 
@@ -86,11 +86,11 @@ app.post("/run", async (req, res): Promise<any> => {
 
         res.json({
             passed: allPassed,
-            totalScore: totalScore.toFixed(3),
-            results: results.map(({ passed, output, expectedOutput, input }) => ({
+            total_score: total_score.toFixed(3),
+            results: results.map(({ passed, output, expected_output: expected_output, input }) => ({
                 passed,
                 output,
-                expectedOutput,
+                expected_output,
                 input
             }))
         });

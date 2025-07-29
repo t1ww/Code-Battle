@@ -26,122 +26,36 @@
         </div>
 
         <!-- Slide Panel Toggle -->
-        <transition name="slide-down">
-            <div v-if="showDescriptionPopup" class="description-popup-panel">
-                <div class="description-popup-content" v-if="question_data">
-                    <h3>Description</h3>
-                    <hr />
-                    <h4>Level {{ question_data.level }}: {{ question_data.question_name }}</h4>
-                    <div class="section">
-                        <p><strong>Description:</strong></p>
-                        <p>{{ question_data.description }}</p>
-                    </div>
-                    <div class="section">
-                        <p><strong>Test Cases:</strong></p>
-                        <div class="test-cases">
-                            <div v-for="(test, i) in question_data.test_cases" :key="i" class="test-case">
-                                <strong>Test Case {{ i + 1 }}</strong><br />
-                                Input: {{ test.input || '(no input)' }}<br />
-                                Output: {{ test.expected_output }}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="section">
-                        <label>
-                            Time limit:
-                            <input type="checkbox" v-model="timeLimitEnabled" disabled />
-                        </label>
-                    </div>
-                    <div class="section modifier">
-                        <span>Modifier:</span>
-                        <span class="modifier-value">{{ selectedModifier }}</span>
-                    </div>
-                </div>
-                <!-- Button inside sliding panel -->
-                <div class="description-popup-toggle">
-                    <button @click="showDescriptionPopup = false">▲</button>
-                </div>
-            </div>
-        </transition>
+        <DescriptionPopup :show="showDescriptionPopup" :question="question_data" :timeLimitEnabled="timeLimitEnabled"
+            :selectedModifier="selectedModifier" @close="showDescriptionPopup = false" />
 
         <!-- Submission result -->
-        <transition name="fade">
-            <div v-if="showResultPopup" class="overlay" @click.self="showResultPopup = false">
-                <div class="popup">
-                    <h2>Test Results</h2>
-                    <p><strong>Final Score:</strong> {{ finalScore }} / {{
-                        question_data?.test_cases?.reduce((acc, test) => acc + (test.score ?? 0), 0) ?? 0
-                        }}</p>
-                    <div v-for="(result, i) in testResults?.results" :key="i" class="test-result"
-                        :style="{ color: result.passed ? 'green' : 'red' }">
-                        <p><strong>Test Case {{ i + 1 }}:</strong> {{ result.passed ? 'Passed' : 'Failed' }}</p>
-                        <p>Input: {{ result.input || '(no input)' }}</p>
-                        <p>Expected Output: {{ result.expected_output }}</p>
-                        <p>Actual Output: {{ result.output }}</p>
-                    </div>
-                    <button @click="showResultPopup = false">Close</button>
-                </div>
-            </div>
-        </transition>
+        <ResultPopup :show="showResultPopup" :finalScore="finalScore"
+            :totalPossibleScore="question_data?.test_cases?.reduce((acc, t) => acc + (t.score ?? 0), 0) ?? 0"
+            :testResults="testResults?.results || []" @close="showResultPopup = false" />
+
     </div>
 
     <!-- Game ends -->
     <!-- By timer -->
-    <template v-if="showTimeoutPopup">
-        <div class="popup-backdrop">
-            <div class="popup-content">
-                <h2>Time's up!</h2>
-                <p>Your time limit has expired.</p>
-                <button @click="restartPage">Restart</button>
-                <router-link :to="{ name: 'PveLevelSelect' }">
-                    <button>Select New Level</button>
-                </router-link>
-            </div>
-        </div>
-    </template>
+    <TimeoutPopup v-if="showTimeoutPopup" @restart="restartPage" />
 
     <!-- By clear -->
-    <template v-if="showClearedPopup">
-        <div class="popup-backdrop">
-            <div class="popup-content">
-                <h2>Level Cleared!</h2>
-                <p>Your final score: {{ finalScore }}</p>
-                <button @click="restartPage">Restart</button>
-                <router-link :to="{ name: 'PveLevelSelect' }">
-                    <button>Select New Level</button>
-                </router-link>
-            </div>
-        </div>
-    </template>
+    <ClearedPopup v-if="showClearedPopup" :finalScore="finalScore" :fullScore="fullScore" @restart="restartPage" />
 
     <!-- By confident lost -->
-    <template v-if="showConfidentLostPopup">
-        <div class="popup-backdrop">
-            <div class="popup-content">
-                <h2>Your submission failed</h2>
-                <h2 :style="{ color: 'red' }">Confident Modifer on</h2>
-                <p>Your final score: {{ finalScore }}</p>
-                <router-link :to="{ name: 'PveLevelSelect' }">
-                    <button>Select New Level</button>
-                </router-link>
-            </div>
-        </div>
-    </template>
+    <ConfidentLostPopup v-if="showConfidentLostPopup" :finalScore="finalScore"
+        @close="showConfidentLostPopup = false" />
 
     <!-- Notifications -->
-    <transition name="notif-slide">
-        <div v-if="showNotification" class="notification">
-            ℹ️ {{ notificationMessage }}
-        </div>
-    </transition>
-
+    <NotificationPopup :show="showNotification" :message="notificationMessage" @close="showNotification = false" />
 </template>
 
 <script setup lang="ts">
 // =============================
 // 📦 Imports
 // =============================
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/clients/crud.api'
 import codeRunnerApi from '@/clients/coderunner.api'
@@ -153,6 +67,15 @@ import { getPlayerData } from '@/stores/auth'
 import { useNotification } from '@/composables/useNotification'
 import { useSabotage } from '@/composables/useSabotage'
 import { useTimer } from '@/composables/useTimer'
+
+// Popup components
+import ResultPopup from '@/components/popups/ResultPopup.vue'
+import NotificationPopup from '@/components/popups/NotificationPopup.vue'
+import ConfidentLostPopup from '@/components/popups/ConfidentLostPopup.vue'
+import TimeoutPopup from '@/components/popups/TimeoutPopup.vue'
+import ClearedPopup from '@/components/popups/ClearedPopup.vue'
+import DescriptionPopup from '@/components/popups/DescriptionPopup.vue'
+
 
 
 // =============================
@@ -290,6 +213,13 @@ const restartPage = () => {
     window.location.reload()
 }
 
+// =============================
+// 🖥️ Computed
+// =============================
+
+const fullScore = computed(() =>
+    question_data.value?.test_cases?.reduce((acc, t) => acc + (t.score ?? 0), 0) ?? 0
+)
 
 // =============================
 // 🚀 Lifecycle Hooks
@@ -472,12 +402,16 @@ onUnmounted(() => {
     top: 0;
     left: 0;
     width: 100vw;
-    background-color: #4b5563;
     color: white;
     z-index: 1000;
     font-size: 14px;
-    border-bottom: 2px solid #ccc;
     text-align: left;
+}
+
+.description-popup-inner-panel {
+    padding: .5rem;
+    background-color: #4b5563;
+    border-bottom: 2px solid #ccc;
 }
 
 .description-popup-content {
