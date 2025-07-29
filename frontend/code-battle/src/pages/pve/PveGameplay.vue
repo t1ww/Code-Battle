@@ -254,34 +254,23 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Page's screen container */
 .container {
     background-color: #d1d5db;
-    padding: 6rem;
-    padding-top: 6rem;
-    padding-bottom: 2.6rem;
+    padding: 5rem 6rem 3.6rem;
     width: 100%;
     max-width: 100vw;
     box-sizing: border-box;
     overflow-x: hidden;
 }
 
-/* Top bar with button and timer */
 .top-bar {
     position: relative;
     margin-bottom: 2rem;
     height: 40px;
 }
 
-.center-div {
-    position: absolute;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: center;
-}
-
-.center-div button {
+.top-bar button {
+    margin-top: 0;
     background-color: #9ca3af;
     border: none;
     padding: 8px 12px;
@@ -290,26 +279,22 @@ onUnmounted(() => {
     font-size: 20px;
 }
 
+.popup-toggle.fixed {
+    display: flex;
+    justify-content: center;
+    padding: 0.5rem;
+    z-index: 999;
+}
+
 .timer {
     position: absolute;
     right: 0;
-    top: 50%;
     transform: translateY(-50%);
     font-weight: 600;
     font-size: 14px;
     color: black;
 }
 
-.top-bar button {
-    background-color: #9ca3af;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 20px;
-}
-
-/* Buttons */
 .buttons {
     display: flex;
     justify-content: flex-end;
@@ -336,224 +321,11 @@ onUnmounted(() => {
     background-color: #9fb2a4;
 }
 
-/* Overlay */
-.overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.4);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-/* Popup */
-.popup {
-    background-color: #e5e7eb;
-    border-radius: 12px;
-    width: 400px;
-    max-width: 90vw;
-    padding: 24px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-    font-size: 20px;
-    text-align: center;
-}
-
-/* Slide down transition */
-.slide-down-enter-active {
-    animation: slideDown 0.3s ease-out forwards;
-}
-
-.slide-down-leave-active {
-    animation: slideUp 0.2s ease-in forwards;
-}
-
-@keyframes slideDown {
-    from {
-        transform: translateY(-100%);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-@keyframes slideUp {
-    from {
-        transform: translateY(0);
-        opacity: 1;
-    }
-
-    to {
-        transform: translateY(-100%);
-        opacity: 0;
-    }
-}
-
-/* Popup panel styling */
-/* Popup panel */
-.description-popup-panel {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    color: white;
-    z-index: 1000;
-    font-size: 14px;
-    text-align: left;
-}
-
-.description-popup-inner-panel {
-    padding: .5rem;
-    background-color: #4b5563;
-    border-bottom: 2px solid #ccc;
-}
-
-.description-popup-content {
-    max-width: 1000px;
-    margin: 0 auto;
-}
-
-/* Button inside the panel */
-.description-popup-toggle {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 1rem;
-}
-
-.description-popup-toggle button {
-    background-color: #9ca3af;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 20px;
-}
-
-/* Button when panel is hidden */
-.description-popup-toggle.fixed {
-    display: flex;
-    justify-content: center;
-    padding: 0.5rem;
-    z-index: 999;
-}
-
-/* Section layout */
-.section {
-    margin-bottom: 1rem;
-}
-
-.test-cases {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.test-case {
-    background-color: #6b7280;
-    padding: 0.5rem;
-    border-radius: 4px;
-    font-family: monospace;
-    width: 15vw;
-}
-
-.modifier {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.modifier-value {
-    background: white;
-    color: black;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-weight: bold;
-}
-
-/* Loading submit */
 .loading-spinner {
     justify-self: flex-end;
     margin-left: 8px;
     font-size: 12px;
     font-style: italic;
     color: #555;
-}
-
-/* Time out */
-.popup-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.popup-content {
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
-    text-align: center;
-}
-
-.popup-content button {
-    margin: 0.5rem;
-}
-
-/* Notifications */
-.notification {
-    position: fixed;
-    top: 1rem;
-    left: 1rem;
-    background-color: #1f2937;
-    color: #f9fafb;
-    padding: 10px 16px;
-    border-radius: 6px;
-    font-weight: 500;
-    z-index: 1100;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-/* Slide in from top-left */
-.notif-slide-enter-active {
-    animation: notifIn 0.3s ease-out forwards;
-}
-
-.notif-slide-leave-active {
-    animation: notifOut 0.2s ease-in forwards;
-}
-
-@keyframes notifIn {
-    from {
-        transform: translate(-100%, 0);
-        opacity: 0;
-    }
-
-    to {
-        transform: translate(0, 0);
-        opacity: 1;
-    }
-}
-
-@keyframes notifOut {
-    from {
-        transform: translate(0, 0);
-        opacity: 1;
-    }
-
-    to {
-        transform: translate(-100%, 0);
-        opacity: 0;
-    }
 }
 </style>
