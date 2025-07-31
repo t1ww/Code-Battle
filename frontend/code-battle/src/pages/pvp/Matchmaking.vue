@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { findMatch } from '@/services/matchmaking'
@@ -8,6 +8,8 @@ import type { PlayerData } from '@/types/types'
 import SearchIcon from '@/components/pvp/SearchIcon.vue'
 import MatchFoundIcon from '@/components/pvp/MatchFoundIcon.vue'
 import TeamList from '@/components/pvp/TeamList.vue'
+
+import { socket } from '@/services/socket'
 
 type MatchState = 'searching' | 'found' | 'showingTeams' | 'countdown' | 'started'
 
@@ -75,6 +77,38 @@ watch(
     },
     { immediate: true }
 )
+
+onMounted(() => {
+    socket.connect()
+
+    const player_id = 'player_' + Math.floor(Math.random() * 10000) // mock ID for now
+
+    socket.emit("queuePlayer", { player_id })
+
+    socket.on("queueResponse", (response: { error_message: any; message: any }) => {
+        if (response.error_message) {
+            console.error("Queue Error:", response.error_message)
+            return
+        }
+        console.log("Queued successfully:", response.message)
+
+        // Try to start match after player is queued
+        socket.emit("startMatch")
+    })
+
+    socket.on("matchResponse", (response: { error_message: any; message: any }) => {
+        if (response.error_message) {
+            console.error("Match Error:", response.error_message)
+            return
+        }
+        console.log("Match started:", response.message)
+    })
+
+    socket.on("matchStarted", (data: { player_id: any }) => {
+        console.log("Match started for player:", data.player_id)
+        state.value = 'started'
+    })
+})
 
 onBeforeUnmount(() => {
     if (timer) clearInterval(timer)
