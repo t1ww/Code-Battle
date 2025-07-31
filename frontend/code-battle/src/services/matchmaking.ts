@@ -1,3 +1,4 @@
+// Deprecated, will keep for mock data template
 import type { PlayerData } from '@/types/types'
 
 export function findMatch(): Promise<{
