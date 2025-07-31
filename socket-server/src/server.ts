@@ -25,9 +25,10 @@ io.on("connection", (socket) => {
     // ✅ Matchmaking: Queue a player
     socket.on("queuePlayer", (data: QueuePlayerData) => {
         const mode = data.mode || "1v1";
-
+        
         if (mode === "1v1" && "player_id" in data) {
             const playerData = data as QueuePlayerData1v1;
+            console.log(`Queuing player for 1v1: ${playerData.name}`)
             const player: QueuedPlayer = {
                 player_id: playerData.player_id,
                 name: playerData.name,
@@ -55,7 +56,6 @@ io.on("connection", (socket) => {
             socket.emit("queueResponse", result);
         }
     });
-
 
     // ✅ Matchmaking: Try to start match
     socket.on("startMatch", (data: { mode?: MatchMode }) => {
