@@ -14,6 +14,14 @@ const io = new Server(server, {
 const connectionService = new ConnectionService();
 const matchmakingService = new MatchmakingService();
 
+// Start match (matching) loop
+setInterval(() => {
+    ['1v1', '3v3'].forEach(mode => {
+        console.log(`Attempt starting match for ${mode}`)
+        matchmakingService.startMatch(mode as MatchMode);
+    });
+}, 2000);
+
 io.on("connection", (socket) => {
     // Connection handling
     connectionService.handleConnect(socket);
@@ -25,7 +33,7 @@ io.on("connection", (socket) => {
     // ✅ Matchmaking: Queue a player
     socket.on("queuePlayer", (data: QueuePlayerData) => {
         const mode = data.mode || "1v1";
-        
+
         if (mode === "1v1" && "player_id" in data) {
             const playerData = data as QueuePlayerData1v1;
             console.log(`Queuing player for 1v1: ${playerData.name}`)
