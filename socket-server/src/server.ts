@@ -3,6 +3,7 @@ import express from "express";
 import { Server } from "socket.io";
 import { ConnectionService } from "@/services/connection.service";
 import { MatchmakingService } from "@/services/matchmaking.service";
+import { Team } from "@/types";
 
 const app = express();
 const server = createServer(app);
@@ -23,13 +24,29 @@ io.on("connection", (socket) => {
 
     // ✅ Matchmaking: Queue a player
     socket.on("queuePlayer", (data) => {
-        const result = matchmakingService.queuePlayer({ player_id: data.player_id, socket });
-        socket.emit("queueResponse", result);
+        const mode = data.mode || "1v1";
+
+        if (mode === "1v1") {
+            const result = matchmakingService.queuePlayer({ player_id: data.player_id, socket }, mode);
+            socket.emit("queueResponse", result);
+        } else if (mode === "3v3") {
+            const team: Team = {
+                team_id: data.team_id,
+                players: data.players.map((p: { player_id: string }) => ({
+                    player_id: p.player_id,
+                    socket
+                }))
+            };
+            const result = matchmakingService.queuePlayer(team, mode);
+            socket.emit("queueResponse", result);
+        }
     });
 
+
     // ✅ Matchmaking: Try to start match
-    socket.on("startMatch", () => {
-        const result = matchmakingService.startMatch();
+    socket.on("startMatch", (data) => {
+        const mode = data?.mode || "1v1"; // default to 1v1 if no mode sent
+        const result = matchmakingService.startMatch(mode);
         socket.emit("matchResponse", result);
     });
 });

@@ -48,21 +48,14 @@ const team2 = computed(() => {
 const countdown = ref(3)
 let timer: ReturnType<typeof setInterval> | null = null
 
-watch(
-    () => route.query.mode,
-    async (newModeRaw) => {
-        const newMode = (newModeRaw === '1v1' || newModeRaw === '3v3') ? newModeRaw : '1v1'
-        console.log('mode changed:', newMode)
+onMounted(() => {
+    socket.connect()
 
-        state.value = 'searching'
-        countdown.value = 3
+    if (player?.id) {
+        socket.emit("queuePlayer", { player_id: player.id, mode: mode.value || '1v1' })
+    }
 
-        if (timer) {
-            clearInterval(timer)
-            timer = null
-        }
-
-        const data = await findMatch()
+    socket.on("matchInfo", (data: { you: PlayerData, friends: PlayerData[], opponents: PlayerData[] }) => {
         match.value = data
         state.value = 'found'
 
@@ -70,6 +63,7 @@ watch(
             state.value = 'showingTeams'
             setTimeout(() => {
                 state.value = 'countdown'
+                countdown.value = 3;
                 timer = setInterval(() => {
                     if (countdown.value <= 1) {
                         clearInterval(timer!)
@@ -81,16 +75,7 @@ watch(
                 }, 1000)
             }, 1000)
         }, 1000)
-    },
-    { immediate: true }
-)
-
-onMounted(() => {
-    socket.connect()
-
-    if (player?.id) {
-        socket.emit("queuePlayer", { player_id: player.id, mode: mode.value || '1v1' })
-    }
+    })
 
     socket.on("queueResponse", (response: { error_message: any; message: any }) => {
         if (response.error_message) {
@@ -119,7 +104,13 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     if (timer) clearInterval(timer)
+
+    socket.off("matchInfo")
+    socket.off("queueResponse")
+    socket.off("matchResponse")
+    socket.off("matchStarted")
 })
+
 </script>
 
 <template>

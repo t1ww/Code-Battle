@@ -1,23 +1,10 @@
+import { QueuedPlayer, Team } from "@/types";
 import { Socket } from "socket.io";
-
-interface QueuedPlayer {
-    player_id: string;
-    socket: Socket;
-}
-
-interface Team {
-    team_id: string;
-    players: QueuedPlayer[]; // must be exactly 3 players for 3v3
-}
 
 export class MatchmakingService {
     // Separate queues for 1v1 players and 3v3 teams
     private queue1v1: Map<string, QueuedPlayer> = new Map();
     private queue3v3: Map<string, Team> = new Map();
-
-    private getQueue(mode: "1v1" | "3v3") {
-        return mode === "1v1" ? this.queue1v1 : this.queue3v3;
-    }
 
     // ✅ UTC-21: queuePlayer
     // Overloaded to accept either single player (1v1) or team (3v3)
