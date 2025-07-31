@@ -3,7 +3,7 @@ import express from "express";
 import { Server } from "socket.io";
 import { ConnectionService } from "@/services/connection.service";
 import { MatchmakingService } from "@/services/matchmaking.service";
-import { MatchMode, QueuePlayerData, Team } from "@/types";
+import { MatchMode, QueuedPlayer, QueuePlayerData, QueuePlayerData1v1, QueuePlayerData3v3, Team } from "@/types";
 
 const app = express();
 const server = createServer(app);
@@ -27,16 +27,30 @@ io.on("connection", (socket) => {
         const mode = data.mode || "1v1";
 
         if (mode === "1v1" && "player_id" in data) {
-            const result = matchmakingService.queuePlayer({ player_id: data.player_id, socket }, mode);
+            const playerData = data as QueuePlayerData1v1;
+            const player: QueuedPlayer = {
+                player_id: playerData.player_id,
+                name: playerData.name,
+                email: playerData.email,
+                socket,
+            };
+
+            const result = matchmakingService.queuePlayer(player, mode);
             socket.emit("queueResponse", result);
         } else if (mode === "3v3" && "team_id" in data && Array.isArray(data.players)) {
+            // Cast data to QueuePlayerData3v3
+            const teamData = data as QueuePlayerData3v3;
+
             const team: Team = {
-                team_id: data.team_id,
-                players: data.players.map((p: { player_id: string }) => ({
+                team_id: teamData.team_id,
+                players: teamData.players.map(p => ({
                     player_id: p.player_id,
-                    socket
-                }))
+                    name: p.name,
+                    email: p.email,
+                    socket,
+                })),
             };
+
             const result = matchmakingService.queuePlayer(team, mode);
             socket.emit("queueResponse", result);
         }

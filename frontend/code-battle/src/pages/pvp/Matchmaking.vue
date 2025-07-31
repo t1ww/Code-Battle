@@ -22,8 +22,9 @@ type MatchState = 'searching' | 'found' | 'showingTeams' | 'countdown' | 'starte
 const route = useRoute()
 const mode = computed(() => route.query.mode)
 
-const state = ref<MatchState>('searching')
+const errorMessage = ref('')
 
+const state = ref<MatchState>('searching')
 const match = ref<{
     you: PlayerData
     friends: PlayerData[]
@@ -51,7 +52,14 @@ onMounted(() => {
     socket.connect()
 
     if (player?.id) {
-        socket.emit("queuePlayer", { player_id: player.id, mode: mode.value || '1v1' })
+        if (mode.value === '1v1') {
+            socket.emit("queuePlayer", { player_id: player.id, name: player.name, email: player.email, mode: '1v1' })
+        } else if (mode.value === '3v3') {
+            // emit queue
+        } else {
+            // Error
+            errorMessage.value = 'Invalid match mode selected.'
+        }
     }
 
     socket.on("matchInfo", (data: { you: PlayerData, friends: PlayerData[], opponents: PlayerData[] }) => {
@@ -114,6 +122,8 @@ onBeforeUnmount(() => {
 
 <template>
     <div class="matchmaking-container">
+        <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+
         <div v-if="state === 'searching'">
             <SearchIcon />
             <p>Searching for a match…</p>
@@ -139,6 +149,12 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.error-message {
+    color: red;
+    margin: 0.5rem 0;
+    font-weight: bold;
+}
+
 .matchmaking-container {
     display: grid;
     place-items: center;

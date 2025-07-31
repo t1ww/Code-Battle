@@ -96,10 +96,25 @@ export class MatchmakingService {
 
             // ✅ UTC-22 ID 1: Enough players queued
             const matchPlayers = players.slice(0, 2);
-            matchPlayers.forEach((p) => {
+            const [p1, p2] = matchPlayers;
+
+            p1.socket.emit("matchInfo", {
+                you: { id: p1.player_id, name: p1.name, email: p1.email, token: null },
+                friends: [],
+                opponents: [{ id: p2.player_id, name: p2.name, email: p2.email, token: null }]
+            });
+
+            p2.socket.emit("matchInfo", {
+                you: { id: p2.player_id, name: p2.name, email: p2.email, token: null },
+                friends: [],
+                opponents: [{ id: p1.player_id, name: p1.name, email: p1.email, token: null }]
+            });
+
+            matchPlayers.forEach(p => {
                 p.socket.emit("matchStarted", { player_id: p.player_id });
                 queue.delete(p.player_id);
             });
+
 
             return { message: "1v1 match started successfully" };
         }
@@ -113,16 +128,49 @@ export class MatchmakingService {
         }
 
         // ✅ UTC-22 ID 1: Enough teams queued
-        const matchTeams = teams.slice(0, 2);
-        matchTeams.forEach(team => {
-            team.players.forEach(player => {
-                player.socket.emit("matchStarted", {
-                    player_id: player.player_id,
-                    team_id: team.team_id
-                });
+        const [teamA, teamB] = teams.slice(0, 2);
+
+        const teamAData = teamA.players.map(p => ({
+            id: p.player_id,
+            name: p.name,
+            email: p.email,
+            token: null
+        }));
+        const teamBData = teamB.players.map(p => ({
+            id: p.player_id,
+            name: p.name,
+            email: p.email,
+            token: null
+        }));
+
+        teamA.players.forEach(p => {
+            p.socket.emit("matchInfo", {
+                you: { id: p.player_id, name: p.name, email: p.email, token: null },
+                friends: teamAData.filter(fp => fp.id !== p.player_id),
+                opponents: teamBData
             });
-            queue.delete(team.team_id);
+
+            p.socket.emit("matchStarted", {
+                player_id: p.player_id,
+                team_id: teamA.team_id
+            });
         });
+
+        teamB.players.forEach(p => {
+            p.socket.emit("matchInfo", {
+                you: { id: p.player_id, name: p.name, email: p.email, token: null },
+                friends: teamBData.filter(fp => fp.id !== p.player_id),
+                opponents: teamAData
+            });
+
+            p.socket.emit("matchStarted", {
+                player_id: p.player_id,
+                team_id: teamB.team_id
+            });
+        });
+
+        queue.delete(teamA.team_id);
+        queue.delete(teamB.team_id);
 
         return { message: "3v3 match started successfully" };
     }
