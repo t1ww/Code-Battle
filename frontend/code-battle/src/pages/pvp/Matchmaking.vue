@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { findMatch } from '@/services/matchmaking'
 import type { PlayerData } from '@/types/types'
 
 import SearchIcon from '@/components/pvp/SearchIcon.vue'
