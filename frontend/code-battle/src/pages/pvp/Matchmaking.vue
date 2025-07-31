@@ -9,7 +9,14 @@ import SearchIcon from '@/components/pvp/SearchIcon.vue'
 import MatchFoundIcon from '@/components/pvp/MatchFoundIcon.vue'
 import TeamList from '@/components/pvp/TeamList.vue'
 
-import { socket } from '@/services/socket'
+import { socket } from '@/clients/socket.api'
+
+import { getPlayerData } from "@/stores/auth"
+
+const player = getPlayerData()
+if (player?.id) {
+    socket.emit("queuePlayer", { player_id: player.id })
+}
 
 type MatchState = 'searching' | 'found' | 'showingTeams' | 'countdown' | 'started'
 
@@ -81,9 +88,9 @@ watch(
 onMounted(() => {
     socket.connect()
 
-    const player_id = 'player_' + Math.floor(Math.random() * 10000) // mock ID for now
-
-    socket.emit("queuePlayer", { player_id })
+    if (player?.id) {
+        socket.emit("queuePlayer", { player_id: player.id })
+    }
 
     socket.on("queueResponse", (response: { error_message: any; message: any }) => {
         if (response.error_message) {
