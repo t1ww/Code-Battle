@@ -8,6 +8,7 @@ export const register = async (
   req: Request<{}, {}, RegisterRequest>,
   res: Response<RegisterResponse>
 ) => {
+  console.log("Received RegisterRequest body:", req.body);
   // ✅ UTC-01 ID 6: Invalid input format
   if (
     !req.body ||

@@ -33,7 +33,7 @@ export class PlayerService {
     }
 
     const [rows] = await pool.query<RowDataPacket[]>(
-      "SELECT id, player_name AS username, email, created_at FROM players WHERE id = ?",
+      "SELECT player_id, player_name AS username, email, created_at FROM players WHERE id = ?",
       [id]
     );
 
@@ -66,7 +66,7 @@ export class PlayerService {
     }
 
     const [rows] = await pool.query<RowDataPacket[]>(
-      "SELECT id, player_name, email, created_at FROM players WHERE email = ?",
+      "SELECT player_id, player_name, email, created_at FROM players WHERE email = ?",
       [email]
     );
 

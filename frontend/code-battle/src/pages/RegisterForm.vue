@@ -40,6 +40,7 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
+import router from "@/router";
 import api from "@/clients/crud.api";
 
 const username = ref("");
@@ -63,7 +64,7 @@ async function handleRegister() {
         username: username.value,
         email: email.value,
         password: password.value,
-        confirmPassword: confirmPassword.value
+        confirm_password: confirmPassword.value
       },
       { withCredentials: true }
     );
@@ -71,12 +72,20 @@ async function handleRegister() {
     successMessage.value = "Registration successful.";
     failMessage.value = "";
     console.log("res:", response.data);
+    // Redirect to login
+    setInterval(() => {
+      router.push("/login");
+    }, 600)
   } catch (err: any) {
-    failMessage.value =
+    const errorMsg =
+      err?.response?.data?.error_message ||
       "Registration service unavailable. Please try again later.";
+
+    failMessage.value = errorMsg;
     successMessage.value = "";
     console.error(err);
-  } finally {
+  }
+  finally {
     loading.value = false;
   }
 }

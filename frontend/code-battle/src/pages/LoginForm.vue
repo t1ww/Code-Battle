@@ -63,12 +63,12 @@ async function handleLogin() {
 
     const data = response.data;
 
-    if (data.success && data.token && data.playerInfo) {
+    if (data.token && data.player_info) {
       loginPlayer({
         token: data.token,
-        id: data.playerInfo.id,
-        name: data.playerInfo.username,
-        email: data.playerInfo.email,
+        id: data.player_info.id,
+        name: data.player_info.username,
+        email: data.player_info.email,
       });
 
       successMessage.value = "Login successful.";

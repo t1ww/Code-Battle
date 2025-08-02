@@ -25,7 +25,7 @@ export class AuthService {
     try {
       // ✅ UTC-09 ID 2: Check for existing email
       const [existing] = await pool.query(
-        "SELECT id FROM players WHERE email = ? LIMIT 1",
+        "SELECT player_id FROM players WHERE email = ? LIMIT 1",
         [email]
       );
       if (Array.isArray(existing) && existing.length > 0) {
@@ -42,7 +42,7 @@ export class AuthService {
 
       return { error_message: null };
     } catch (err) {
-      return { error_message: "Registration failed" };
+      return { error_message: "Registration failed: " + err };
     }
   }
 
