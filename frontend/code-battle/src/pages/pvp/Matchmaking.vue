@@ -13,9 +13,6 @@ import { socket } from '@/clients/socket.api'
 import { getPlayerData } from "@/stores/auth"
 
 const player = getPlayerData()
-if (player?.id) {
-    socket.emit("queuePlayer", { player_id: player.id })
-}
 
 type MatchState = 'searching' | 'found' | 'showingTeams' | 'countdown' | 'started'
 
@@ -64,24 +61,24 @@ onMounted(() => {
 
     socket.on("matchInfo", (data: { you: PlayerData, friends: PlayerData[], opponents: PlayerData[] }) => {
         match.value = data
-        state.value = 'found'
-
         setTimeout(() => {
-            state.value = 'showingTeams'
             setTimeout(() => {
-                state.value = 'countdown'
-                countdown.value = 3;
-                timer = setInterval(() => {
-                    if (countdown.value <= 1) {
-                        clearInterval(timer!)
-                        timer = null
-                        state.value = 'started'
-                    } else {
-                        countdown.value--
-                    }
+                state.value = 'showingTeams'
+                setTimeout(() => {
+                    state.value = 'countdown'
+                    countdown.value = 3;
+                    timer = setInterval(() => {
+                        if (countdown.value <= 1) {
+                            clearInterval(timer!)
+                            timer = null
+                            state.value = 'started'
+                        } else {
+                            countdown.value--
+                        }
+                    }, 1000)
                 }, 1000)
             }, 1000)
-        }, 1000)
+        }, 2400);
     })
 
     socket.on("queueResponse", (response: { error_message: any; message: any }) => {
@@ -129,9 +126,8 @@ onBeforeUnmount(() => {
             <p>Searching for a match…</p>
         </div>
 
-        <div v-else-if="state === 'found'">
-            <MatchFoundIcon />
-            <p>Match found!</p>
+        <div v-else-if="state === 'started'">
+            <h1>MATCH START!</h1>
         </div>
 
         <div v-else-if="state === 'showingTeams' || state === 'countdown'" class="teams-view">
@@ -141,9 +137,10 @@ onBeforeUnmount(() => {
             </span>
             <TeamList title="Team 2" :players="team2" />
         </div>
-
+        
         <div v-else>
-            <h1>MATCH START!</h1>
+            <MatchFoundIcon />
+            <p>Match found!</p>
         </div>
     </div>
 </template>
