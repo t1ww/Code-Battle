@@ -20,7 +20,7 @@ setInterval(() => {
         console.log(`Attempt starting match for ${mode}`)
         matchmakingService.startMatch(mode as MatchMode);
     });
-}, 2000);
+}, 6000);
 
 io.on("connection", (socket) => {
     // Connection handling

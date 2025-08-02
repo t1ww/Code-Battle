@@ -61,24 +61,6 @@ onMounted(() => {
 
     socket.on("matchInfo", (data: { you: PlayerData, friends: PlayerData[], opponents: PlayerData[] }) => {
         match.value = data
-        setTimeout(() => {
-            setTimeout(() => {
-                state.value = 'showingTeams'
-                setTimeout(() => {
-                    state.value = 'countdown'
-                    countdown.value = 3;
-                    timer = setInterval(() => {
-                        if (countdown.value <= 1) {
-                            clearInterval(timer!)
-                            timer = null
-                            state.value = 'started'
-                        } else {
-                            countdown.value--
-                        }
-                    }, 1000)
-                }, 1000)
-            }, 1000)
-        }, 2400);
     })
 
     socket.on("queueResponse", (response: { error_message: any; message: any }) => {
@@ -102,7 +84,26 @@ onMounted(() => {
 
     socket.on("matchStarted", (data: { player_id: any }) => {
         console.log("Match started for player:", data.player_id)
-        state.value = 'started'
+        // Run the sequence here
+        state.value = 'found'
+        setTimeout(() => {
+            setTimeout(() => {
+                state.value = 'showingTeams'
+                setTimeout(() => {
+                    state.value = 'countdown'
+                    countdown.value = 3;
+                    timer = setInterval(() => {
+                        if (countdown.value <= 1) {
+                            clearInterval(timer!)
+                            timer = null
+                            state.value = 'started'
+                        } else {
+                            countdown.value--
+                        }
+                    }, 1000)
+                }, 1000)
+            }, 1000)
+        }, 2400);
     })
 })
 
@@ -126,8 +127,9 @@ onBeforeUnmount(() => {
             <p>Searching for a match…</p>
         </div>
 
-        <div v-else-if="state === 'started'">
-            <h1>MATCH START!</h1>
+        <div v-else-if="state === 'found'">
+            <MatchFoundIcon />
+            <p>Match found!</p>
         </div>
 
         <div v-else-if="state === 'showingTeams' || state === 'countdown'" class="teams-view">
@@ -137,10 +139,9 @@ onBeforeUnmount(() => {
             </span>
             <TeamList title="Team 2" :players="team2" />
         </div>
-        
-        <div v-else>
-            <MatchFoundIcon />
-            <p>Match found!</p>
+
+        <div v-else-if="state === 'started'">
+            <h1>MATCH START!</h1>
         </div>
     </div>
 </template>
