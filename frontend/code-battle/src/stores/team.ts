@@ -54,14 +54,8 @@ export const useTeamStore = defineStore('team', {
             })
         },
 
-        addMember(member: { id: string; name: string; avatar_url?: string }) {
-            if (!this.members.some((m) => m.id === member.id)) {
-                this.members.push(member)
-            }
-        },
-
-        removeMember(id: string) {
-            this.members = this.members.filter((m) => m.id !== id)
-        },
+        setMembers(members: { id: string; name: string; avatar_url?: string }[]) {
+            this.members = members
+        }
     },
 })

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { socket } from '@/clients/socket.api'
+import { computed, onBeforeUnmount, onMounted } from 'vue'
 import { useTeamStore } from '@/stores/team'
 import { getPlayerData } from '@/stores/auth'
 
@@ -41,18 +42,35 @@ const createOrShareTeam = async () => {
   alert('Invite link copied!')
 }
 
-
 const teammates = computed(() =>
   teamStore.members.filter(m => m.id !== self.id)
 )
 
+onMounted(() => {
+  socket.on('teamJoined', (teamData) => {
+    if (teamData?.team_id === teamStore.team_id) {
+      teamStore.setMembers(teamData.players)
+    }
+  })
+})
+
+onBeforeUnmount(() => {
+  socket.off('teamJoined')
+})
 </script>
 
 <template>
   <nav class="navbar">
     <div class="team-wrapper">
-      <PlayerAvatar v-if="selfAvatar" :player="selfAvatar" />
-      <PlayerAvatar v-for="(player, index) in teammates" :key="player.id || index" :player="player" />
+      <!-- Self avatar with tooltip -->
+      <div v-if="selfAvatar" :title="selfInfo.name">
+        <PlayerAvatar :player="selfAvatar" />
+      </div>
+
+      <!-- Teammates avatars with tooltip -->
+      <div v-for="(player, index) in teammates" :key="player.id || index" :title="player.name">
+        <PlayerAvatar :player="player" />
+      </div>
 
       <!-- Add Button -->
       <div class="add-button" @click="createOrShareTeam">

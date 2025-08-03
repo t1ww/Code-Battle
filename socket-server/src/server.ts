@@ -62,23 +62,6 @@ io.on("connection", (socket) => {
     });
 
     // ✅ Team formation: Join existing team by team ID
-    socket.on("joinTeam", ({ team_id, player }: { team_id: string, player: TeamPlayer }) => {
-        const team = teamService.getTeam(team_id);
-        if (!team) {
-            socket.emit("error", { error_message: "Team not found" });
-            return;
-        }
-        if (team.players.length >= 3) {
-            socket.emit("error", { error_message: "Team is full" });
-            return;
-        }
-
-        team.players.push({ ...player, socket });
-        socket.join(team_id);
-
-        io.to(team_id).emit("teamJoined", sanitizeTeam(team));
-    });
-
     socket.on("joinTeamWithInvite", ({ invite_id, player }: { invite_id: string, player: TeamPlayer }) => {
         const team_id = inviteService.getTeamId(invite_id);
 
@@ -98,12 +81,18 @@ io.on("connection", (socket) => {
             return;
         }
 
+        // Duplicate check here as well
+        const alreadyJoined = team.players.some(p => p.player_id === player.player_id);
+        if (alreadyJoined) {
+            socket.emit("error", { error_message: "Player already in team" });
+            return;
+        }
+
         team.players.push({ ...player, socket });
         socket.join(team_id);
 
         io.to(team_id).emit("teamJoined", sanitizeTeam(team));
     });
-
 
     // ✅ Matchmaking: Queue a single player for 1v1 or team for 3v3
     socket.on("queuePlayer", (data: QueuePlayerData) => {
