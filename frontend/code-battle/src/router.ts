@@ -13,6 +13,7 @@ import PvpTypeSelect from "./pages/pvp/PvpTypeSelect.vue";
 import PveLevelView from "./pages/pve/PveQuestionView.vue";
 import Matchmaking from "./pages/pvp/Matchmaking.vue";
 import PveGameplay from "./pages/pve/PveGameplay.vue";
+import JoinTeamPage from "./components/pvp/JoinTeamPage.vue";
 
 /**
  * Meta Field Usage:
@@ -30,25 +31,30 @@ const routes = [
   { name: "PveLevelSelect", path: "/pveSelect", component: PveLevelSelect },
   { name: "PveLevelView", path: "/pveView", component: PveLevelView },
   { name: "PveGameplay", path: "/pveGameplay", component: PveGameplay },
-  
+
   // pvp
   { name: "PvpTypeSelect", path: "/pvpSelect", component: PvpTypeSelect },
   { name: "Matchmaking", path: "/matchmaking", component: Matchmaking },
-  
+
   // Account
   { name: "Login", path: "/login", component: Login, meta: { hideAuth: true } },
-  { name: "Logout", path: "/logout", component: Logout, meta: { requiresAuth: true }},
+  { name: "Logout", path: "/logout", component: Logout, meta: { requiresAuth: true } },
   {
     name: "Register",
     path: "/register",
     component: Register,
     meta: { hidden: true },
   },
+  {
+    path: '/join/:inviteId',
+    name: 'JoinTeam',
+    component: JoinTeamPage,
+  }
 ];
 
 const router = createRouter({
   history: createWebHistory(),
-  routes, 
+  routes,
 });
 
 // ⏳ Start progress before route changes
