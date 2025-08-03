@@ -1,24 +1,58 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useTeamStore } from '@/stores/team'
 import { getPlayerData } from '@/stores/auth'
 
 import PlayerAvatar from '@/components/pvp/PlayerAvatar.vue'
 
 const teamStore = useTeamStore()
+
+// Get player data once and throw if unavailable
 const self = getPlayerData()
+if (!self || !self.id || !self.name) {
+  throw new Error('Player not authenticated or missing id/name')
+}
+
+const selfInfo = {
+  id: self.id,
+  name: self.name,
+  avatar_url: self.avatar_url
+}
+
 const selfAvatar = computed(() => {
-  if (!self?.id || !self.name) return null
+  if (!self) return null
+
   return {
-    id: self.id,
-    name: self.name,
-    avatar_url: undefined
+    id: self.id as string, // TS now sees it as non-null
+    avatar_url: self.avatar_url,
   }
 })
 
+const createOrShareTeam = async () => {
+  if (!teamStore.team_id) {
+    await teamStore.createTeam({ id: selfInfo.id, name: selfInfo.name })
+  }
+
+  const link = `${window.location.origin}/play?team=${teamStore.team_id}`
+  await navigator.clipboard.writeText(link)
+  alert('Invite link copied!')
+}
+
 const teammates = computed(() =>
-  teamStore.members.filter(m => m.id !== self?.id)
+  teamStore.members.filter(m => m.id !== self.id)
 )
+
+onMounted(async () => {
+  const teamId = useRoute().query.team as string | undefined
+  if (teamId && !teamStore.team_id) {
+    try {
+      await teamStore.joinTeam(teamId, selfInfo)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to join team')
+    }
+  }
+})
 </script>
 
 <template>
@@ -28,7 +62,7 @@ const teammates = computed(() =>
       <PlayerAvatar v-for="(player, index) in teammates" :key="player.id || index" :player="player" />
 
       <!-- Add Button -->
-      <div class="add-button" @click="$emit('openInvitePopup')">
+      <div class="add-button" @click="createOrShareTeam">
         <span>+</span>
       </div>
     </div>
