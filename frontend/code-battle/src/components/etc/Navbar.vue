@@ -34,20 +34,26 @@ const createOrShareTeam = async () => {
     await teamStore.createTeam({ id: selfInfo.id, name: selfInfo.name })
   }
 
-  const link = `${window.location.origin}/play?team=${teamStore.team_id}`
+  const link = teamStore.invite_link.startsWith('http')
+    ? teamStore.invite_link
+    : `${window.location.origin}${teamStore.invite_link}`
+
   await navigator.clipboard.writeText(link)
   alert('Invite link copied!')
 }
+
 
 const teammates = computed(() =>
   teamStore.members.filter(m => m.id !== self.id)
 )
 
 onMounted(async () => {
-  const teamId = useRoute().query.team as string | undefined
-  if (teamId && !teamStore.team_id) {
+  const route = useRoute()
+  const inviteId = route.query.invite_id as string | undefined
+
+  if (inviteId && !teamStore.team_id) {
     try {
-      await teamStore.joinTeam(teamId, selfInfo)
+      await teamStore.joinTeamWithInvite(inviteId, selfInfo)
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to join team')
     }

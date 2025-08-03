@@ -5,8 +5,6 @@ export class TeamService {
     private teams: Map<string, Team> = new Map();
 
     createTeam(players: TeamPlayer[]): Team {
-        if (players.length !== 3) throw new Error("Team must have exactly 3 players");
-
         const team_id = uuidv4();
         const team: Team = {
             team_id,

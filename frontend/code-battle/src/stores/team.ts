@@ -5,7 +5,8 @@ import { socket } from '@/clients/socket.api'
 export const useTeamStore = defineStore('team', {
     state: () => ({
         team_id: null as string | null,
-        members: [] as { id: string, name: string, avatar_url?: string }[],
+        members: [] as { id: string; name: string; avatar_url?: string }[],
+        invite_link: '' as string,
     }),
 
     getters: {
@@ -18,48 +19,49 @@ export const useTeamStore = defineStore('team', {
             if (!socket.connected) socket.connect()
         },
 
-        async createTeam(self: { id: string, name: string }) {
+        async createTeam(self: { id: string; name: string }) {
             this.connectSocket()
             return new Promise<void>((resolve, reject) => {
-                socket.emit("createTeam", [self])
+                socket.emit('createTeam', [self])
 
-                socket.once("teamCreated", ({ team_id, link }) => {
+                socket.once('teamCreated', ({ team_id, link }) => {
                     this.team_id = team_id
                     this.members = [self]
+                    this.invite_link = link // store backend link here
                     resolve()
                 })
 
-                socket.once("error", ({ error_message }) => {
+                socket.once('error', ({ error_message }) => {
                     reject(error_message)
                 })
             })
         },
 
-        async joinTeam(team_id: string, self: { id: string, name: string }) {
+        async joinTeamWithInvite(invite_id: string, self: { id: string; name: string }) {
             this.connectSocket()
             return new Promise<void>((resolve, reject) => {
-                socket.emit("joinTeam", { team_id, player: self })
+                socket.emit('joinTeamWithInvite', { invite_id, player: self })
 
-                socket.once("teamJoined", (team) => {
+                socket.once('teamJoined', (team) => {
                     this.team_id = team.team_id
                     this.members = team.players
                     resolve()
                 })
 
-                socket.once("error", ({ error_message }) => {
+                socket.once('error', ({ error_message }) => {
                     reject(error_message)
                 })
             })
         },
 
-        addMember(member: { id: string, name: string, avatar_url?: string }) {
-            if (!this.members.some(m => m.id === member.id)) {
+        addMember(member: { id: string; name: string; avatar_url?: string }) {
+            if (!this.members.some((m) => m.id === member.id)) {
                 this.members.push(member)
             }
         },
 
         removeMember(id: string) {
-            this.members = this.members.filter(m => m.id !== id)
-        }
-    }
+            this.members = this.members.filter((m) => m.id !== id)
+        },
+    },
 })

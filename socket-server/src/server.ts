@@ -3,8 +3,9 @@ import express from "express";
 import { Server } from "socket.io";
 import { ConnectionService } from "@/services/connection.service";
 import { MatchmakingService } from "@/services/matchmaking.service";
-import { MatchMode, QueuedPlayer, QueuePlayerData, QueuePlayerData1v1, QueuePlayerData3v3, Team, TeamPlayer } from "@/types";
 import { TeamService } from "./services/team.service";
+import { InviteService } from "@/services/invite.service";
+import { MatchMode, QueuedPlayer, QueuePlayerData, QueuePlayerData1v1, QueuePlayerData3v3, Team, TeamPlayer } from "@/types";
 
 const app = express();
 const server = createServer(app);
@@ -15,6 +16,8 @@ const io = new Server(server, {
 const connectionService = new ConnectionService();
 const matchmakingService = new MatchmakingService();
 const teamService = new TeamService();
+const inviteService = new InviteService();
+
 
 // ✅ Start match (matching) loop every 6 seconds
 setInterval(() => {
@@ -40,8 +43,11 @@ io.on("connection", (socket) => {
             const playersWithSocket = players.map(p => ({ ...p, socket }));
             // Create team via TeamService
             const team = teamService.createTeam(playersWithSocket);
-            // Respond with created team ID and shareable link
-            socket.emit("teamCreated", { team_id: team.team_id, link: `/team/${team.team_id}` });
+            const inviteId = inviteService.createInvite(team.team_id);
+            socket.emit("teamCreated", {
+                team_id: team.team_id,
+                link: `/join/${inviteId}` // frontend uses this now
+            });
         } catch (err: any) {
             socket.emit("error", { error_message: err.message });
         }
@@ -63,6 +69,30 @@ io.on("connection", (socket) => {
         // Optionally: Notify team members here with io.to(team_id).emit(...)
         socket.emit("teamJoined", team);
     });
+
+    socket.on("joinTeamWithInvite", ({ invite_id, player }: { invite_id: string, player: TeamPlayer }) => {
+        const team_id = inviteService.getTeamId(invite_id);
+
+        if (!team_id) {
+            socket.emit("error", { error_message: "Invalid or expired invite" });
+            return;
+        }
+
+        const team = teamService.getTeam(team_id);
+        if (!team) {
+            socket.emit("error", { error_message: "Team no longer exists" });
+            return;
+        }
+
+        if (team.players.length >= 3) {
+            socket.emit("error", { error_message: "Team is full" });
+            return;
+        }
+
+        team.players.push({ ...player, socket });
+        socket.emit("teamJoined", team);
+    });
+
 
     // ✅ Matchmaking: Queue a single player for 1v1 or team for 3v3
     socket.on("queuePlayer", (data: QueuePlayerData) => {
