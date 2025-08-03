@@ -1,41 +1,43 @@
 <script setup lang="ts">
-import { computed } from "vue"
-import router from "@/router"
-import { isAuthenticated } from "@/stores/auth"
+import { computed } from 'vue'
+import { useTeamStore } from '@/stores/team'
+import { getPlayerData } from '@/stores/auth'
 
-const filteredRoutes = computed(() => {
-  // Filter routes for navbar display based on their meta fields in router.ts
-  // (e.g., hidden, requiresAuth, hideAuth, allowedRoles)
-  return router.getRoutes().filter(route => {
-    if (route.meta?.hidden) return false
-    if (route.meta?.requiresAuth && !isAuthenticated.value) return false
-    if (route.meta?.hideAuth && isAuthenticated.value) return false 
-  })
+import PlayerAvatar from '@/components/pvp/PlayerAvatar.vue'
+
+const teamStore = useTeamStore()
+const self = getPlayerData()
+const selfAvatar = computed(() => {
+  if (!self?.id || !self.name) return null
+  return {
+    id: self.id,
+    name: self.name,
+    avatar_url: undefined
+  }
 })
+
+const teammates = computed(() =>
+  teamStore.members.filter(m => m.id !== self?.id)
+)
 </script>
 
 <template>
   <nav class="navbar">
-    <router-link to="/">
-      <img
-        src="https://smartoffice.camt.cmu.ac.th/v1r/img/camt_logo.png"
-        class="logo" to="/view-question">
-    </router-link>
-    <ul class="nav-links">
-      <li v-for="item in filteredRoutes" :key="item.path">
-        <router-link :to="item.path">
-          <div :class="{ 'highlight-text': item.path === $route.path }">
-            {{ item.name }}
-          </div>
-        </router-link>
-      </li>
-    </ul>
+    <div class="team-wrapper">
+      <PlayerAvatar v-if="selfAvatar" :player="selfAvatar" />
+      <PlayerAvatar v-for="(player, index) in teammates" :key="player.id || index" :player="player" />
+
+      <!-- Add Button -->
+      <div class="add-button" @click="$emit('openInvitePopup')">
+        <span>+</span>
+      </div>
+    </div>
   </nav>
 </template>
 
 <style scoped>
-.highlight-text {
-  color: #7b6e5a;
+PlayerAvatar {
+  margin: 0;
 }
 
 .navbar {
@@ -43,40 +45,37 @@ const filteredRoutes = computed(() => {
   top: 0;
   left: 0;
   width: 100%;
-  max-width: 100%;
   background: #dadada;
-  padding: 1rem 2rem;
-  color: rgb(255, 255, 255);
+  padding: 0.75rem 1.5rem;
   z-index: 1000;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
+  /* push to right */
   align-items: center;
   box-sizing: border-box;
 }
 
-.logo {
-  width: 50px;
-  height: 50px;
-  object-fit: contain;
-}
-.logo:active{
-  background-color: #d3d3d3;
-}
-
-.nav-links {
+.team-wrapper {
   display: flex;
-  gap: 1.5rem;
-  list-style: none;
+  flex-direction: row-reverse;
+  gap: 0.rem;
+  align-items: center;
 }
 
-.nav-links a {
-  text-decoration: none;
-  color: white;
-  font-weight: 500;
-  transition: color 0.3s;
+
+.add-button {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
 }
 
-.nav-links a:hover {
-  color: #9d7643;
+.add-button:hover {
+  background: #e2e2e2;
 }
 </style>

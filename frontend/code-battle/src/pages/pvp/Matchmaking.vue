@@ -32,15 +32,22 @@ const match = ref<{
     opponents: []
 })
 
+const mapToMinimal = (players: PlayerData[]) => {
+    return players
+        .filter(p => p.id && p.name)
+        .map(({ id, name, avatar_url }) => ({ id: id!, name: name!, avatar_url }))
+}
+
 const team1 = computed(() => {
-    if (mode.value === '1v1') return [match.value.you]
-    return [match.value.you, ...match.value.friends]
+    if (mode.value === '1v1') return mapToMinimal([match.value.you])
+    return mapToMinimal([match.value.you, ...match.value.friends])
 })
 
 const team2 = computed(() => {
-    if (mode.value === '1v1') return match.value.opponents.slice(0, 1)
-    return match.value.opponents
+    if (mode.value === '1v1') return mapToMinimal(match.value.opponents.slice(0, 1))
+    return mapToMinimal(match.value.opponents)
 })
+
 
 const countdown = ref(3)
 let timer: ReturnType<typeof setInterval> | null = null
