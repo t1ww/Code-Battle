@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed } from 'vue'
 import { useTeamStore } from '@/stores/team'
 import { getPlayerData } from '@/stores/auth'
 
@@ -47,18 +46,6 @@ const teammates = computed(() =>
   teamStore.members.filter(m => m.id !== self.id)
 )
 
-onMounted(async () => {
-  const route = useRoute()
-  const inviteId = route.query.invite_id as string | undefined
-
-  if (inviteId && !teamStore.team_id) {
-    try {
-      await teamStore.joinTeamWithInvite(inviteId, selfInfo)
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to join team')
-    }
-  }
-})
 </script>
 
 <template>

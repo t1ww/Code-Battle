@@ -21,14 +21,16 @@ const selfInfo = {
 
 onMounted(async () => {
     const inviteId = route.params.inviteId as string
-    try {
-        await teamStore.joinTeamWithInvite(inviteId, selfInfo)
-        // Redirect to your team/play page or wherever after joining
-        router.push({ path: '/pvpSelect' })
-    } catch (err) {
-        alert(err instanceof Error ? err.message : 'Failed to join team')
-        // Optionally redirect to a safe page or home
-        router.push({ path: '/' })
+    if (inviteId && !teamStore.team_id) {
+        try {
+            await teamStore.joinTeamWithInvite(inviteId, selfInfo)
+            // Redirect to your team/play page or wherever after joining
+            router.push({ path: '/pvpSelect' })
+        } catch (err) {
+            alert(err instanceof Error ? err.message : 'Failed to join team')
+            // Optionally redirect to a safe page or home
+            router.push({ path: '/' })
+        }
     }
 })
 </script>

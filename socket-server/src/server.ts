@@ -18,6 +18,14 @@ const matchmakingService = new MatchmakingService();
 const teamService = new TeamService();
 const inviteService = new InviteService();
 
+// Helper
+function sanitizeTeam(team: Team) {
+    return {
+        team_id: team.team_id,
+        players: team.players.map(({ player_id, name, email }) => ({ player_id, name, email }))
+    }
+}
+
 
 // ✅ Start match (matching) loop every 6 seconds
 setInterval(() => {
@@ -64,10 +72,11 @@ io.on("connection", (socket) => {
             socket.emit("error", { error_message: "Team is full" });
             return;
         }
-        // Add player with socket to team
+
         team.players.push({ ...player, socket });
-        // Optionally: Notify team members here with io.to(team_id).emit(...)
-        socket.emit("teamJoined", team);
+        socket.join(team_id);
+
+        io.to(team_id).emit("teamJoined", sanitizeTeam(team));
     });
 
     socket.on("joinTeamWithInvite", ({ invite_id, player }: { invite_id: string, player: TeamPlayer }) => {
@@ -90,7 +99,9 @@ io.on("connection", (socket) => {
         }
 
         team.players.push({ ...player, socket });
-        socket.emit("teamJoined", team);
+        socket.join(team_id);
+
+        io.to(team_id).emit("teamJoined", sanitizeTeam(team));
     });
 
 
