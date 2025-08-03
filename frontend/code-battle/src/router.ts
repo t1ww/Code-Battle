@@ -21,36 +21,37 @@ import JoinTeamPage from "./components/pvp/JoinTeamPage.vue";
  * - hidden:         Exclude the route from the navigation bar completely.
  * - hideAuth:       Hide route from navbar if user is already authenticated (e.g., login page).
  * - requiresAuth:   Route is only accessible when the user is logged in.
- * - allowedRoles:   Restrict access to users with specific roles (e.g., professors only).
+ * - backTo:         Optional path the back button should navigate to from this route.
  */
 const routes = [
   // root / home
   { name: "Home", path: "/", component: Home },
 
   // pve
-  { name: "PveLevelSelect", path: "/pveSelect", component: PveLevelSelect },
-  { name: "PveLevelView", path: "/pveView", component: PveLevelView },
-  { name: "PveGameplay", path: "/pveGameplay", component: PveGameplay },
+  { name: "PveLevelSelect", path: "/pveSelect", component: PveLevelSelect, meta: { backTo: "/" } },
+  { name: "PveLevelView", path: "/pveView", component: PveLevelView, meta: { backTo: "/pveSelect" } },
+  { name: "PveGameplay", path: "/pveGameplay", component: PveGameplay/*meta: { backTo: "/pveSelect" }*/ },
 
   // pvp
-  { name: "PvpTypeSelect", path: "/pvpSelect", component: PvpTypeSelect },
-  { name: "Matchmaking", path: "/matchmaking", component: Matchmaking },
+  { name: "PvpTypeSelect", path: "/pvpSelect", component: PvpTypeSelect, meta: { backTo: "/" } },
+  { name: "Matchmaking", path: "/matchmaking", component: Matchmaking  /*meta: { backTo: "/pvpSelect" }*/ },
 
   // Account
-  { name: "Login", path: "/login", component: Login, meta: { hideAuth: true } },
-  { name: "Logout", path: "/logout", component: Logout, meta: { requiresAuth: true } },
+  { name: "Login", path: "/login", component: Login, meta: { hideAuth: true, backTo: "/" } },
+  { name: "Logout", path: "/logout", component: Logout, meta: { requiresAuth: true, backTo: "/" } },
   {
     name: "Register",
     path: "/register",
     component: Register,
-    meta: { hidden: true },
+    meta: { hidden: true, backTo: "/" },
   },
   {
-    path: '/join/:inviteId',
-    name: 'JoinTeam',
+    path: "/join/:inviteId",
+    name: "JoinTeam",
     component: JoinTeamPage,
-  }
+  },
 ];
+
 
 const router = createRouter({
   history: createWebHistory(),

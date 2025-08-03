@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import Navbar from "@/components/etc/Navbar.vue";
 import { RouterView } from "vue-router";
+import BackButton from "@/components/etc/BackButton.vue";
 </script>
 
 <template>
   <Navbar />
+  <BackButton />
   <div class="router-container">
     <router-view :key="$route.fullPath" />
   </div>
@@ -15,8 +17,10 @@ import { RouterView } from "vue-router";
 #nprogress .bar {
   background: #42b983;
 }
+
 .router-container {
   display: flex;
-  justify-content: center; /* horizontal center */
+  justify-content: center;
+  /* horizontal center */
 }
 </style>
