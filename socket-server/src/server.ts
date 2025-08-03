@@ -56,6 +56,7 @@ io.on("connection", (socket) => {
                 team_id: team.team_id,
                 link: `/join/${inviteId}` // frontend uses this now
             });
+            socket.join(team.team_id);
         } catch (err: any) {
             socket.emit("error", { error_message: err.message });
         }

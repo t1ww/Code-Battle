@@ -9,14 +9,14 @@ const router = useRouter()
 const teamStore = useTeamStore()
 
 const self = getPlayerData()
-if (!self || !self.id || !self.name) {
-    throw new Error('Player not authenticated or missing id/name')
+if (!self || !self.id || !self.name || !self.email) {
+    throw new Error('Player not authenticated or missing data')
 }
 
 const selfInfo = {
     id: self.id,
     name: self.name,
-    avatar_url: self.avatar_url,
+    email: self.email,
 }
 
 onMounted(async () => {

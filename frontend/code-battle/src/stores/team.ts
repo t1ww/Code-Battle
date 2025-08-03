@@ -5,13 +5,13 @@ import { socket } from '@/clients/socket.api'
 export const useTeamStore = defineStore('team', {
     state: () => ({
         team_id: null as string | null,
-        members: [] as { id: string; name: string; avatar_url?: string }[],
+        members: [] as { player_id: string; name: string; avatar_url?: string }[],
         invite_link: '' as string,
     }),
 
     getters: {
         size: (state) => state.members.length,
-        isLeader: (state) => state.members[0]?.id === localStorage.getItem('player_id'),
+        isLeader: (state) => state.members[0]?.player_id === localStorage.getItem('player_id'),
     },
 
     actions: {
@@ -19,7 +19,7 @@ export const useTeamStore = defineStore('team', {
             if (!socket.connected) socket.connect()
         },
 
-        async createTeam(self: { id: string; name: string }) {
+        async createTeam(self: { player_id: string; name: string; avatar_url?: string }) {
             this.connectSocket()
             return new Promise<void>((resolve, reject) => {
                 socket.emit('createTeam', [self])
@@ -37,10 +37,18 @@ export const useTeamStore = defineStore('team', {
             })
         },
 
-        async joinTeamWithInvite(invite_id: string, self: { id: string; name: string }) {
+        async joinTeamWithInvite(invite_id: string, self: { id: string; name: string, email: string }) {
             this.connectSocket()
             return new Promise<void>((resolve, reject) => {
-                socket.emit('joinTeamWithInvite', { invite_id, player: self })
+                socket.emit('joinTeamWithInvite', {
+                    invite_id,
+                    player: {
+                        player_id: self.id,  // rename here
+                        name: self.name,
+                        email: self.email // add if available or empty string
+                    }
+                });
+
 
                 socket.once('teamJoined', (team) => {
                     this.team_id = team.team_id
@@ -54,7 +62,7 @@ export const useTeamStore = defineStore('team', {
             })
         },
 
-        setMembers(members: { id: string; name: string; avatar_url?: string }[]) {
+        setMembers(members: { player_id: string; name: string; avatar_url?: string }[]) {
             this.members = members
         }
     },

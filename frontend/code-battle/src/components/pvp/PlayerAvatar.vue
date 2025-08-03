@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ player: { id: string, avatar_url?: string }}>()
+defineProps<{ player: { player_id: string, avatar_url?: string }}>()
 </script>
 
 <style scoped>

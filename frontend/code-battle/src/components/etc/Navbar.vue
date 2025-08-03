@@ -15,7 +15,7 @@ if (!self || !self.id || !self.name) {
 }
 
 const selfInfo = {
-  id: self.id,
+  player_id: self.id,
   name: self.name,
   avatar_url: self.avatar_url
 }
@@ -24,14 +24,14 @@ const selfAvatar = computed(() => {
   if (!self) return null
 
   return {
-    id: self.id as string, // TS now sees it as non-null
+    player_id: self.id as string, // TS now sees it as non-null
     avatar_url: self.avatar_url,
   }
 })
 
 const createOrShareTeam = async () => {
   if (!teamStore.team_id) {
-    await teamStore.createTeam({ id: selfInfo.id, name: selfInfo.name })
+    await teamStore.createTeam({ player_id: selfInfo.player_id, name: selfInfo.name })
   }
 
   const link = teamStore.invite_link.startsWith('http')
@@ -43,10 +43,13 @@ const createOrShareTeam = async () => {
 }
 
 const teammates = computed(() =>
-  teamStore.members.filter(m => m.id !== self.id)
+  teamStore.members.filter(m => m.player_id !== self.id)
 )
 
 onMounted(() => {
+  //
+
+  // Update new team member joined
   socket.on('teamJoined', (teamData) => {
     if (teamData?.team_id === teamStore.team_id) {
       teamStore.setMembers(teamData.players)
@@ -68,7 +71,7 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Teammates avatars with tooltip -->
-      <div v-for="(player, index) in teammates" :key="player.id || index" :title="player.name">
+      <div v-for="(player, index) in teammates" :key="player.player_id || index" :title="player.name">
         <PlayerAvatar :player="player" />
       </div>
 
