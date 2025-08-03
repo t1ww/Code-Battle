@@ -3,7 +3,8 @@ import express from "express";
 import { Server } from "socket.io";
 import { ConnectionService } from "@/services/connection.service";
 import { MatchmakingService } from "@/services/matchmaking.service";
-import { MatchMode, QueuedPlayer, QueuePlayerData, QueuePlayerData1v1, QueuePlayerData3v3, Team } from "@/types";
+import { MatchMode, QueuedPlayer, QueuePlayerData, QueuePlayerData1v1, QueuePlayerData3v3, Team, TeamPlayer } from "@/types";
+import { TeamService } from "./services/team.service";
 
 const app = express();
 const server = createServer(app);
@@ -13,30 +14,63 @@ const io = new Server(server, {
 
 const connectionService = new ConnectionService();
 const matchmakingService = new MatchmakingService();
+const teamService = new TeamService();
 
-// Start match (matching) loop
+// ✅ Start match (matching) loop every 6 seconds
 setInterval(() => {
     ['1v1', '3v3'].forEach(mode => {
-        console.log(`Attempt starting match for ${mode}`)
+        console.log(`Attempt starting match for ${mode}`);
         matchmakingService.startMatch(mode as MatchMode);
     });
 }, 6000);
 
 io.on("connection", (socket) => {
-    // Connection handling
+    // ✅ Handle new socket connection
     connectionService.handleConnect(socket);
 
+    // ✅ Handle socket disconnect
     socket.on("disconnect", () => {
         connectionService.handleDisconnect(socket.id);
     });
 
-    // ✅ Matchmaking: Queue a player
+    // ✅ Team formation: Create a new team
+    socket.on("createTeam", (players: TeamPlayer[]) => {
+        try {
+            // Attach current socket reference to each player
+            const playersWithSocket = players.map(p => ({ ...p, socket }));
+            // Create team via TeamService
+            const team = teamService.createTeam(playersWithSocket);
+            // Respond with created team ID and shareable link
+            socket.emit("teamCreated", { team_id: team.team_id, link: `/team/${team.team_id}` });
+        } catch (err: any) {
+            socket.emit("error", { error_message: err.message });
+        }
+    });
+
+    // ✅ Team formation: Join existing team by team ID
+    socket.on("joinTeam", ({ team_id, player }: { team_id: string, player: TeamPlayer }) => {
+        const team = teamService.getTeam(team_id);
+        if (!team) {
+            socket.emit("error", { error_message: "Team not found" });
+            return;
+        }
+        if (team.players.length >= 3) {
+            socket.emit("error", { error_message: "Team is full" });
+            return;
+        }
+        // Add player with socket to team
+        team.players.push({ ...player, socket });
+        // Optionally: Notify team members here with io.to(team_id).emit(...)
+        socket.emit("teamJoined", team);
+    });
+
+    // ✅ Matchmaking: Queue a single player for 1v1 or team for 3v3
     socket.on("queuePlayer", (data: QueuePlayerData) => {
         const mode = data.mode || "1v1";
 
         if (mode === "1v1" && "player_id" in data) {
             const playerData = data as QueuePlayerData1v1;
-            console.log(`Queuing player for 1v1: ${playerData.name}`)
+            console.log(`Queuing player for 1v1: ${playerData.name}`);
             const player: QueuedPlayer = {
                 player_id: playerData.player_id,
                 name: playerData.name,
@@ -47,7 +81,7 @@ io.on("connection", (socket) => {
             const result = matchmakingService.queuePlayer(player, mode);
             socket.emit("queueResponse", result);
         } else if (mode === "3v3" && "team_id" in data && Array.isArray(data.players)) {
-            // Cast data to QueuePlayerData3v3
+            // Cast to 3v3 team data
             const teamData = data as QueuePlayerData3v3;
 
             const team: Team = {
@@ -65,15 +99,27 @@ io.on("connection", (socket) => {
         }
     });
 
-    // ✅ Matchmaking: Try to start match
+    // ✅ Matchmaking: Queue an existing team by team ID
+    socket.on("queueTeam", ({ team_id, mode }: { team_id: string, mode: MatchMode }) => {
+        const team = teamService.getTeam(team_id);
+        if (!team) {
+            socket.emit("queueResponse", { error_message: "Team not found" });
+            return;
+        }
+        const result = matchmakingService.queuePlayer(team, mode);
+        socket.emit("queueResponse", result);
+    });
+
+    // ✅ Matchmaking: Start a match manually (fallback or test)
     socket.on("startMatch", (data: { mode?: MatchMode }) => {
-        const mode = data?.mode || "1v1"; // default to 1v1 if no mode sent
+        const mode = data?.mode || "1v1"; // default to 1v1 if not specified
         const result = matchmakingService.startMatch(mode);
         socket.emit("matchResponse", result);
     });
 });
 
 const PORT = 3001;
+// ✅ Start server listening on PORT
 server.listen(PORT, () => {
     console.log(`Socket server running on port ${PORT}`);
 });

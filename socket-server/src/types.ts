@@ -33,5 +33,16 @@ export interface QueuePlayerData3v3 {
     }[];
 }
 
+export interface TeamPlayer {
+    player_id: string;
+    name: string;
+    email: string;
+    socket: Socket;
+}
+
+export interface Team {
+    team_id: string;
+    players: TeamPlayer[];
+}
 
 export type QueuePlayerData = QueuePlayerData1v1 | QueuePlayerData3v3;
