@@ -1,5 +1,4 @@
 import { ref } from "vue";
-import { useRouter } from "vue-router";
 import type { PlayerData } from "@/types/types";
 
 export const isAuthenticated = ref(!!localStorage.getItem("player_token"));
@@ -38,9 +37,4 @@ export function logoutPlayer() {
   localStorage.removeItem("player_email");
 
   isAuthenticated.value = false;
-
-  const router = useRouter(); // works inside Vue components only
-  setTimeout(() => {
-    router.push({ name: "Login" });
-  }, 300);
 }

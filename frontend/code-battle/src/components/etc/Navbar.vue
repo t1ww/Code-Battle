@@ -1,37 +1,37 @@
 <script setup lang="ts">
 import { socket } from '@/clients/socket.api'
-import { computed, onBeforeUnmount, onMounted } from 'vue'
+import { computed, ref, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useTeamStore } from '@/stores/team'
-import { getPlayerData } from '@/stores/auth'
+import { getPlayerData, isAuthenticated } from '@/stores/auth'
+import { useRouter } from 'vue-router'
 
 import PlayerAvatar from '@/components/pvp/PlayerAvatar.vue'
 
+const router = useRouter()
 const teamStore = useTeamStore()
 
-// Get player data once and throw if unavailable
-const self = getPlayerData()
-if (!self || !self.id || !self.name) {
-  throw new Error('Player not authenticated or missing id/name')
-}
+const self = ref<null | { id: string; name: string; avatar_url?: string }>(null)
 
-const selfInfo = {
-  player_id: self.id,
-  name: self.name,
-  avatar_url: self.avatar_url
-}
+const isLoggedIn = computed(() => !!self.value)
 
 const selfAvatar = computed(() => {
-  if (!self) return null
-
+  if (!self.value) return null
   return {
-    player_id: self.id as string, // TS now sees it as non-null
-    avatar_url: self.avatar_url,
+    player_id: self.value.id,
+    avatar_url: self.value.avatar_url,
   }
 })
 
+const teammates = computed(() =>
+  teamStore.members.filter(m => m.player_id !== self.value?.id)
+)
+
 const createOrShareTeam = async () => {
-  if (!teamStore.team_id) {
-    await teamStore.createTeam({ player_id: selfInfo.player_id, name: selfInfo.name })
+  if (!teamStore.team_id && self.value) {
+    await teamStore.createTeam({
+      player_id: self.value.id,
+      name: self.value.name,
+    })
   }
 
   const link = teamStore.invite_link.startsWith('http')
@@ -42,52 +42,81 @@ const createOrShareTeam = async () => {
   alert('Invite link copied!')
 }
 
-const teammates = computed(() =>
-  teamStore.members.filter(m => m.player_id !== self.id)
-)
+const goToLogin = () => {
+  router.push({ name: 'Login' })
+}
 
+// Set self on mount for initial load
 onMounted(() => {
-  //
+  const player = getPlayerData()
+  if (player?.id && player?.name) {
+    self.value = {
+      id: player.id,
+      name: player.name,
+      avatar_url: player.avatar_url ?? undefined,
+    }
+  } else {
+    self.value = null
+  }
 
-  // Update new team member joined
   socket.on('teamJoined', (teamData) => {
     if (teamData?.team_id === teamStore.team_id) {
       teamStore.setMembers(teamData.players)
     }
   })
+  socket.on('teamLeft', (playerId) => {
+    teamStore.setMembers(teamStore.members.filter(m => m.player_id !== playerId))
+    if (playerId === self.value?.id) {
+      self.value = null
+    }
+  })
+})
+
+// Watch for login/logout changes
+watch(isAuthenticated, (loggedIn) => {
+  if (loggedIn) {
+    const player = getPlayerData()
+    if (player?.id && player?.name) {
+      self.value = {
+        id: player.id,
+        name: player.name,
+        avatar_url: player.avatar_url ?? undefined,
+      }
+    }
+  } else {
+    self.value = null
+    teamStore.setMembers([])
+  }
 })
 
 onBeforeUnmount(() => {
   socket.off('teamJoined')
+  socket.off('teamLeft')
 })
+
 </script>
 
 <template>
   <nav class="navbar">
-    <div class="team-wrapper">
-      <!-- Self avatar with tooltip -->
-      <div v-if="selfAvatar" :title="selfInfo.name">
+    <div class="team-wrapper" v-if="isLoggedIn">
+      <div v-if="selfAvatar" :title="self?.name">
         <PlayerAvatar :player="selfAvatar" />
       </div>
 
-      <!-- Teammates avatars with tooltip -->
       <div v-for="(player, index) in teammates" :key="player.player_id || index" :title="player.name">
         <PlayerAvatar :player="player" />
       </div>
 
-      <!-- Add Button -->
       <div class="add-button" @click="createOrShareTeam">
         <span>+</span>
       </div>
     </div>
+
+    <button v-else class="login-button" @click="goToLogin">Login</button>
   </nav>
 </template>
 
 <style scoped>
-PlayerAvatar {
-  margin: 0;
-}
-
 .navbar {
   position: fixed;
   top: 0;
@@ -98,7 +127,6 @@ PlayerAvatar {
   z-index: 1000;
   display: flex;
   justify-content: flex-end;
-  /* push to right */
   align-items: center;
   box-sizing: border-box;
 }
@@ -106,10 +134,9 @@ PlayerAvatar {
 .team-wrapper {
   display: flex;
   flex-direction: row-reverse;
-  gap: 0.rem;
+  gap: 0.5rem;
   align-items: center;
 }
-
 
 .add-button {
   width: 64px;
@@ -125,5 +152,19 @@ PlayerAvatar {
 
 .add-button:hover {
   background: #e2e2e2;
+}
+
+.login-button {
+  padding: 0.5rem 1rem;
+  background-color: #007bff;
+  border: none;
+  color: white;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.login-button:hover {
+  background-color: #0056b3;
 }
 </style>
