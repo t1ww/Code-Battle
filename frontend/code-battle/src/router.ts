@@ -9,11 +9,12 @@ import PveLevelSelect from "./pages/pve/PveLevelSelect.vue";
 
 import NProgress from "nprogress";
 import "nprogress/nprogress.css"; // import the style
-import PvpTypeSelect from "./pages/pvp/PvpTypeSelect.vue";
-import PveLevelView from "./pages/pve/PveQuestionView.vue";
-import Matchmaking from "./pages/pvp/Matchmaking.vue";
-import PveGameplay from "./pages/pve/PveGameplay.vue";
-import JoinTeamPage from "./components/pvp/JoinTeamPage.vue";
+import PvpTypeSelect from "@/pages/pvp/PvpTypeSelect.vue";
+import PveLevelView from "@/pages/pve/PveQuestionView.vue";
+import Matchmaking from "@/pages/pvp/Matchmaking.vue";
+import PveGameplay from "@/pages/pve/PveGameplay.vue";
+import JoinTeamPage from "@/components/pvp/JoinTeamPage.vue";
+import { isAuthenticated } from "@/stores/auth";
 
 /**
  * Meta Field Usage:
@@ -25,16 +26,16 @@ import JoinTeamPage from "./components/pvp/JoinTeamPage.vue";
  */
 const routes = [
   // root / home
-  { name: "Home", path: "/", component: Home },
+  { name: "Home", path: "/", component: Home, meta: { requiresAuth: true } },
 
   // pve
-  { name: "PveLevelSelect", path: "/pveSelect", component: PveLevelSelect, meta: { backTo: "/" } },
-  { name: "PveLevelView", path: "/pveView", component: PveLevelView, meta: { backTo: "/pveSelect" } },
-  { name: "PveGameplay", path: "/pveGameplay", component: PveGameplay/*meta: { backTo: "/pveSelect" }*/ },
+  { name: "PveLevelSelect", path: "/pveSelect", component: PveLevelSelect, meta: { requiresAuth: true, backTo: "/" } },
+  { name: "PveLevelView", path: "/pveView", component: PveLevelView, meta: { requiresAuth: true, backTo: "/pveSelect" } },
+  { name: "PveGameplay", path: "/pveGameplay", component: PveGameplay, meta: { requiresAuth: true } },
 
   // pvp
-  { name: "PvpTypeSelect", path: "/pvpSelect", component: PvpTypeSelect, meta: { backTo: "/" } },
-  { name: "Matchmaking", path: "/matchmaking", component: Matchmaking  /*meta: { backTo: "/pvpSelect" }*/ },
+  { name: "PvpTypeSelect", path: "/pvpSelect", component: PvpTypeSelect, meta: { requiresAuth: true, backTo: "/" } },
+  { name: "Matchmaking", path: "/matchmaking", component: Matchmaking, meta: { requiresAuth: true } },
 
   // Account
   { name: "Login", path: "/login", component: Login, meta: { hideAuth: true, backTo: "/" } },
@@ -43,12 +44,13 @@ const routes = [
     name: "Register",
     path: "/register",
     component: Register,
-    meta: { hidden: true, backTo: "/" },
+    meta: { hideAuth: true, hidden: true, backTo: "/" },
   },
   {
     path: "/join/:inviteId",
     name: "JoinTeam",
     component: JoinTeamPage,
+    meta: { requiresAuth: true }
   },
 ];
 
@@ -59,9 +61,18 @@ const router = createRouter({
 });
 
 // ⏳ Start progress before route changes
-router.beforeEach((_to, _from, next) => {
+router.beforeEach((to, _from, next) => {
   NProgress.start();
-  next();
+
+  if (to.meta.requiresAuth && !isAuthenticated.value) {
+    // Redirect to Login if route requires auth but user is not logged in
+    next({ name: 'Login' });
+  } else if (to.meta.hideAuth && isAuthenticated.value) {
+    // Redirect away from Login/Register if already logged in (optional)
+    next({ name: 'Home' });
+  } else {
+    next();
+  }
 });
 
 // Done progress after route fully loads
