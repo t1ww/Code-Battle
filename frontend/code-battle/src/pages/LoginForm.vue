@@ -78,8 +78,12 @@ async function handleLogin() {
       failMessage.value = data.errorMessage || "Invalid login response.";
       successMessage.value = "";
     }
-  } catch (err) {
-    failMessage.value = "Login service unavailable. Please try again later.";
+  } catch (err: any) {
+    const msg =
+      err?.response?.data?.error_message ||
+      "Login service unavailable. Please try again later.";
+
+    failMessage.value = msg;
     successMessage.value = "";
     console.error(err);
   } finally {
