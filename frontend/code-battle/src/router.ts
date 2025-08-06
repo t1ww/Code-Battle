@@ -38,13 +38,13 @@ const routes = [
   { name: "Matchmaking", path: "/matchmaking", component: Matchmaking, meta: { requiresAuth: true } },
 
   // Account
-  { name: "Login", path: "/login", component: Login, meta: { hideAuth: true, backTo: "/" } },
-  { name: "Logout", path: "/logout", component: Logout, meta: { requiresAuth: true, backTo: "/" } },
+  { name: "Login", path: "/login", component: Login, meta: { hideAuth: true } },
+  { name: "Logout", path: "/logout", component: Logout, meta: { requiresAuth: true } },
   {
     name: "Register",
     path: "/register",
     component: Register,
-    meta: { hideAuth: true, hidden: true, backTo: "/" },
+    meta: { hideAuth: true, hidden: true, backTo: "/login" },
   },
   {
     path: "/join/:inviteId",
@@ -64,11 +64,11 @@ const router = createRouter({
 router.beforeEach((to, _from, next) => {
   NProgress.start();
 
+  // Redirect to Login if route requires auth but user is not logged in
   if (to.meta.requiresAuth && !isAuthenticated.value) {
-    // Redirect to Login if route requires auth but user is not logged in
     next({ name: 'Login' });
-  } else if (to.meta.hideAuth && isAuthenticated.value) {
     // Redirect away from Login/Register if already logged in (optional)
+  } else if (to.meta.hideAuth && isAuthenticated.value) {
     next({ name: 'Home' });
   } else {
     next();

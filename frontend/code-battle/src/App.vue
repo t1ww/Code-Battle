@@ -2,6 +2,14 @@
 import Navbar from "@/components/etc/Navbar.vue";
 import { RouterView } from "vue-router";
 import BackButton from "@/components/etc/BackButton.vue";
+
+window.addEventListener("offline", () => {
+  console.log("Lost internet connection");
+});
+
+window.addEventListener("online", () => {
+  console.log("Back online");
+});
 </script>
 
 <template>
