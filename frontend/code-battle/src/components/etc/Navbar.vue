@@ -4,16 +4,20 @@ import { computed, ref, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useTeamStore } from '@/stores/team'
 import { getPlayerData, isAuthenticated } from '@/stores/auth'
 import { useRouter } from 'vue-router'
+import { logoutPlayer } from "@/stores/auth";
 
 import PlayerAvatar from '@/components/pvp/PlayerAvatar.vue'
 
+// Initializations
 const router = useRouter()
 const teamStore = useTeamStore()
 
 const self = ref<null | { id: string; name: string; avatar_url?: string }>(null)
 
 const isLoggedIn = computed(() => !!self.value)
+const showLogout = ref(false);
 
+// Team formation
 const selfAvatar = computed(() => {
   if (!self.value) return null
   return {
@@ -42,9 +46,21 @@ const createOrShareTeam = async () => {
   alert('Invite link copied!')
 }
 
+// Login
 const goToLogin = () => {
   router.push({ name: 'Login' })
 }
+
+// Logout
+const toggleLogout = () => {
+  showLogout.value = !showLogout.value;
+};
+
+const handleLogout = () => {
+  logoutPlayer();
+  showLogout.value = false;
+  router.push({ name: "Login" });
+};
 
 // Set self on mount for initial load
 onMounted(() => {
@@ -99,9 +115,18 @@ onBeforeUnmount(() => {
 <template>
   <nav class="navbar">
     <div class="team-wrapper" v-if="isLoggedIn">
-      <div v-if="selfAvatar" :title="self?.name">
-        <PlayerAvatar :player="selfAvatar" />
+      <div class="avatar-container" v-if="selfAvatar">
+        <div :title="self?.name" @click="toggleLogout">
+          <PlayerAvatar :player="selfAvatar" />
+        </div>
+
+        <transition name="slide-fade">
+          <div v-if="showLogout" class="logout-dropdown">
+            <button @click="handleLogout">Logout</button>
+          </div>
+        </transition>
       </div>
+
 
       <div v-for="(player, index) in teammates" :key="player.player_id || index" :title="player.name">
         <PlayerAvatar :player="player" />
@@ -166,5 +191,47 @@ onBeforeUnmount(() => {
 
 .login-button:hover {
   background-color: #0056b3;
+}
+
+/* Logout */
+.avatar-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logout-dropdown {
+  position: absolute;
+  top: 72px;
+  background: white;
+  border: 1px solid #ccc;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.logout-dropdown button {
+  background: none;
+  border: none;
+  font-weight: bold;
+  color: #d00;
+  cursor: pointer;
+}
+
+.logout-dropdown button:hover {
+  text-decoration: underline;
+}
+
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.2s ease;
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 </style>

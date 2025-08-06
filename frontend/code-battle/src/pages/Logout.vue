@@ -1,30 +1,29 @@
 <script setup lang="ts">
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { logoutPlayer } from "@/stores/auth"; // or wherever it's located
-import { onMounted } from "vue";
+import { logoutPlayer } from "@/stores/auth";
 
 const router = useRouter();
-
-function handleLogout() {
-  logoutPlayer();
-  setTimeout(() => {
-    router.replace({ name: "Login" });
-  }, 300);
-}
+const message = ref("Logging out...");
 
 onMounted(() => {
-  handleLogout()
-})
+  logoutPlayer();
+  message.value = "You have been logged out successfully.";
+
+  setTimeout(() => {
+    router.push({ name: "Login" });
+  }, 1000); // wait 1 second as required
+});
 </script>
 
 <template>
-  <h1>Logging out...</h1>
+  <h1>{{ message }}</h1>
 </template>
 
 <style scoped>
-  h1 {
-    position: relative;
-    top: 2rem;
-    align-self: center;
-  }
+h1 {
+  position: relative;
+  top: 2rem;
+  align-self: center;
+}
 </style>
