@@ -57,9 +57,7 @@ const toggleLogout = () => {
 };
 
 const handleLogout = () => {
-  logoutPlayer();
-  showLogout.value = false;
-  router.push({ name: "Login" });
+  router.push({ name: "Logout" });
 };
 
 // Set self on mount for initial load
