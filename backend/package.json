@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "database:reset": "ts-node -r tsconfig-paths/register src/scripts/resetData.ts",
+    "database:seed": "ts-node -r tsconfig-paths/register src/scripts/seedData.ts",
     "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
     "start": "node dist/server.js",
     "test": "jest",
