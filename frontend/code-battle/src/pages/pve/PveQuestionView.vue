@@ -164,33 +164,40 @@ onMounted(async () => {
   </div>
 </template>
 
+
 <style scoped>
 .level-container {
   display: flex;
+  justify-content: center;
+  align-items: center;
   padding-top: 5rem;
   width: 100vw;
+  height: calc(100vh - 2rem); /* subtract padding-top */
   background-color: #bbb;
   font-family: sans-serif;
   color: #000;
+  overflow: hidden; /* prevent scrollbars */
+  box-sizing: border-box; /* include padding in height */
 }
 
 /* Panels */
 .panel {
-  border: none;
-  border-radius: 1rem;
-  margin: .5rem;
-  margin-top: 1rem;
+  height: 100%;
+  min-height: 0;
+  /* allows flex child to shrink properly */
+  margin-inline: 2rem;
+  margin-bottom: 2rem;
+  border-radius: .5rem;
   background: #ddd;
-  box-sizing: border-box;
   overflow-y: auto;
-  overflow-x: none;
-  height: 85vh;
-}
-
+  box-sizing: border-box;
+  padding: 1rem;
+} 
 
 /* Left: Leaderboard */
 .leaderboard {
-  width: 36vw;
+  width: 30vw;
+  /* smaller width */
   padding: 1rem;
 }
 
@@ -206,7 +213,8 @@ onMounted(async () => {
   width: 100%;
   border-collapse: collapse;
   margin-top: 0.5rem;
-  font-size: clamp(.8rem, 1.1vw, 1.2vw);
+  font-size: 0.9rem;
+  /* smaller font */
   table-layout: fixed;
 }
 
@@ -224,18 +232,18 @@ onMounted(async () => {
   font-weight: 500;
 }
 
-/* ✅ Hover fix */
+/* Hover fix */
 .leaderboard-table tbody tr:hover {
   background-color: #bbb;
   font-weight: bold;
 }
 
-
 /* Right: Description Panel */
 .description {
   margin-left: 0;
-  width: 70vw;
-  padding: 1rem;
+  width: 55vw;
+  /* smaller width */
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
   text-align: left;
@@ -251,17 +259,17 @@ onMounted(async () => {
   display: flex;
   justify-content: left;
   font-family: monospace;
-  gap: .5rem;
+  gap: 0.5rem;
 }
 
 .test-cases>div {
   background: #eee;
   border: 1px solid #aaa;
   border-radius: 0.4rem;
-  padding: 0.5rem;
-  width: 12vw;
+  padding: 0.4rem;
+  width: 10vw;
+  font-size: 0.85rem;
 }
-
 
 /* Options Section */
 .options {
@@ -283,9 +291,9 @@ onMounted(async () => {
 }
 
 .modifier button {
-  width: 2rem;
-  height: 2rem;
-  font-size: 1rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  font-size: 0.85rem;
   background: #ccc;
   border: 1px solid #888;
   cursor: pointer;
@@ -293,32 +301,30 @@ onMounted(async () => {
 }
 
 .modifier span {
-  width: 10rem;
+  width: 8rem;
   text-align: center;
-  font-weight: bold;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
-
 
 /* Start Button */
 .start-button-container {
   margin-right: 4rem;
   display: flex;
   justify-content: flex-end;
-  /* ✅ Add this */
 }
-
 
 .start-button {
   align-self: flex-end;
-  margin-top: 1.5rem;
-  padding: 0.4rem 1rem;
-  width: 8rem;
+  margin-top: 1.2rem;
+  padding: 0.3rem 0.8rem;
+  width: 7rem;
   background-color: #666;
   color: #fff;
   text-align: center;
   text-decoration: none;
   font-weight: bold;
-  font-size: 1rem;
+  font-size: 0.9rem;
   border-radius: 0.4rem;
   transition: background-color 0.2s ease, transform 0.1s ease;
   border: 1px solid #444;
@@ -333,7 +339,7 @@ onMounted(async () => {
   transform: scale(0.98);
 }
 
-/* Reactive */
+/* Responsive */
 @media (max-width: 900px) {
   .level-container {
     flex-direction: column;
@@ -343,10 +349,12 @@ onMounted(async () => {
 
   .leaderboard,
   .description {
-    margin: 0rem;
+    margin: 0;
     margin-top: 2rem;
     width: 90vw;
     height: auto;
+    transform: scale(1);
+    padding: 1rem;
   }
 
   .test-cases {
@@ -356,6 +364,24 @@ onMounted(async () => {
 
   .test-cases>div {
     width: 40%;
+    font-size: 1rem;
+  }
+
+  .modifier button {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1rem;
+  }
+
+  .modifier span {
+    width: 10rem;
+    font-size: 1rem;
+  }
+
+  .start-button {
+    width: 8rem;
+    font-size: 1rem;
+    padding: 0.4rem 1rem;
   }
 
   .start-button-container {
