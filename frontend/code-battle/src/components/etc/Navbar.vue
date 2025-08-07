@@ -138,13 +138,15 @@ onBeforeUnmount(() => {
   </nav>
 </template>
 
+
 <style scoped>
 .navbar {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  background: #dadada;
+  height: 8vh;
+  background: #b0f08e;
   padding: 0.75rem 1.5rem;
   z-index: 1000;
   display: flex;

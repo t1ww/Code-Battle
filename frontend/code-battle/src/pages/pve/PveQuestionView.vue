@@ -118,7 +118,6 @@ onMounted(async () => {
 
       <div v-else-if="question_data" class="desc-content">
         <h4>Level {{ question_data.level }}: {{ question_data.question_name }}</h4>
-        <hr />
 
         <p><strong>Description:</strong><br />{{ question_data.description }}</p>
         <hr />
@@ -135,15 +134,17 @@ onMounted(async () => {
 
         <div class="options">
           <label class="checkbox-line">
-            <span>Time limit :</span>
             <input type="checkbox" v-model="timeLimitEnabled" />
+            <span>Time limit :</span>
           </label>
 
           <div class="modifier">
             <span>Difficulty modifier :</span>
-            <button @click="cylcleModifier('left')">&lt;</button>
-            <span>{{ selectedModifier }}</span>
-            <button @click="cylcleModifier('right')">&gt;</button>
+            <div class="modifier-cycle modifier">
+              <button @click="cylcleModifier('left')">&lt;</button>
+              <span>{{ selectedModifier }}</span>
+              <button @click="cylcleModifier('right')">&gt;</button>
+            </div>
           </div>
         </div>
         <hr />
@@ -166,128 +167,142 @@ onMounted(async () => {
 
 
 <style scoped>
+* {
+  box-sizing: border-box;
+}
+
 .level-container {
   display: flex;
   justify-content: center;
-  align-items: center;
-  padding-top: 5rem;
+  align-items: stretch;
+  /* full height */
+  padding: 5rem 2rem 2rem 2rem;
+  /* leave room for navbar/back button */
   width: 100vw;
-  height: calc(100vh - 2rem); /* subtract padding-top */
-  background-color: #bbb;
-  font-family: sans-serif;
+  height: calc(100vh - 2rem);
+  background-color: #9bd67a;
+  /* main green */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #000;
-  overflow: hidden; /* prevent scrollbars */
-  box-sizing: border-box; /* include padding in height */
+  overflow: hidden;
+  gap: 2rem;
 }
 
 /* Panels */
 .panel {
+  background-color: #b0f08e;
+  /* lighter green */
+  border-radius: 0.7rem;
+  padding: 1rem 1.5rem;
   height: 100%;
-  min-height: 0;
-  /* allows flex child to shrink properly */
-  margin-inline: 2rem;
-  margin-bottom: 2rem;
-  border-radius: .5rem;
-  background: #ddd;
   overflow-y: auto;
-  box-sizing: border-box;
-  padding: 1rem;
-} 
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
 
-/* Left: Leaderboard */
+/* Leaderboard width */
 .leaderboard {
   width: 30vw;
-  /* smaller width */
-  padding: 1rem;
+  min-width: 320px;
 }
 
-.leaderboard h3 {
+/* Description width */
+.description {
+  width: 55vw;
+  min-width: 480px;
+  display: flex;
+  flex-direction: column;
   text-align: left;
+  gap: 1rem;
 }
 
-.leaderboard hr {
-  color: black;
+/* Headings */
+h3 {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  border-bottom: 2px solid #2e7d32;
+  /* dark green line */
+  padding-bottom: 0.3rem;
 }
 
+h4 {
+  margin: 0;
+  border-bottom: 1.5px solid #57a05a;
+  padding-bottom: 0.3rem;
+  font-weight: 700;
+  color: #2e7d32;
+}
+
+/* Table styling */
 .leaderboard-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 0.5rem;
-  font-size: 0.9rem;
-  /* smaller font */
+  font-size: 0.85rem;
+  margin-top: 0.3rem;
   table-layout: fixed;
+  color: #1b5e20;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #6b8e23;
+  text-align: center;
 }
 
 .leaderboard-table th {
-  background-color: #ddd;
-  border-bottom: 2px solid #666;
-  font-weight: bold;
-  padding: 0.5rem;
+  font-weight: 600;
+  background-color: #a7d08c;
 }
 
-.leaderboard-table td {
-  text-align: center;
-  padding: 0.5rem;
-  border-bottom: 1px solid #999;
-  font-weight: 500;
-}
-
-/* Hover fix */
 .leaderboard-table tbody tr:hover {
-  background-color: #bbb;
-  font-weight: bold;
+  background-color: #8acc6e;
+  font-weight: 600;
 }
 
-/* Right: Description Panel */
-.description {
-  margin-left: 0;
-  width: 55vw;
-  /* smaller width */
-  padding: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-}
-
-.desc-content hr {
-  border: none;
-  border-bottom: 2px solid #aaa;
-  margin: 0.8rem 0;
-}
-
+/* Test cases */
 .test-cases {
   display: flex;
-  justify-content: left;
+  gap: 1rem;
   font-family: monospace;
-  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #2a5d1e;
 }
 
 .test-cases>div {
-  background: #eee;
-  border: 1px solid #aaa;
+  background: #daf1be;
+  border: 1px solid #6eaa4f;
   border-radius: 0.4rem;
-  padding: 0.4rem;
-  width: 10vw;
-  font-size: 0.85rem;
+  padding: 0.5rem;
+  flex: 1;
 }
 
-/* Options Section */
+/* Options */
 .options {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 1rem;
+  align-items: center;
 }
 
 .checkbox-line {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-weight: 600;
 }
 
 .modifier {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-weight: 600;
+}
+
+.modifier span {
+  width: 8rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .modifier button {
@@ -298,95 +313,156 @@ onMounted(async () => {
   border: 1px solid #888;
   cursor: pointer;
   padding: 0;
+  font-size: 1rem;
+  border: none;
+  outline: none;
+  background: #7fc97f;
+  color: #1b5e20;
+  cursor: pointer;
+  font-weight: bold;
+  user-select: none;
+  transition: background-color 0.2s ease;
 }
 
-.modifier span {
-  width: 8rem;
-  text-align: center;
-  font-weight: 600;
-  font-size: 0.9rem;
+.modifier button:hover {
+  color: #569c4d;
+  background: #83cc83;
 }
 
-/* Start Button */
+.modifier button:active {
+  background: #ffffff;
+}
+
+.modifier-cycle {
+  border-radius: 0.4rem;
+  background: #7fc97f;
+}
+
+/* Start button */
 .start-button-container {
-  margin-right: 4rem;
+  margin-top: auto;
   display: flex;
   justify-content: flex-end;
 }
 
 .start-button {
-  align-self: flex-end;
-  margin-top: 1.2rem;
-  padding: 0.3rem 0.8rem;
+  padding: 0.4rem 1rem;
   width: 7rem;
-  background-color: #666;
-  color: #fff;
+  background-color: #559f55;
+  color: white;
+  font-weight: 700;
   text-align: center;
+  border-radius: 0.5rem;
   text-decoration: none;
-  font-weight: bold;
-  font-size: 0.9rem;
-  border-radius: 0.4rem;
   transition: background-color 0.2s ease, transform 0.1s ease;
-  border: 1px solid #444;
+  border: 1px solid #3e783e;
 }
 
 .start-button:hover {
-  background-color: #555;
-  transform: scale(1.02);
+  background-color: #3e783e;
+  transform: scale(1.05);
 }
 
 .start-button:active {
-  transform: scale(0.98);
+  transform: scale(0.95);
 }
 
-/* Responsive */
+/* Scrollbar styling for panels */
+.panel::-webkit-scrollbar {
+  width: 10px;
+}
+
+.panel::-webkit-scrollbar-track {
+  background: #c1e6a3;
+  border-radius: 10px;
+}
+
+.panel::-webkit-scrollbar-thumb {
+  background-color: #6ca06c;
+  border-radius: 10px;
+  border: 2px solid #c1e6a3;
+}
+
+/* Responsive adjustments */
 @media (max-width: 900px) {
   .level-container {
     flex-direction: column;
-    align-items: center;
-    padding-bottom: 1rem;
+    height: auto;
+    padding: 1rem;
   }
 
   .leaderboard,
   .description {
-    margin: 0;
-    margin-top: 2rem;
-    width: 90vw;
-    height: auto;
-    transform: scale(1);
-    padding: 1rem;
+    width: 100%;
+    min-width: unset;
+    height: 50vh;
   }
 
   .test-cases {
     flex-direction: column;
-    align-items: flex-start;
   }
+}
 
-  .test-cases>div {
-    width: 40%;
-    font-size: 1rem;
-  }
+.checkbox-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
 
-  .modifier button {
-    width: 2rem;
-    height: 2rem;
-    font-size: 1rem;
-  }
+.checkbox-line input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
 
-  .modifier span {
-    width: 10rem;
-    font-size: 1rem;
-  }
+.checkbox-line span {
+  flex-shrink: 0;
+  position: relative;
+  padding-left: 28px;
+  line-height: 1.2;
+}
 
-  .start-button {
-    width: 8rem;
-    font-size: 1rem;
-    padding: 0.4rem 1rem;
-  }
+.checkbox-line span::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid #559f55;
+  border-radius: 4px;
+  background: white;
+  box-sizing: border-box;
+  transition: background-color 0.3s, border-color 0.3s;
+}
 
-  .start-button-container {
-    justify-content: center;
-    margin-right: 0;
-  }
+.checkbox-line input[type="checkbox"]:checked+span::before {
+  background-color: #559f55;
+  border-color: #3e783e;
+}
+
+.checkbox-line input[type="checkbox"]:checked+span::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 6px;
+  height: 12px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  pointer-events: none;
+}
+
+/* Hover effect */
+.checkbox-line:hover span::before {
+  border-color: #3e783e;
 }
 </style>
