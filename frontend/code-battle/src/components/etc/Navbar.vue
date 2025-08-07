@@ -204,9 +204,10 @@ onBeforeUnmount(() => {
 .logout-dropdown {
   position: absolute;
   top: 72px;
-  background: white;
-  border: 1px solid #ccc;
-  padding: 0.5rem 1rem;
+  height: 1.5rem;
+  background: rgb(198, 255, 199);
+  border: .2rem solid #74ff8e;
+  padding: 0.5rem 2rem;
   border-radius: 4px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 10;
@@ -214,9 +215,10 @@ onBeforeUnmount(() => {
 
 .logout-dropdown button {
   background: none;
+  padding: 0;
   border: none;
   font-weight: bold;
-  color: #d00;
+  color: rgb(0, 0, 0);
   cursor: pointer;
 }
 
