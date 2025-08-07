@@ -12,18 +12,32 @@ const leaderboard = ref<LeaderboardEntry[]>([])
 const selectedModifier = ref('None')
 const timeLimitEnabled = ref(true)
 
+const loading = ref(true)
+const error = ref<string | null>(null)
+
 const difficultyOptions = ['None', 'Sabotage', 'Confident']
 
 async function fetchLevelData(): Promise<Question> {
-  const response = await api.get(`/questions?level=${level}`)
-  console.log('[Question Fetch] Response data:', response.data)
-  return response.data as Question
+  try {
+    const response = await api.get(`/questions?level=${level}`)
+    console.log('[Level Fetch] Question data:', response.data)
+    return response.data as Question
+  } catch (err) {
+    console.error('[Level Fetch Error]', err)
+    throw err
+  }
 }
 
 async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
-  const response = await api.get(`/scores/leaderboard?question_id=${question_data.value?.id}`)
-  console.log('[Leaderboard Fetch] Response data:', response.data)
-  return response.data as LeaderboardEntry[]
+  try {
+    const questionId = question_data.value?.id
+    const response = await api.get(`/scores/leaderboard?question_id=${questionId}`)
+    console.log('[Leaderboard Fetch] Data:', response.data)
+    return response.data as LeaderboardEntry[]
+  } catch (err) {
+    console.error('[Leaderboard Fetch Error]', err)
+    throw err
+  }
 }
 
 function cylcleModifier(direction: 'left' | 'right') {
@@ -37,18 +51,34 @@ function cylcleModifier(direction: 'left' | 'right') {
 }
 
 onMounted(async () => {
-  question_data.value = await fetchLevelData()
-  leaderboard.value = await fetchLeaderboard()
+  loading.value = true
+  error.value = null
+  try {
+    question_data.value = await fetchLevelData()
+    leaderboard.value = await fetchLeaderboard()
+  } catch (err) {
+    error.value = 'Failed to load level data or leaderboard.'
+  } finally {
+    loading.value = false
+  }
 })
 </script>
 
 <template>
-  <div class="level-container" v-if="question_data">
+  <div class="level-container">
     <!-- Leaderboard -->
     <div class="panel leaderboard">
       <h3>Leaderboard</h3>
-      <hr>
-      <div v-if="leaderboard.length">
+      <hr />
+
+      <!-- Show error -->
+      <div v-if="error">
+        <div class="face">:(</div>
+        <p>Failed to load leaderboard data.</p>
+      </div>
+
+      <!-- Show leaderboard -->
+      <div v-else-if="leaderboard.length">
         <table class="leaderboard-table">
           <thead>
             <tr>
@@ -70,6 +100,7 @@ onMounted(async () => {
           </tbody>
         </table>
       </div>
+
       <!-- No data -->
       <div v-else class="leaderboard-empty">
         <div class="face">:(</div>
@@ -80,7 +111,12 @@ onMounted(async () => {
     <!-- Description -->
     <div class="panel description">
       <h3>Description</h3>
-      <div class="desc-content">
+      <div v-if="error">
+        <div class="face">:(</div>
+        <p>Failed to load level description.</p>
+      </div>
+
+      <div v-else-if="question_data" class="desc-content">
         <h4>Level {{ question_data.level }}: {{ question_data.question_name }}</h4>
         <hr />
 
@@ -117,14 +153,12 @@ onMounted(async () => {
             name: 'PveGameplay',
             query: {
               modifier: selectedModifier,
-              timeLimitEnabled: timeLimitEnabled.toString() // ✅ convert to string
+              timeLimitEnabled: timeLimitEnabled.toString()
             }
           }" class="start-button">
             Start!
           </router-link>
-
         </div>
-
       </div>
     </div>
   </div>
