@@ -1,4 +1,10 @@
 <script setup lang="ts">
+// levelDescriptions.ts
+const levelDescriptions = {
+  Easy: "Simple algorithmic problems focused on basic programming concepts like arithmetic, conditionals, and loops. Time limit: 30 seconds.",
+  Medium: "Moderate complexity challenges involving strings, arrays, and simple recursion or iteration. Time limit: 60 seconds.",
+  Hard: "Advanced problems requiring efficient algorithms and data structures like interval merging, sliding windows, or graph traversal. Time limit: 120 seconds.",
+};
 </script>
 
 <template>
