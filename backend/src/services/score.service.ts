@@ -87,12 +87,12 @@ export class ScoreService {
         // ✅ UTC-20 ID 1: Valid leaderboard
         const [rows] = await pool.query<RowDataPacket[]>(
             `SELECT 
-            s.player_id AS playerId,
-            p.player_name AS playerName,
-            s.question_id AS questionId,
+            s.player_id,
+            p.player_name,
+            s.question_id,
             s.score,
             s.language,
-            s.modifier_state AS modifierState
+            s.modifier_state
         FROM scores s
         JOIN players p ON s.player_id = p.player_id
         WHERE s.question_id = ?

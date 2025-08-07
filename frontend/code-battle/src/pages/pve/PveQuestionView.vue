@@ -16,15 +16,14 @@ const difficultyOptions = ['None', 'Sabotage', 'Confident']
 
 async function fetchLevelData(): Promise<Question> {
   const response = await api.get(`/questions?level=${level}`)
-  console.log(response.data);
+  console.log('[Question Fetch] Response data:', response.data)
   return response.data as Question
 }
 
 async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
-  // mock data for now
-  const response = await api.get(`/scores/leaderboard?question_id=${question_data.value?.id}`);
-  console.log( response.data.value)
-  return response.data as LeaderboardEntry[];
+  const response = await api.get(`/scores/leaderboard?question_id=${question_data.value?.id}`)
+  console.log('[Leaderboard Fetch] Response data:', response.data)
+  return response.data as LeaderboardEntry[]
 }
 
 function cylcleModifier(direction: 'left' | 'right') {
