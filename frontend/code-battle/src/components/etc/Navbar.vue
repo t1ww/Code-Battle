@@ -4,7 +4,6 @@ import { computed, ref, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useTeamStore } from '@/stores/team'
 import { getPlayerData, isAuthenticated } from '@/stores/auth'
 import { useRouter } from 'vue-router'
-import { logoutPlayer } from "@/stores/auth";
 
 import PlayerAvatar from '@/components/pvp/PlayerAvatar.vue'
 
