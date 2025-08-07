@@ -73,7 +73,7 @@ async function handleRegister() {
     failMessage.value = "";
     console.log("res:", response.data);
     // Redirect to login
-    setInterval(() => {
+    setTimeout(() => {
       router.push("/login");
     }, 600)
   } catch (err: any) {
