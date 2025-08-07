@@ -24,12 +24,22 @@ export class AuthService {
 
     try {
       // ✅ UTC-09 ID 2: Check for existing email
-      const [existing] = await pool.query(
+      // Check for existing email
+      const [existingEmail] = await pool.query(
         "SELECT player_id FROM players WHERE email = ? LIMIT 1",
         [email]
       );
-      if (Array.isArray(existing) && existing.length > 0) {
+      if (Array.isArray(existingEmail) && existingEmail.length > 0) {
         return { error_message: "Email already registered" };
+      }
+
+      // Check for existing username
+      const [existingUsername] = await pool.query(
+        "SELECT player_id FROM players WHERE player_name = ? LIMIT 1",
+        [username]
+      );
+      if (Array.isArray(existingUsername) && existingUsername.length > 0) {
+        return { error_message: "Username already taken" };
       }
 
       const hashed = await bcrypt.hash(password, 10);

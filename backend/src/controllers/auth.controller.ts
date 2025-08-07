@@ -41,6 +41,7 @@ export const register = async (
 
   // ✅ UTC-01 ID 3: Invalid email format
   // ✅ UTC-01 ID 4: Email already exists
+  // + Username already exists
   // (Both handled by `authService.register()` returning a non-null error_message)
   if (result.error_message) {
     res.status(400).json({ error_message: result.error_message });
