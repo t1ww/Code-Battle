@@ -518,4 +518,35 @@ h4 {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   z-index: 9999;
 }
+
+.leaderboard-table {
+  border-collapse: separate; 
+  border-spacing: 0 0.2rem; /* smaller vertical spacing */
+}
+
+/* Highlighted row */
+.self-row td {
+  background-color: #72c653;
+  font-weight: 700;
+  padding: 0.5rem 1rem;
+}
+
+/* Rounded corners for left and right cells */
+.self-row td:first-child {
+  border-top-left-radius: 0.7rem;
+  border-bottom-left-radius: 0.7rem;
+  border-left-color: #4c8c29;
+}
+
+.self-row td:last-child {
+  border-top-right-radius: 0.7rem;
+  border-bottom-right-radius: 0.7rem;
+  border-right-color: #4c8c29;
+}
+
+/* Prevent double borders between cells */
+.self-row td + td {
+  border-left: none;
+}
+
 </style>
