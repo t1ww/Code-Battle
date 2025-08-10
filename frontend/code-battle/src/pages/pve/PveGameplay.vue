@@ -178,7 +178,8 @@ const submitCode = async () => {
                 return;
             }
             console.log(player)
-
+            
+            stopTimer()
             showClearedPopup.value = true
             const scorePayload: ScoreSubmitRequest = {
                 player_id: player.id!, // replace with actual player ID from state/store if dynamic
