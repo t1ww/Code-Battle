@@ -211,6 +211,7 @@ onMounted(async () => {
 </template>
 
 
+
 <style scoped>
 * {
   box-sizing: border-box;
@@ -220,13 +221,10 @@ onMounted(async () => {
   display: flex;
   justify-content: center;
   align-items: stretch;
-  /* full height */
   padding: 5rem 2rem 2rem 2rem;
-  /* leave room for navbar/back button */
   width: 100vw;
   height: calc(100vh - 2rem);
   background-color: #9bd67a;
-  /* main green */
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #000;
   overflow: hidden;
@@ -236,7 +234,6 @@ onMounted(async () => {
 /* Panels */
 .panel {
   background-color: #b0f08e;
-  /* lighter green */
   border-radius: 0.7rem;
   padding: 1rem 1.5rem;
   height: 100%;
@@ -265,7 +262,6 @@ h3 {
   font-weight: 600;
   margin-bottom: 0.5rem;
   border-bottom: 2px solid #2e7d32;
-  /* dark green line */
   padding-bottom: 0.3rem;
 }
 
@@ -280,7 +276,8 @@ h4 {
 /* Table styling */
 .leaderboard-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0 0.4rem; /* vertical spacing between rows */
   font-size: 0.85rem;
   margin-top: 0.3rem;
   table-layout: fixed;
@@ -299,6 +296,29 @@ h4 {
   background-color: #a7d08c;
 }
 
+/* Highlight self row */
+.self-row {
+  background-color: #72c653;
+  font-weight: 700;
+}
+
+.self-row td {
+  padding: 0.5rem 1rem;
+}
+
+/* Rounded corners for left and right cells in self-row */
+.self-row td:first-child {
+  border-top-left-radius: 0.7rem;
+  border-bottom-left-radius: 0.7rem;
+  border-left-color: #4c8c29;
+}
+
+.self-row td:last-child {
+  border-top-right-radius: 0.7rem;
+  border-bottom-right-radius: 0.7rem;
+  border-right-color: #4c8c29;
+}
+
 /* Test cases */
 .test-cases {
   display: flex;
@@ -308,7 +328,7 @@ h4 {
   color: #2a5d1e;
 }
 
-.test-cases>div {
+.test-cases > div {
   background: #daf1be;
   border: 1px solid #6eaa4f;
   border-radius: 0.4rem;
@@ -324,13 +344,71 @@ h4 {
   align-items: center;
 }
 
+/* Checkbox (timer) */
 .checkbox-line {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
 }
 
+.checkbox-line input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.checkbox-line span {
+  flex-shrink: 0;
+  position: relative;
+  padding-left: 28px;
+  line-height: 1.2;
+}
+
+.checkbox-line span::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid #559f55;
+  border-radius: 4px;
+  background: white;
+  box-sizing: border-box;
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.checkbox-line input[type="checkbox"]:checked + span::before {
+  background-color: #559f55;
+  border-color: #3e783e;
+}
+
+.checkbox-line input[type="checkbox"]:checked + span::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 6px;
+  height: 12px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  pointer-events: none;
+}
+
+/* Hover effect */
+.checkbox-line:hover span::before {
+  border-color: #3e783e;
+}
+
+/* Modifier */
 .modifier {
   display: flex;
   align-items: center;
@@ -348,20 +426,16 @@ h4 {
 .modifier button {
   width: 1.6rem;
   height: 1.6rem;
-  font-size: 0.85rem;
-  background: #ccc;
-  border: 1px solid #888;
-  cursor: pointer;
-  padding: 0;
   font-size: 1rem;
-  border: none;
-  outline: none;
   background: #7fc97f;
+  border: none;
   color: #1b5e20;
   cursor: pointer;
   font-weight: bold;
   user-select: none;
   transition: background-color 0.2s ease;
+  outline: none;
+  padding: 0;
 }
 
 .modifier button:hover {
@@ -443,102 +517,14 @@ h4 {
   }
 }
 
-/* Checkbox (timer) */
-.checkbox-line {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  cursor: pointer;
-  user-select: none;
-  position: relative;
-}
-
-.checkbox-line input[type="checkbox"] {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-}
-
-.checkbox-line span {
-  flex-shrink: 0;
-  position: relative;
-  padding-left: 28px;
-  line-height: 1.2;
-}
-
-.checkbox-line span::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  border: 2px solid #559f55;
-  border-radius: 4px;
-  background: white;
-  box-sizing: border-box;
-  transition: background-color 0.3s, border-color 0.3s;
-}
-
-.checkbox-line input[type="checkbox"]:checked+span::before {
-  background-color: #559f55;
-  border-color: #3e783e;
-}
-
-.checkbox-line input[type="checkbox"]:checked+span::after {
-  content: "";
-  position: absolute;
-  left: 6px;
-  top: 50%;
-  transform: translateY(-50%) rotate(45deg);
-  width: 6px;
-  height: 12px;
-  border: solid white;
-  border-width: 0 3px 3px 0;
-  pointer-events: none;
-}
-
-/* Hover effect */
-.checkbox-line:hover span::before {
-  border-color: #3e783e;
-}
-
-/* Self Leaderboard */
-.self-row {
-  background-color: #72c653;
-  font-weight: 700;
-}
-
-.self-row-cell {
-  font-weight: 700;
-}
-
-.self-row-cell>.self-row-content {
-  padding: 0rem 1.3rem;
-  border-radius: 0.7rem;
-  background-color: #72c653;
-  display: flex;
-  justify-content: space-between;
-}
-
-/* To create spacing between rows so the rounded corners are visible */
-.leaderboard-table tbody tr {
-  border-spacing: 0 0.4rem;
-  /* vertical spacing between rows (if supported) */
-}
-
-
+/* Self Leaderboard fixed entry */
 .fixed-self-entry {
   position: fixed;
   bottom: 1rem;
   left: 50%;
   transform: translateX(-50%);
   background: #dff0d8;
-  border: 1px solid #3e783e;
+  border: none;
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
   font-weight: 600;
