@@ -2,8 +2,11 @@
     <div class="popup-backdrop">
         <div class="popup-content">
             <h2>Level Cleared!</h2>
-            <p>Your final score: {{ finalScore }} / {{ fullScore }}</p>
-            <button @click="onRestart">Restart</button>
+            <p>Time left: {{ timeLeft }}</p>
+            <p>Your final score: {{ finalScore }} / {{ totalPossibleScore }}</p>
+            <p>Questions cleared: {{ clearedCount }}</p>
+            <p>{{ modifierName }} Modifier Bonus Applied: ×{{ modifierBonus }}</p>
+            <button @click="$emit('restart')">Restart</button>
             <router-link :to="{ name: 'PveLevelSelect' }">
                 <button>Select New Level</button>
             </router-link>
@@ -13,9 +16,12 @@
 
 <script setup lang="ts">
 defineProps<{
+    timeLeft: string
     finalScore: number
-    fullScore: number
-    onRestart: () => void
+    totalPossibleScore: number
+    clearedCount: number
+    modifierName: string
+    modifierBonus: number
 }>()
 </script>
 

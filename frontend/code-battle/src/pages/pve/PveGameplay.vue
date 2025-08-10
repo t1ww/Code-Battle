@@ -49,7 +49,9 @@
     <TimeoutPopup v-if="showTimeoutPopup" @restart="restartPage" />
 
     <!-- By clear -->
-    <ClearedPopup v-if="showClearedPopup" :finalScore="finalScore" :fullScore="fullScore" @restart="restartPage" />
+    <ClearedPopup v-if="showClearedPopup" :timeLeft="formattedTime" :finalScore="finalScore" :totalPossibleScore="totalPossibleScore"
+        :clearedCount="clearedCount" :modifierName="selectedModifier" :modifierBonus="modifierBonusApplied" @restart="restartPage" />
+
 
     <!-- By confident lost -->
     <ConfidentLostPopup v-if="showConfidentLostPopup" :finalScore="finalScore"
@@ -227,9 +229,16 @@ const restartPage = () => {
 // 🖥️ Computed
 // =============================
 
-const fullScore = computed(() =>
+const totalPossibleScore = computed(() =>
     question_data.value?.test_cases?.reduce((acc, t) => acc + (t.score ?? 0), 0) ?? 0
 )
+const clearedCount = computed(() => {
+    if (!testResults.value) return 0
+    return testResults.value.results.filter(r => r.passed).length
+})
+const modifierBonusApplied = computed(() => {
+    return (selectedModifier === 'Sabotage' || selectedModifier === 'Confident') ? MODIFIER_BONUS : 1
+})
 
 // =============================
 // 🚀 Lifecycle Hooks
