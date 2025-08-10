@@ -162,7 +162,7 @@ const submitCode = async () => {
             code: code.value,
             test_cases: question_data.value.test_cases,
             // Score percentage based on timer, if its enabled check from time left, if disabled find time taken which would've left from based timer limit.
-            scorePct: scorePct,
+            score_pct: scorePct,
         })
         const data = res.data as CodeRunResponse
 
@@ -174,7 +174,7 @@ const submitCode = async () => {
                 expected_output: question_data.value!.test_cases[i].expected_output,
                 input: question_data.value!.test_cases[i].input,
             })),
-            total_score: data.total_score ?? 0,
+            total_score: parseFloat(data.total_score as unknown as string) || 0,
         }
         console.log(testResults.value)
         if (selectedModifier === 'Sabotage' || selectedModifier === 'Confident') {

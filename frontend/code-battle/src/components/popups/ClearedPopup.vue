@@ -4,7 +4,7 @@
             <h2>Level Cleared!</h2>
             <p>Time left: {{ timeLeft }}</p>
             <p>Your final score: {{ finalScore }} / {{ totalPossibleScore }}</p>
-            <p>Questions cleared: {{ clearedCount }}</p>
+            <p>Test cases cleared: {{ clearedCount }}</p>
             <p>{{ modifierName }} Modifier Bonus Applied: ×{{ modifierBonus }}</p>
             <button @click="$emit('restart')">Restart</button>
             <router-link :to="{ name: 'PveLevelSelect' }">
