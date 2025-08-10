@@ -3,11 +3,12 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/clients/crud.api'
 import type { Question, LeaderboardEntry } from '@/types/types'
+import { useQuestionStore } from '@/stores/questionStore'
 
 const route = useRoute()
 const level = route.query.mode as string || 'Easy'
 
-const question_data = ref<Question | null>(null)
+const { question_data } = useQuestionStore()
 const leaderboard = ref<LeaderboardEntry[]>([])
 const selectedModifier = ref('None')
 const timeLimitEnabled = ref(true)
@@ -16,6 +17,7 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 
 const difficultyOptions = ['None', 'Sabotage', 'Confident']
+
 
 async function fetchLevelData(): Promise<Question> {
   try {

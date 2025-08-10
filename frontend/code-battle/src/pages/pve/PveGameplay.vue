@@ -1,5 +1,13 @@
 <template>
     <div class="container">
+        <!-- In case question data is missing -->
+        <template v-if="!question_data">
+            <div class="error-message">
+                <p>Error: Question data is missing.</p>
+                <p>Redirecting to level selection...</p>
+            </div>
+        </template>
+
         <!-- Top bar -->
         <div class="top-bar">
             <!-- Toggle Button when hidden -->
@@ -55,13 +63,14 @@
 // =============================
 // 📦 Imports
 // =============================
+import type { CodeRunResponse, ScoreSubmitRequest } from '@/types/types'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import api from '@/clients/crud.api'
-import codeRunnerApi from '@/clients/coderunner.api'
-import type { CodeRunResponse, Question, ScoreSubmitRequest } from '@/types/types'
-import CodeEditor from '@/components/pve/CodeEditor.vue'
 import { getPlayerData } from '@/stores/auth'
+import codeRunnerApi from '@/clients/coderunner.api'
+import CodeEditor from '@/components/pve/CodeEditor.vue'
+import router from '@/router'
+import api from '@/clients/crud.api'
 
 // Composables
 import { useNotification } from '@/composables/useNotification'
@@ -76,13 +85,14 @@ import TimeoutPopup from '@/components/popups/TimeoutPopup.vue'
 import ClearedPopup from '@/components/popups/ClearedPopup.vue'
 import DescriptionPopup from '@/components/popups/DescriptionPopup.vue'
 
-
+// Stores
+import { useQuestionStore } from '@/stores/questionStore'
+const { question_data } = useQuestionStore()
 
 // =============================
 // 📍 Route & Query Params
 // =============================
 const route = useRoute()
-const level = route.query.mode as string || 'Easy'
 const selectedModifier = route.query.modifier as string || 'None'
 const timeLimitEnabled = route.query.timeLimitEnabled === 'true'
 
@@ -93,7 +103,6 @@ const timeLimitEnabled = route.query.timeLimitEnabled === 'true'
 // Base
 const code = ref('// Write code here')
 const showDescriptionPopup = ref(false)
-const question_data = ref<Question | null>(null)
 const isLoading = ref(false)
 const MODIFIER_BONUS = 1.25
 // get player ID from auth
@@ -178,7 +187,7 @@ const submitCode = async () => {
                 return;
             }
             console.log(player)
-            
+
             stopTimer()
             showClearedPopup.value = true
             const scorePayload: ScoreSubmitRequest = {
@@ -226,9 +235,13 @@ const fullScore = computed(() =>
 // 🚀 Lifecycle Hooks
 // =============================
 onMounted(async () => {
-    // Fetch question
-    const response = await api.get(`/questions?level=${level}`)
-    question_data.value = response.data as Question
+    // Don't need to Fetch question anymore
+    if (!question_data.value) {
+        setTimeout(() => {
+            router.push({ name: 'PveLevelSelect' })
+        }, 2000)
+        return;
+    }
 
     // Modifiers on notifications
     if (selectedModifier === 'Confident') {
