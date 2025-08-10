@@ -121,13 +121,22 @@ onMounted(async () => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(entry, i) in leaderboard" :key="i" :class="{ 'self-row': entry.player_name === player?.name }">
-              <td>{{ i + 1 }}#</td>
-              <td>{{ entry.player_name }}</td>
-              <td>{{ entry.language }}</td>
-              <td>{{ entry.modifier_state }}</td>
-              <td>{{ entry.score }}</td>
-            </tr>
+            <template v-for="(entry, i) in leaderboard" :key="i">
+              <tr v-if="entry.player_name === player?.name" class="self-row">
+                <td>{{ i + 1 }}#</td>
+                <td>{{ entry.player_name }}</td>
+                <td>{{ entry.language }}</td>
+                <td>{{ entry.modifier_state }}</td>
+                <td>{{ entry.score }}</td>
+              </tr>
+              <tr v-else>
+                <td>{{ i + 1 }}#</td>
+                <td>{{ entry.player_name }}</td>
+                <td>{{ entry.language }}</td>
+                <td>{{ entry.modifier_state }}</td>
+                <td>{{ entry.score }}</td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
@@ -275,7 +284,7 @@ h4 {
   font-size: 0.85rem;
   margin-top: 0.3rem;
   table-layout: fixed;
-  color: #1b5e20;
+  color: #000000;
 }
 
 .leaderboard-table th,
@@ -288,11 +297,6 @@ h4 {
 .leaderboard-table th {
   font-weight: 600;
   background-color: #a7d08c;
-}
-
-.leaderboard-table tbody tr:hover {
-  background-color: #8acc6e;
-  font-weight: 600;
 }
 
 /* Test cases */
@@ -505,10 +509,28 @@ h4 {
 
 /* Self Leaderboard */
 .self-row {
-  background-color: #e5ff99;
+  background-color: #72c653;
   font-weight: 700;
-  color: #3e783e;
 }
+
+.self-row-cell {
+  font-weight: 700;
+}
+
+.self-row-cell>.self-row-content {
+  padding: 0rem 1.3rem;
+  border-radius: 0.7rem;
+  background-color: #72c653;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* To create spacing between rows so the rounded corners are visible */
+.leaderboard-table tbody tr {
+  border-spacing: 0 0.4rem;
+  /* vertical spacing between rows (if supported) */
+}
+
 
 .fixed-self-entry {
   position: fixed;
