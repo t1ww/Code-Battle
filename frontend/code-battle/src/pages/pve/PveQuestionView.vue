@@ -100,7 +100,6 @@ onMounted(async () => {
     <!-- Leaderboard -->
     <div class="panel leaderboard">
       <h3>Leaderboard</h3>
-      <hr />
 
       <!-- Show error -->
       <div v-if="error">
@@ -286,9 +285,16 @@ h4 {
 
 .leaderboard-table th,
 .leaderboard-table td {
-  padding: 0.5rem 0.75rem;
+  padding-top: .25rem;
+  padding-bottom: .1rem;
   border-bottom: 1px solid #6b8e23;
   text-align: center;
+}
+
+.leaderboard-table td:last-child,
+.leaderboard-table th:last-child {
+  text-align: right;
+  padding-right: 1.5rem;
 }
 
 .leaderboard-table th {
@@ -300,10 +306,6 @@ h4 {
 .self-row {
   background-color: #72c653;
   font-weight: 700;
-}
-
-.self-row td {
-  padding: 0.5rem 1rem;
 }
 
 /* Rounded corners for left and right cells in self-row */
