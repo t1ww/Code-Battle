@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/clients/crud.api'
 import type { Question, LeaderboardEntry } from '@/types/types'
+import { getPlayerData } from '@/stores/auth'
 import { useQuestionStore } from '@/stores/questionStore'
 
 const route = useRoute()
@@ -18,6 +19,10 @@ const error = ref<string | null>(null)
 
 const difficultyOptions = ['None', 'Sabotage', 'Confident']
 
+const player = getPlayerData()  // assuming this returns { id, name, ... }
+const selfEntry = ref<LeaderboardEntry | null>(null)
+const showSelfAtBottom = ref(false)
+const topScoreEntry = ref<LeaderboardEntry | null>(null)
 
 async function fetchLevelData(): Promise<Question> {
   try {
@@ -27,6 +32,15 @@ async function fetchLevelData(): Promise<Question> {
   } catch (err) {
     console.error('[Level Fetch Error]', err)
     throw err
+  }
+}
+
+async function fetchTopScore() {
+  try {
+    const response = await api.get(`/scores/topscore?question_id=${question_data.value?.id}`)
+    topScoreEntry.value = response.data as LeaderboardEntry
+  } catch (err) {
+    console.error('[Top Score Fetch Error]', err)
   }
 }
 
@@ -58,12 +72,27 @@ onMounted(async () => {
   try {
     question_data.value = await fetchLevelData()
     leaderboard.value = await fetchLeaderboard()
+
+    if (player && leaderboard.value.length) {
+      const found = leaderboard.value.find(
+        (entry) => entry.player_name === player.name
+      )
+      if (found) {
+        selfEntry.value = found
+        showSelfAtBottom.value = false
+      } else {
+        selfEntry.value = null
+        showSelfAtBottom.value = true
+        await fetchTopScore()
+      }
+    }
   } catch (err) {
     error.value = 'Failed to load level data or leaderboard.'
   } finally {
     loading.value = false
   }
 })
+
 </script>
 
 <template>
@@ -92,13 +121,26 @@ onMounted(async () => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(entry, i) in leaderboard" :key="i">
-              <td>{{ i + 1 }}#</td>
-              <td>{{ entry.player_name }}</td>
-              <td>{{ entry.language }}</td>
-              <td>{{ entry.modifier_state }}</td>
-              <td>{{ entry.score }}</td>
-            </tr>
+            <template v-for="(entry, i) in leaderboard" :key="i">
+              <tr v-if="entry.player_name === player?.name" class="self-row">
+                <td :colspan="5" class="self-row-cell">
+                  <div class="self-row-content" style="display:flex; justify-content: space-between;">
+                    <span>{{ i + 1 }}#</span>
+                    <span>{{ entry.player_name }}</span>
+                    <span>{{ entry.language }}</span>
+                    <span>{{ entry.modifier_state }}</span>
+                    <span>{{ entry.score }}</span>
+                  </div>
+                </td>
+              </tr>
+              <tr v-else>
+                <td>{{ i + 1 }}#</td>
+                <td>{{ entry.player_name }}</td>
+                <td>{{ entry.language }}</td>
+                <td>{{ entry.modifier_state }}</td>
+                <td>{{ entry.score }}</td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
@@ -107,6 +149,11 @@ onMounted(async () => {
       <div v-else class="leaderboard-empty">
         <div class="face">:(</div>
         <p>No leaderboard data<br />available at the moment</p>
+      </div>
+      <div v-if="showSelfAtBottom && topScoreEntry" class="fixed-self-entry">
+        <strong>Your Best Score:</strong>
+        <span>{{ topScoreEntry.player_name }}</span> -
+        <span>{{ topScoreEntry.score }}</span>
       </div>
     </div>
 
@@ -241,7 +288,7 @@ h4 {
   font-size: 0.85rem;
   margin-top: 0.3rem;
   table-layout: fixed;
-  color: #1b5e20;
+  color: #000000;
 }
 
 .leaderboard-table th,
@@ -254,11 +301,6 @@ h4 {
 .leaderboard-table th {
   font-weight: 600;
   background-color: #a7d08c;
-}
-
-.leaderboard-table tbody tr:hover {
-  background-color: #8acc6e;
-  font-weight: 600;
 }
 
 /* Test cases */
@@ -405,6 +447,7 @@ h4 {
   }
 }
 
+/* Checkbox (timer) */
 .checkbox-line {
   display: flex;
   align-items: center;
@@ -466,5 +509,40 @@ h4 {
 /* Hover effect */
 .checkbox-line:hover span::before {
   border-color: #3e783e;
+}
+
+/* Self Leaderboard */
+.self-row-cell {
+  font-weight: 700;
+}
+
+.self-row-cell>.self-row-content {
+  padding: 0rem 1.3rem;
+  border-radius: 0.7rem;
+  background-color: #72c653;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* To create spacing between rows so the rounded corners are visible */
+.leaderboard-table tbody tr {
+  border-spacing: 0 0.4rem;
+  /* vertical spacing between rows (if supported) */
+}
+
+
+.fixed-self-entry {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #dff0d8;
+  border: 1px solid #3e783e;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  color: #2e7d32;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
 }
 </style>
