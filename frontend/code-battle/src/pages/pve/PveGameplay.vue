@@ -46,11 +46,12 @@
 
     <!-- Game ends -->
     <!-- By timer -->
-    <TimeoutPopup v-if="showTimeoutPopup" @restart="restartPage" />
+    <TimeoutPopup v-if="showTimeoutPopup" @restart="restartGame" />
 
     <!-- By clear -->
-    <ClearedPopup v-if="showClearedPopup" :timeLeft="formattedTime" :finalScore="finalScore" :totalPossibleScore="totalPossibleScore"
-        :clearedCount="clearedCount" :modifierName="selectedModifier" :modifierBonus="modifierBonusApplied" @restart="restartPage" />
+    <ClearedPopup v-if="showClearedPopup" :timeLeft="formattedTime" :finalScore="finalScore"
+        :totalPossibleScore="totalPossibleScore" :clearedCount="clearedCount" :modifierName="selectedModifier"
+        :modifierBonus="modifierBonusApplied" @restart="restartGame" />
 
 
     <!-- By confident lost -->
@@ -221,9 +222,19 @@ const submitCode = async () => {
     }
 }
 
-const restartPage = () => {
-    window.location.reload()
-}
+const restartGame = () => {
+    code.value = '// Write code here';
+    isLoading.value = false;
+    showTimeoutPopup.value = false;
+    showResultPopup.value = false;
+    showClearedPopup.value = false;
+    showConfidentLostPopup.value = false;
+    testResults.value = null;
+    finalScore.value = 0;
+    timeLeft.value = question_data.value?.time_limit ?? 0;
+    startTimer();
+};
+
 
 // =============================
 // 🖥️ Computed
