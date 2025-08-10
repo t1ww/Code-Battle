@@ -92,6 +92,7 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
 </script>
 
 <template>
@@ -120,22 +121,13 @@ onMounted(async () => {
             </tr>
           </thead>
           <tbody>
-            <template v-for="(entry, i) in leaderboard" :key="i">
-              <tr v-if="entry.player_name === player?.name" class="self-row">
-                <td>{{ i + 1 }}#</td>
-                <td>{{ entry.player_name }}</td>
-                <td>{{ entry.language }}</td>
-                <td>{{ entry.modifier_state }}</td>
-                <td>{{ entry.score }}</td>
-              </tr>
-              <tr v-else>
-                <td>{{ i + 1 }}#</td>
-                <td>{{ entry.player_name }}</td>
-                <td>{{ entry.language }}</td>
-                <td>{{ entry.modifier_state }}</td>
-                <td>{{ entry.score }}</td>
-              </tr>
-            </template>
+            <tr v-for="(entry, i) in leaderboard" :key="i" :class="{ 'self-row': entry.player_name === player?.name }">
+              <td>{{ i + 1 }}#</td>
+              <td>{{ entry.player_name }}</td>
+              <td>{{ entry.language }}</td>
+              <td>{{ entry.modifier_state }}</td>
+              <td>{{ entry.score }}</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -208,6 +200,7 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+
 
 <style scoped>
 * {
@@ -282,7 +275,7 @@ h4 {
   font-size: 0.85rem;
   margin-top: 0.3rem;
   table-layout: fixed;
-  color: #000000;
+  color: #1b5e20;
 }
 
 .leaderboard-table th,
@@ -297,15 +290,9 @@ h4 {
   background-color: #a7d08c;
 }
 
-/* Highlight self row */
-.self-row {
-  font-weight: 700;
-  background-color: #72c653;
-  color: #000;
-}
-
-.self-row td {
-  padding: 0.5rem 1rem;
+.leaderboard-table tbody tr:hover {
+  background-color: #8acc6e;
+  font-weight: 600;
 }
 
 /* Test cases */
@@ -338,101 +325,8 @@ h4 {
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
-  cursor: pointer;
-  user-select: none;
-  position: relative;
 }
 
-.checkbox-line input[type="checkbox"] {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-}
-
-.checkbox-line span {
-  flex-shrink: 0;
-  position: relative;
-  padding-left: 28px;
-  line-height: 1.2;
-}
-
-.checkbox-line span::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  border: 2px solid #559f55;
-  border-radius: 4px;
-  background: white;
-  box-sizing: border-box;
-  transition: background-color 0.3s, border-color 0.3s;
-}
-
-.checkbox-line input[type="checkbox"]:checked + span::before {
-  background-color: #559f55;
-  border-color: #3e783e;
-}
-
-.checkbox-line input[type="checkbox"]:checked + span::after {
-  content: "";
-  position: absolute;
-  left: 6px;
-  top: 50%;
-  transform: translateY(-50%) rotate(45deg);
-  width: 6px;
-  height: 12px;
-  border: solid white;
-  border-width: 0 3px 3px 0;
-  pointer-events: none;
-}
-
-/* Hover effect */
-.checkbox-line:hover span::before {
-  border-color: #3e783e;
-}
-
-/* Scrollbar styling for panels */
-.panel::-webkit-scrollbar {
-  width: 10px;
-}
-
-.panel::-webkit-scrollbar-track {
-  background: #c1e6a3;
-  border-radius: 10px;
-}
-
-.panel::-webkit-scrollbar-thumb {
-  background-color: #6ca06c;
-  border-radius: 10px;
-  border: 2px solid #c1e6a3;
-}
-
-/* Responsive adjustments */
-@media (max-width: 900px) {
-  .level-container {
-    flex-direction: column;
-    height: auto;
-    padding: 1rem;
-  }
-
-  .leaderboard,
-  .description {
-    width: 100%;
-    min-width: unset;
-    height: 50vh;
-  }
-
-  .test-cases {
-    flex-direction: column;
-  }
-}
-
-/* Modifier */
 .modifier {
   display: flex;
   align-items: center;
@@ -450,12 +344,18 @@ h4 {
 .modifier button {
   width: 1.6rem;
   height: 1.6rem;
+  font-size: 0.85rem;
+  background: #ccc;
+  border: 1px solid #888;
+  cursor: pointer;
+  padding: 0;
+  font-size: 1rem;
+  border: none;
+  outline: none;
   background: #7fc97f;
   color: #1b5e20;
   cursor: pointer;
   font-weight: bold;
-  border: none;
-  outline: none;
   user-select: none;
   transition: background-color 0.2s ease;
 }
@@ -503,7 +403,113 @@ h4 {
   transform: scale(0.95);
 }
 
-/* Fixed self entry */
+/* Scrollbar styling for panels */
+.panel::-webkit-scrollbar {
+  width: 10px;
+}
+
+.panel::-webkit-scrollbar-track {
+  background: #c1e6a3;
+  border-radius: 10px;
+}
+
+.panel::-webkit-scrollbar-thumb {
+  background-color: #6ca06c;
+  border-radius: 10px;
+  border: 2px solid #c1e6a3;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .level-container {
+    flex-direction: column;
+    height: auto;
+    padding: 1rem;
+  }
+
+  .leaderboard,
+  .description {
+    width: 100%;
+    min-width: unset;
+    height: 50vh;
+  }
+
+  .test-cases {
+    flex-direction: column;
+  }
+}
+
+/* Checkbox (timer) */
+.checkbox-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.checkbox-line input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.checkbox-line span {
+  flex-shrink: 0;
+  position: relative;
+  padding-left: 28px;
+  line-height: 1.2;
+}
+
+.checkbox-line span::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid #559f55;
+  border-radius: 4px;
+  background: white;
+  box-sizing: border-box;
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.checkbox-line input[type="checkbox"]:checked+span::before {
+  background-color: #559f55;
+  border-color: #3e783e;
+}
+
+.checkbox-line input[type="checkbox"]:checked+span::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 6px;
+  height: 12px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  pointer-events: none;
+}
+
+/* Hover effect */
+.checkbox-line:hover span::before {
+  border-color: #3e783e;
+}
+
+/* Self Leaderboard */
+.self-row {
+  background-color: #e5ff99;
+  font-weight: 700;
+  color: #3e783e;
+}
+
 .fixed-self-entry {
   position: fixed;
   bottom: 1rem;
@@ -518,35 +524,4 @@ h4 {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   z-index: 9999;
 }
-
-.leaderboard-table {
-  border-collapse: separate; 
-  border-spacing: 0 0.2rem; /* smaller vertical spacing */
-}
-
-/* Highlighted row */
-.self-row td {
-  background-color: #72c653;
-  font-weight: 700;
-  padding: 0.5rem 1rem;
-}
-
-/* Rounded corners for left and right cells */
-.self-row td:first-child {
-  border-top-left-radius: 0.7rem;
-  border-bottom-left-radius: 0.7rem;
-  border-left-color: #4c8c29;
-}
-
-.self-row td:last-child {
-  border-top-right-radius: 0.7rem;
-  border-bottom-right-radius: 0.7rem;
-  border-right-color: #4c8c29;
-}
-
-/* Prevent double borders between cells */
-.self-row td + td {
-  border-left: none;
-}
-
 </style>
