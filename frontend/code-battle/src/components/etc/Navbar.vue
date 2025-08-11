@@ -3,11 +3,12 @@ import { socket } from '@/clients/socket.api'
 import { computed, ref, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useTeamStore } from '@/stores/team'
 import { getPlayerData, isAuthenticated } from '@/stores/auth'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import PlayerAvatar from '@/components/pvp/PlayerAvatar.vue'
 
 // Initializations
+const route = useRoute()
 const router = useRouter()
 const teamStore = useTeamStore()
 
@@ -15,6 +16,9 @@ const self = ref<null | { id: string; name: string; avatar_url?: string }>(null)
 
 const isLoggedIn = computed(() => !!self.value)
 const showLogout = ref(false);
+
+const online = computed(() => route.meta.online === true)
+const canAddPlayer = computed(() => route.meta.online === true && !teamStore.isFull)
 
 // Team formation
 const selfAvatar = computed(() => {
@@ -123,13 +127,13 @@ onBeforeUnmount(() => {
           </div>
         </transition>
       </div>
+      
 
-
-      <div v-for="(player, index) in teammates" :key="player.player_id || index" :title="player.name">
+      <div v-if="online" v-for="(player, index) in teammates" :key="player.player_id || index" :title="player.name">
         <PlayerAvatar :player="player" />
       </div>
 
-      <div class="add-button" @click="createOrShareTeam">
+      <div v-if="canAddPlayer" class="add-button" @click="createOrShareTeam">
         <span>+</span>
       </div>
     </div>

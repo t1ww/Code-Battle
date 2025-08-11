@@ -18,6 +18,7 @@ type MatchState = 'searching' | 'found' | 'showingTeams' | 'countdown' | 'starte
 
 const route = useRoute()
 const mode = computed(() => route.query.mode)
+const timeLimit = computed(() => route.query.timeLimit === 'true')
 
 const errorMessage = ref('')
 

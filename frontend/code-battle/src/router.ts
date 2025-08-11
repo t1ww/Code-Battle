@@ -5,11 +5,12 @@ import Home from "@/pages/Home.vue";
 import Login from "@/pages/LoginForm.vue";
 import Logout from "@/pages/Logout.vue";
 import Register from "@/pages/RegisterForm.vue";
-import PveLevelSelect from "./pages/pve/PveLevelSelect.vue";
+import PveLevelSelect from "@/pages/pve/PveLevelSelect.vue";
 
 import NProgress from "nprogress";
-import "nprogress/nprogress.css"; // import the style
+import "nprogress/nprogress.css"; // import nprogress style
 import PvpTypeSelect from "@/pages/pvp/PvpTypeSelect.vue";
+import PvpTimeSelect from "@/pages/pvp/PvpTimeSelect.vue";
 import PveLevelView from "@/pages/pve/PveQuestionView.vue";
 import Matchmaking from "@/pages/pvp/Matchmaking.vue";
 import PveGameplay from "@/pages/pve/PveGameplay.vue";
@@ -23,6 +24,7 @@ import { isAuthenticated } from "@/stores/auth";
  * - hideAuth:       Hide route from navbar if user is already authenticated (e.g., login page).
  * - requiresAuth:   Route is only accessible when the user is logged in.
  * - backTo:         Optional path the back button should navigate to from this route.
+ * - online:         Paths that will requires socket connections.
  */
 const routes = [
   // root / home
@@ -34,8 +36,10 @@ const routes = [
   { name: "PveGameplay", path: "/pveGameplay", component: PveGameplay, meta: { requiresAuth: true } },
 
   // pvp
-  { name: "PvpTypeSelect", path: "/pvpSelect", component: PvpTypeSelect, meta: { requiresAuth: true, backTo: "/" } },
-  { name: "Matchmaking", path: "/matchmaking", component: Matchmaking, meta: { requiresAuth: true } },
+  { name: "PvpTypeSelect", path: "/pvpSelect", component: PvpTypeSelect, meta: { requiresAuth: true, online: true, backTo: "/" } },
+  { name: "PvpTimeSelect", path: "/pvpTimeSelect", component: PvpTimeSelect, meta: { requiresAuth: true, online: true, backTo: "/pvpSelect" } },
+  { name: "Matchmaking", path: "/matchmaking", component: Matchmaking, meta: { requiresAuth: true, online: true } },
+  // Private match (wip)
 
   // Account
   { name: "Login", path: "/login", component: Login, meta: { hideAuth: true } },

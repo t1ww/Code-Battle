@@ -1,21 +1,26 @@
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+const mode = route.query.mode as string
 </script>
 
 <template>
   <div class="container">
     <div class="button-wrapper">
-      <router-link :to="{ name: 'PvpTimeSelect', query: { mode: '1v1' } }" id="pvp1v1-button" class="mode-button">
-        1v1
+      <router-link :to="{ name: 'Matchmaking', query: { mode, timeLimit: 'true' } }" id="time-limit-button"
+        class="mode-button">
+        Time Limit Mode
       </router-link>
-      <router-link :to="{ name: 'PvpTimeSelect', query: { mode: '3v3' } }" id="pvp3v3-button" class="mode-button">
-        3v3
-      </router-link>
-      <router-link :to="{ name: '' }" id="pvp-private-button" class="mode-button">
-        Private custom match
+
+      <router-link :to="{ name: 'Matchmaking', query: { mode, timeLimit: 'false' } }" id="endurance-button"
+        class="mode-button">
+        Endurance Mode
       </router-link>
     </div>
   </div>
 </template>
+
 
 <style scoped>
 .container {
@@ -39,15 +44,11 @@ h1 {
   gap: 20px;
 }
 
-#pvp1v1-button {
-  margin-right: 6rem;
+#time-limit-button {
+  margin-right: 12rem;
 }
 
-#pvp3v3-button {
-  margin-left: 6rem;
-}
-
-#pvp-private-button {
+#endurance-button {
   margin-left: 12rem;
 }
 
