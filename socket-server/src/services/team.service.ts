@@ -1,10 +1,10 @@
-import { Team, TeamPlayer } from "@/types";
+import { PlayerSession, Team,  } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 
 export class TeamService {
     private teams: Map<string, Team> = new Map();
 
-    createTeam(players: TeamPlayer[]): Team {
+    createTeam(players: PlayerSession[]): Team {
         const team_id = uuidv4();
         const team: Team = {
             team_id,

@@ -11,8 +11,10 @@ import TeamList from '@/components/pvp/TeamList.vue'
 import { socket } from '@/clients/socket.api'
 
 import { getPlayerData } from "@/stores/auth"
+import { useTeamStore } from '@/stores/team'
 
 const player = getPlayerData()
+const teamStore = useTeamStore()
 
 type MatchState = 'searching' | 'found' | 'showingTeams' | 'countdown' | 'started'
 
@@ -58,9 +60,13 @@ onMounted(() => {
 
     if (player?.id) {
         if (mode.value === '1v1') {
-            socket.emit("queuePlayer", { player_id: player.id, name: player.name, email: player.email, mode: '1v1', timeLimit: timeLimit.value})
+            socket.emit("queuePlayer", { player_id: player.id, name: player.name, email: player.email, mode: '1v1', timeLimit: timeLimit.value })
         } else if (mode.value === '3v3') {
-            // emit queue
+            if (!teamStore.team_id || teamStore.members.length < 3) {
+                errorMessage.value = 'You must be in a full team to queue for 3v3.'
+                return
+            }
+            socket.emit('queueTeam', { team_id: teamStore.team_id, mode: '3v3' })
         } else {
             // Error
             errorMessage.value = 'Invalid match mode selected.'
