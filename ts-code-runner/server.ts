@@ -32,9 +32,11 @@ app.post("/run", async (req, res): Promise<any> => {
 
     const fileName = `temp_${Date.now()}`;
     const cppFilePath = path.join(TEMP_DIR, `${fileName}.cpp`);
-    const exeFilePath = path.join(TEMP_DIR, fileName);
-
+    const exeFilePath = path.join(TEMP_DIR, `${fileName}.exe`);
+    console.log(`handling cppFilePath = ${cppFilePath}`);
+    console.log(`handling exeFilePath = ${exeFilePath}`);
     try {
+        await fs.ensureDir(TEMP_DIR);
         await fs.writeFile(cppFilePath, code);
 
         await new Promise((resolve, reject) => {
