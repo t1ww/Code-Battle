@@ -1,12 +1,12 @@
-import { QueuedPlayer, Team, MatchMode } from "@/types";
+import { PlayerSession, Team, MatchMode } from "@/types";
 import { Socket } from "socket.io";
 
 export class MatchmakingService {
-    private queue1v1: Map<string, QueuedPlayer> = new Map();
+    private queue1v1: Map<string, PlayerSession> = new Map();
     private queue3v3: Map<string, Team> = new Map();
 
     // ✅ Type Guards
-    private isQueuedPlayer(input: any): input is QueuedPlayer {
+    private isPlayerSession(input: any): input is PlayerSession {
         return (
             input &&
             typeof input === "object" &&
@@ -23,43 +23,40 @@ export class MatchmakingService {
             typeof input.team_id === "string" &&
             Array.isArray(input.players) &&
             input.players.length === 3 &&
-            input.players.every(this.isQueuedPlayer)
+            input.players.every(this.isPlayerSession.bind(this))
         );
     }
 
-    // ✅ UTC-21: queuePlayer
-    queuePlayer(playerOrTeam: QueuedPlayer | Team, mode: MatchMode): { message?: string; error_message?: string } {
-        if (mode === "1v1") {
-            const player = playerOrTeam;
 
-            // ✅ UTC-21 ID 3: Invalid player object
-            if (!this.isQueuedPlayer(player)) {
-                return { error_message: "Invalid player object" };
-            }
-
-            // ✅ UTC-21 ID 4: Empty player
-            if (!player.player_id || !player.socket) {
-                return { error_message: "Player is required" };
-            }
-
-            const queue = this.queue1v1;
-
-            // ✅ UTC-21 ID 2: Duplicate player
-            if (queue.has(player.player_id)) {
-                return { error_message: "Player already in queue" };
-            }
-
-            // ✅ UTC-21 ID 1: Valid player added
-            queue.set(player.player_id, player);
-            return { message: "Player added to 1v1 queue successfully" };
+    // ✅ UTC-21: queuePlayer for 1v1
+    queuePlayer(player: PlayerSession): { message?: string; error_message?: string } {
+        // ✅ UTC-21 ID 3: Invalid player object
+        if (!this.isPlayerSession(player)) {
+            return { error_message: "Invalid player object" };
         }
 
-        // 3v3 mode
-        const team = playerOrTeam;
+        // ✅ UTC-21 ID 4: Empty player
+        if (!player.player_id || !player.socket) {
+            return { error_message: "Player is required" };
+        }
 
+        const queue = this.queue1v1;
+
+        // ✅ UTC-21 ID 2: Duplicate player
+        if (queue.has(player.player_id)) {
+            return { error_message: "Player already in queue" };
+        }
+
+        // ✅ UTC-21 ID 1: Valid player added
+        queue.set(player.player_id, player);
+        return { message: "Player added to 1v1 queue successfully" };
+    }
+
+    // ✅ UTC-21: queueTeam for 3v3
+    queueTeam(team: Team): { message?: string; error_message?: string } {
         // ✅ UTC-21 ID 3: Invalid team object
         if (!this.isTeam(team)) {
-            return { error_message: "Team must consist of exactly 3 valid players" };
+            return { error_message: "Team must consist of exactly 3 valid player sessions" };
         }
 
         const queue = this.queue3v3;

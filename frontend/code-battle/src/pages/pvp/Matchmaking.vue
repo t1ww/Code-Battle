@@ -58,7 +58,7 @@ onMounted(() => {
 
     if (player?.id) {
         if (mode.value === '1v1') {
-            socket.emit("queuePlayer", { player_id: player.id, name: player.name, email: player.email, mode: '1v1' })
+            socket.emit("queuePlayer", { player_id: player.id, name: player.name, email: player.email, mode: '1v1', timeLimit: timeLimit.value})
         } else if (mode.value === '3v3') {
             // emit queue
         } else {
