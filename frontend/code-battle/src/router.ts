@@ -6,6 +6,7 @@ import Login from "@/pages/LoginForm.vue";
 import Logout from "@/pages/Logout.vue";
 import Register from "@/pages/RegisterForm.vue";
 import PveLevelSelect from "@/pages/pve/PveLevelSelect.vue";
+import { socket } from '@/clients/socket.api'
 
 import NProgress from "nprogress";
 import "nprogress/nprogress.css"; // import nprogress style
@@ -26,6 +27,9 @@ import { isAuthenticated } from "@/stores/auth";
  * - backTo:         Optional path the back button should navigate to from this route.
  * - online:         Paths that will requires socket connections.
  */
+
+let connected = false
+
 const routes = [
   // root / home
   { name: "Home", path: "/", component: Home, meta: { requiresAuth: true } },
@@ -65,19 +69,35 @@ const router = createRouter({
 });
 
 // ⏳ Start progress before route changes
-router.beforeEach((to, _from, next) => {
+router.beforeEach((to, from, next) => {
   NProgress.start();
 
   // Redirect to Login if route requires auth but user is not logged in
   if (to.meta.requiresAuth && !isAuthenticated.value) {
     next({ name: 'Login' });
+    return;
     // Redirect away from Login/Register if already logged in (optional)
   } else if (to.meta.hideAuth && isAuthenticated.value) {
     next({ name: 'Home' });
-  } else {
-    next();
+    return;
   }
+
+  // Handle connections
+  const toOnline = !!to.meta.online
+  const fromOnline = !!from.meta.online
+
+  if (toOnline && !connected) {
+    socket.connect()
+    connected = true
+  } else if (!toOnline && fromOnline && connected) {
+    socket.disconnect()
+    connected = false
+  }
+
+  next();
 });
+
+
 
 // Done progress after route fully loads
 router.afterEach(() => {

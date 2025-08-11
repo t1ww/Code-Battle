@@ -56,8 +56,6 @@ const countdown = ref(3)
 let timer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
-    socket.connect()
-
     if (player?.id) {
         if (mode.value === '1v1') {
             socket.emit("queuePlayer", { player_id: player.id, name: player.name, email: player.email, mode: '1v1', timeLimit: timeLimit.value })
