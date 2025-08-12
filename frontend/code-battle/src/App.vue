@@ -1,7 +1,37 @@
 <script setup lang="ts">
 import Navbar from "@/components/etc/Navbar.vue";
-import { RouterView } from "vue-router";
 import BackButton from "@/components/etc/BackButton.vue";
+import NotificationPopup from "./components/popups/NotificationPopup.vue";
+import { onMounted, onBeforeUnmount } from 'vue'
+import { RouterView } from "vue-router";
+import { socket } from '@/clients/socket.api'
+import { useNotification } from '@/composables/useNotification'
+import router from "./router";
+
+const { showNotification, notificationMessage, triggerNotification } = useNotification()
+
+onMounted(() => {
+  socket.on('connect', () => {
+    triggerNotification("Connected to PVP server.", 2000)
+  })
+
+  socket.on('connect_error', () => {
+    triggerNotification("Unable to connect to PVP server. Please try again later.")
+    router.push('/')
+  })
+
+  socket.on('disconnect', (reason) => {
+    if (reason !== 'io client disconnect') {
+      triggerNotification("Disconnected from PVP server.", 2000)
+    }
+  })
+})
+
+onBeforeUnmount(() => {
+  socket.off('connect')
+  socket.off('connect_error')
+  socket.off('disconnect')
+})
 
 window.addEventListener("offline", () => {
   console.log("Lost internet connection");
@@ -13,6 +43,7 @@ window.addEventListener("online", () => {
 </script>
 
 <template>
+  <NotificationPopup :show="showNotification" :message="notificationMessage" @close="showNotification = false" />
   <Navbar />
   <BackButton />
   <div class="router-container">

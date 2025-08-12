@@ -87,17 +87,17 @@ router.beforeEach((to, from, next) => {
   const fromOnline = !!from.meta.online
 
   if (toOnline && !connected) {
+    console.log("Connected socket.")
     socket.connect()
     connected = true
   } else if (!toOnline && fromOnline && connected) {
+    console.log("Disconnected socket.")
     socket.disconnect()
     connected = false
   }
 
   next();
 });
-
-
 
 // Done progress after route fully loads
 router.afterEach(() => {
