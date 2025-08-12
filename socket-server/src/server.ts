@@ -113,34 +113,55 @@ io.on("connection", (socket) => {
         }
     );
 
+
     // Queue a player or team for matchmaking
     socket.on("queuePlayer", (data: QueuePlayerData1v1) => {
-        if ("player" in data) {
-            const playerData = data.player;
-            console.log(`Queuing player for 1v1: ${playerData.name}`);
+        try {
+            if ("player" in data) {
+                const playerData = data.player;
+                console.log(`Queuing player for 1v1: ${playerData.name}`);
 
-            const player: PlayerSession = {
-                ...playerData,
-                socket,
-            };
+                const player: PlayerSession = {
+                    ...playerData,
+                    socket,
+                };
 
-            const result = matchmakingService.queuePlayer(player);
-            socket.emit("queueResponse", result);
-        } else {
-            socket.emit("queueResponse", { error_message: "Invalid queue data" });
+                const result = matchmakingService.queuePlayer(player);
+                if (result.error_message) {
+                    socket.emit("queueResponse", `Matchmaking error with following message: ${result.error_message}`);
+                    return;
+                }
+
+                socket.emit("queueResponse", result);
+            } else {
+                socket.emit("queueResponse", { error_message: "Invalid queue data" });
+            }
+        } catch (err) {
+            console.error("Error during matchmaking initiation:", err);
+            socket.emit("queueResponse", { error_message: "Matchmaking service unavailable. Please try again later." });
         }
     });
 
-
     // Queue an existing team by ID
     socket.on("queueTeam", ({ team_id, mode }: { team_id: string; mode: MatchMode }) => {
-        const team = teamService.getTeam(team_id);
-        if (!team) {
-            socket.emit("queueResponse", { error_message: "Team not found" });
-            return;
+        try {
+            const team = teamService.getTeam(team_id);
+            if (!team) {
+                socket.emit("queueResponse", { error_message: "Team not found" });
+                return;
+            }
+
+            const result = matchmakingService.queueTeam(team);
+            if (result.error_message) {
+                socket.emit("queueResponse", `Matchmaking error with following message: ${result.error_message}`);
+                return;
+            }
+
+            socket.emit("queueResponse", result);
+        } catch (err) {
+            console.error("Error during matchmaking initiation:", err);
+            socket.emit("queueResponse", { error_message: "Matchmaking service unavailable. Please try again later." });
         }
-        const result = matchmakingService.queueTeam(team);
-        socket.emit("queueResponse", result);
     });
 
 
