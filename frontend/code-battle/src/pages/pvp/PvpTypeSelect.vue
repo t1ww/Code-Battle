@@ -3,19 +3,29 @@ import { computed } from 'vue'
 import { useTeamStore } from '@/stores/team'
 
 const team = useTeamStore()
+const isMember = computed(() => team.size > 0 && !team.isLeader)
 
-const is1v1Disabled = computed(() => team.size > 1)
-const is3v3Disabled = computed(() => team.size !== 3)
+const is1v1Disabled = computed(() => isMember.value || team.size > 1)
+const is3v3Disabled = computed(() => isMember.value || team.size !== 3)
+const isPrivateDisabled = computed(() => isMember.value)
 
 const get1v1Message = computed(() => {
+  if (isMember.value) return 'Only team leader can select game mode.'
   if (team.size > 1) return 'You cannot play 1v1 with other people in the team'
   return ''
 })
 
 const get3v3Message = computed(() => {
+  if (isMember.value) return 'Only team leader can select game mode.'
   if (team.size < 3) return 'Please form a team of 3 to play this mode'
   return ''
 })
+
+const getPrivateMessage = computed(() => {
+  if (isMember.value) return 'Only team leader can select game mode.'
+  return ''
+})
+
 </script>
 
 <template>
@@ -23,12 +33,8 @@ const get3v3Message = computed(() => {
     <div class="button-wrapper">
       <!-- 1v1 -->
       <div class="button-with-text">
-        <router-link
-          :to="is1v1Disabled ? {} : { name: 'PvpTimeSelect', query: { mode: '1v1' } }"
-          id="pvp1v1-button"
-          class="mode-button"
-          :class="{ disabled: is1v1Disabled }"
-        >
+        <router-link :to="is1v1Disabled ? {} : { name: 'PvpTimeSelect', query: { mode: '1v1' } }" id="pvp1v1-button"
+          class="mode-button" :class="{ disabled: is1v1Disabled }">
           1v1
         </router-link>
         <span v-if="is1v1Disabled" id="1v1mode-text" class="mode-text">{{ get1v1Message }}</span>
@@ -36,12 +42,8 @@ const get3v3Message = computed(() => {
 
       <!-- 3v3 -->
       <div class="button-with-text">
-        <router-link
-          :to="is3v3Disabled ? {} : { name: 'PvpTimeSelect', query: { mode: '3v3' } }"
-          id="pvp3v3-button"
-          class="mode-button"
-          :class="{ disabled: is3v3Disabled }"
-        >
+        <router-link :to="is3v3Disabled ? {} : { name: 'PvpTimeSelect', query: { mode: '3v3' } }" id="pvp3v3-button"
+          class="mode-button" :class="{ disabled: is3v3Disabled }">
           3v3
         </router-link>
         <span v-if="is3v3Disabled" class="mode-text">{{ get3v3Message }}</span>
@@ -49,9 +51,11 @@ const get3v3Message = computed(() => {
 
       <!-- Private -->
       <div class="button-with-text">
-        <router-link :to="{ name: '' }" id="pvp-private-button" class="mode-button">
+        <router-link :to="isPrivateDisabled ? {} : { name: '' }" id="pvp-private-button" class="mode-button"
+          :class="{ disabled: isPrivateDisabled }">
           Private custom match
         </router-link>
+        <span v-if="isPrivateDisabled" class="mode-text">{{ getPrivateMessage }}</span>
       </div>
     </div>
   </div>
@@ -85,7 +89,8 @@ h1 {
   gap: 1rem;
 }
 
-#pvp1v1-button, #1v1mode-text {
+#pvp1v1-button,
+#1v1mode-text {
   margin-right: 6rem;
 }
 
@@ -100,10 +105,14 @@ h1 {
 .mode-text {
   font-size: 14px;
   color: #222;
-  white-space: nowrap; /* force single line */
-  overflow: hidden;    /* optional: hides overflow if too long */
-  text-overflow: ellipsis; /* optional: adds "..." if too long */
+  white-space: nowrap;
+  /* force single line */
+  overflow: hidden;
+  /* optional: hides overflow if too long */
+  text-overflow: ellipsis;
+  /* optional: adds "..." if too long */
 }
+
 .mode-button {
   display: flex;
   align-items: center;
