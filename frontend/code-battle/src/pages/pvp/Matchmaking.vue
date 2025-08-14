@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import type { PlayerData } from '@/types/types'
 
@@ -12,6 +12,8 @@ import { socket } from '@/clients/socket.api'
 
 import { getPlayerData } from "@/stores/auth"
 import { useTeamStore } from '@/stores/team'
+
+const router = useRouter()
 
 const player = getPlayerData()
 const teamStore = useTeamStore()
@@ -51,7 +53,6 @@ const team2 = computed(() => {
     return mapToMinimal(match.value.opponents)
 })
 
-
 const countdown = ref(3)
 let timer: ReturnType<typeof setInterval> | null = null
 
@@ -62,12 +63,19 @@ onMounted(() => {
         } else if (mode.value === '3v3') {
             if (!teamStore.team_id || teamStore.members.length < 3) {
                 errorMessage.value = 'You must be in a full team to queue for 3v3.'
+                // redirect after showing error (optional delay)
+                setTimeout(() => {
+                    router.replace({ name: 'PvpTypeSelect' })
+                }, 1000)
                 return
             }
             socket.emit('queueTeam', { team_id: teamStore.team_id, mode: '3v3' })
         } else {
             // Error
             errorMessage.value = 'Invalid match mode selected.'
+            setTimeout(() => {
+                router.replace({ name: 'PvpTypeSelect' })
+            }, 1000)
         }
     }
 
