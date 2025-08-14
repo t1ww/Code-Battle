@@ -52,6 +52,16 @@ io.on("connection", (socket) => {
     // Handle socket disconnect
     socket.on("disconnect", () => {
         connectionService.handleDisconnect(socket.id);
+
+        const removed = teamService.removePlayerBySocket(socket);
+        if (removed) {
+            const { team, playerId } = removed;
+            io.to(team.team_id).emit("teamLeft", playerId);
+
+            if (team.players.length === 0) {
+                teamService.removeTeam(team.team_id);
+            }
+        }
     });
 
     // Create a new team with players attached to current socket

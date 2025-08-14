@@ -87,6 +87,12 @@ onMounted(() => {
       self.value = null
     }
   })
+
+  socket.on('disconnect', () => {
+    teamStore.team_id = null
+    teamStore.members = []
+    teamStore.invite_link = ''
+  })
 })
 
 // Watch for login/logout changes
@@ -127,7 +133,7 @@ onBeforeUnmount(() => {
           </div>
         </transition>
       </div>
-      
+
 
       <div v-if="online" v-for="(player, index) in teammates" :key="player.player_id || index" :title="player.name">
         <PlayerAvatar :player="player" />

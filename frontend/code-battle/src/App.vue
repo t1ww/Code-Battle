@@ -6,11 +6,13 @@ import { onMounted, onBeforeUnmount } from 'vue'
 import { RouterView } from "vue-router";
 import { socket } from '@/clients/socket.api'
 import { useNotification } from '@/composables/useNotification'
-import router from "./router";
+import router from "@/router";
+import { useTeamStore } from "@/stores/team";
 
 const { showNotification, notificationMessage, triggerNotification } = useNotification()
 
 onMounted(() => {
+  const teamStore = useTeamStore()
   socket.on('connect', () => {
     triggerNotification("Connected to PVP server.", 2000)
   })
@@ -23,6 +25,11 @@ onMounted(() => {
   socket.on('disconnect', (reason) => {
     if (reason !== 'io client disconnect') {
       triggerNotification("Disconnected from PVP server.", 2000)
+
+      // Reset team info on disconnect
+      teamStore.team_id = null
+      teamStore.members = []
+      teamStore.invite_link = ''
     }
   })
 })
