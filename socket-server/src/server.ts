@@ -6,6 +6,8 @@ import { ConnectionService } from "@/services/connection.service";
 import { MatchmakingService } from "@/services/matchmaking.service";
 import { TeamService } from "./services/team.service";
 import { InviteService } from "@/services/invite.service";
+import { PrivateRoomService } from "@/services/privateroom.service";
+
 import type {
     MatchMode,
     PlayerSession,
@@ -24,6 +26,7 @@ const connectionService = new ConnectionService();
 const matchmakingService = new MatchmakingService();
 const teamService = new TeamService();
 const inviteService = new InviteService();
+const privateRoomService = new PrivateRoomService();
 
 // Helper: Remove socket from players before emitting to clients
 function sanitizeTeam(team: Team) {
@@ -36,6 +39,33 @@ function sanitizeTeam(team: Team) {
         })),
     };
 }
+
+function sanitizeRoom(room: { room_id: string; team1: Team | null; team2: Team | null }) {
+    return {
+        room_id: room.room_id,
+        team1: room.team1
+            ? {
+                team_id: room.team1.team_id,
+                players: room.team1.players.map(({ player_id, name, email }) => ({
+                    player_id,
+                    name,
+                    email,
+                })),
+            }
+            : undefined,
+        team2: room.team2
+            ? {
+                team_id: room.team2.team_id,
+                players: room.team2.players.map(({ player_id, name, email }) => ({
+                    player_id,
+                    name,
+                    email,
+                })),
+            }
+            : undefined,
+    };
+}
+
 
 // Matchmaking loop every 6 seconds, tries to start matches for all modes
 setInterval(() => {
@@ -180,6 +210,61 @@ io.on("connection", (socket) => {
         const mode = data?.mode || "1v1";
         const result = matchmakingService.startMatch(mode);
         socket.emit("matchResponse", result);
+    });
+
+    // ==== PRIVATE ROOM EVENTS ====
+
+    socket.on("createPrivateRoom", (players: PlayerSession[]) => {
+        try {
+            const playersWithSocket = players.map((p) => ({ ...p, socket }));
+            const room = privateRoomService.createRoom(playersWithSocket);
+            socket.join(room.room_id);
+            socket.emit("privateRoomCreated", sanitizeRoom(room));
+        } catch (err: any) {
+            socket.emit("error", { error_message: err.message });
+        }
+    });
+
+    socket.on("joinPrivateRoom", ({ room_id, players }: { room_id: string; players: PlayerSession[] }) => {
+        try {
+            const playersWithSocket = players.map((p) => ({ ...p, socket }));
+            const room = privateRoomService.joinRoom(room_id, playersWithSocket);
+            playersWithSocket.forEach((p) => p.socket.join(room.room_id));
+            io.to(room.room_id).emit("privateRoomUpdated", sanitizeRoom(room));
+        } catch (err: any) {
+            socket.emit("error", { error_message: err.message });
+        }
+    });
+
+    socket.on("swapTeam", ({ room_id, player_id }: { room_id: string; player_id: string }) => {
+        try {
+            const result = privateRoomService.requestSwap(room_id, player_id);
+            if (result.swapped) {
+                io.to(room_id).emit("privateRoomUpdated", sanitizeRoom(result.room));
+            } else if (result.pending) {
+                io.to(room_id).emit("swapRequest", { requesterId: player_id });
+            }
+        } catch (err: any) {
+            socket.emit("error", { error_message: err.message });
+        }
+    });
+
+    socket.on("confirmSwap", ({ room_id, player_id }: { room_id: string; player_id: string }) => {
+        try {
+            const result = privateRoomService.confirmSwap(room_id, player_id);
+            if (result.swapped) {
+                io.to(room_id).emit("privateRoomUpdated", sanitizeRoom(result.room));
+            }
+        } catch (err: any) {
+            socket.emit("error", { error_message: err.message });
+        }
+    });
+
+    socket.on("leavePrivateRoom", ({ room_id }: { room_id: string }) => {
+        const removed = privateRoomService.removePlayer(socket.id);
+        if (removed?.room) {
+            io.to(room_id).emit("privateRoomUpdated", sanitizeRoom(removed.room));
+        }
     });
 });
 
