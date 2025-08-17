@@ -32,7 +32,7 @@ async function seedData() {
             {
                 name: "Sum Two Numbers",
                 description: "Given two numbers, return their sum.",
-                time_limit: 30,
+                time_limit: 300, // seconds (5 minutes)
                 level: "Easy",
                 test_cases: [
                     { input: "2 3", expected_output: "5", score: 10 },
@@ -43,7 +43,7 @@ async function seedData() {
             {
                 name: "Find Maximum",
                 description: "Given three integers, find the maximum.",
-                time_limit: 30,
+                time_limit: 300, // seconds (5 minutes)
                 level: "Easy",
                 test_cases: [
                     { input: "1 2 3", expected_output: "3", score: 10 },
@@ -54,7 +54,7 @@ async function seedData() {
             {
                 name: "Check Even",
                 description: "Given an integer, output 'Yes' if even, else 'No'.",
-                time_limit: 30,
+                time_limit: 300, // seconds (5 minutes)
                 level: "Easy",
                 test_cases: [
                     { input: "4", expected_output: "Yes", score: 10 },
@@ -67,7 +67,7 @@ async function seedData() {
             {
                 name: "Fibonacci Number",
                 description: "Return the N-th Fibonacci number (0-indexed).",
-                time_limit: 60,
+                time_limit: 900, // seconds (15 minutes)
                 level: "Medium",
                 test_cases: [
                     { input: "5", expected_output: "5", score: 15 },
@@ -78,7 +78,7 @@ async function seedData() {
             {
                 name: "Palindrome Check",
                 description: "Check if a string is palindrome. Output 'Yes' or 'No'.",
-                time_limit: 60,
+                time_limit: 900, // seconds (15 minutes)
                 level: "Medium",
                 test_cases: [
                     { input: "madam", expected_output: "Yes", score: 15 },
@@ -89,7 +89,7 @@ async function seedData() {
             {
                 name: "Count Vowels",
                 description: "Count vowels (a,e,i,o,u) in the input string.",
-                time_limit: 60,
+                time_limit: 900, // seconds (15 minutes)
                 level: "Medium",
                 test_cases: [
                     { input: "hello", expected_output: "2", score: 15 },
@@ -103,7 +103,7 @@ async function seedData() {
                 name: "Merge Intervals",
                 description:
                     "Given a list of intervals, merge all overlapping intervals and return the result.",
-                time_limit: 120,
+                time_limit: 1800, // seconds (30 minutes)
                 level: "Hard",
                 test_cases: [
                     {
@@ -127,7 +127,7 @@ async function seedData() {
                 name: "Longest Substring Without Repeating",
                 description:
                     "Given a string, find the length of the longest substring without repeating characters.",
-                time_limit: 120,
+                time_limit: 1800, // seconds (30 minutes)
                 level: "Hard",
                 test_cases: [
                     { input: "abcabcbb", expected_output: "3", score: 20 },
@@ -139,7 +139,7 @@ async function seedData() {
                 name: "Word Ladder",
                 description:
                     "Given two words (start and end), and a dictionary, find the shortest transformation sequence length from start to end.",
-                time_limit: 120,
+                time_limit: 1800, // seconds (30 minutes)
                 level: "Hard",
                 test_cases: [
                     { input: "hit cog [hot dot dog lot log]", expected_output: "5", score: 20 },
