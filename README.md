@@ -80,7 +80,7 @@ This will install dependencies for all workspaces (backend, frontend, code runne
 Run MySQL and phpMyAdmin using Docker Compose:
 
 ```bash
-docker-compose -p Code-Battle up -d
+docker-compose -p code_battle up -d
 ```
 
 - **phpMyAdmin:** [http://localhost:8081](http://localhost:8081)
