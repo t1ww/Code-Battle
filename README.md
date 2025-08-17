@@ -11,12 +11,30 @@ Follow these steps to set up and run the entire Code Battle project from scratch
 
 ### 1. Prerequisites
 
-- [Node.js & npm](https://nodejs.org/) installed
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed
+Before you begin, make sure you have these tools installed:
+
+- [Node.js & npm](https://nodejs.org/)  
+  _Download and install from the official website. This is required to run the project._
+  **After installing Node.js, please close and re-open VS Code to ensure the terminal recognizes the new installation.**
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)  
+  _Download and install to run the database and phpMyAdmin containers._
+
+_You can check if Node.js and npm are installed by running:_
+
+```bash
+node -v
+npm -v
+```
+
+_You can check if Docker is running by opening Docker Desktop or running:_
+
+```bash
+docker info
+```
 
 ---
 
-### 2. Clone the Repository
+### 2. Clone the Repository (If you haven't)
 
 ```bash
 git clone https://github.com/t1ww/Code-Battle.git
@@ -26,6 +44,28 @@ cd Code-Battle
 ---
 
 ### 3. Install All Dependencies
+
+**⚠️ Windows PowerShell Users: Fix "running scripts is disabled" Error**
+
+If you see an error like:
+
+```
+npm : File C:\Program Files\nodejs\npm.ps1 cannot be loaded because running scripts is disabled on this system.
+```
+
+You need to change your PowerShell execution policy **before running `npm install`**:
+
+Open PowerShell as Administrator and run:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+
+After running the command, restart your terminal or VS Code.
+
+---
+
+In your terminal, make sure you are in the **root folder** (`Code-Battle`), then run:
 
 ```bash
 npm install
