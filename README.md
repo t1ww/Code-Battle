@@ -1,17 +1,144 @@
 # Code Battle
 
-**Senior Project – CAMT SE65**
-Real-time code battle web app with live multiplayer functionality, built as a full-stack monorepo.
+**Senior Project – CAMT SE65**  
+A real-time code battle web app with live multiplayer functionality, built as a full-stack monorepo.
 
 ---
 
-## API Documentation
+## 🚀 Quick Start Guide
 
-Detailed API endpoints and usage are documented in [API.md](API.md).
+Follow these steps to set up and run the entire Code Battle project from scratch.
+
+### 1. Prerequisites
+
+Before you begin, make sure you have these tools installed:
+
+- [Node.js & npm](https://nodejs.org/)  
+  _Download and install from the official website. This is required to run the project._
+  **After installing Node.js, please close and re-open VS Code to ensure the terminal recognizes the new installation.**
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)  
+  _Download and install to run the database and phpMyAdmin containers._
+
+_You can check if Node.js and npm are installed by running:_
+
+```bash
+node -v
+npm -v
+```
+
+_You can check if Docker is running by opening Docker Desktop or running:_
+
+```bash
+docker info
+```
+
+---
+
+### 2. Clone the Repository (If you haven't)
+
+```bash
+git clone https://github.com/t1ww/Code-Battle.git
+cd Code-Battle
+```
+
+---
+
+### 3. Install All Dependencies
+
+**⚠️ Windows PowerShell Users: Fix "running scripts is disabled" Error**
+
+If you see an error like:
+
+```
+npm : File C:\Program Files\nodejs\npm.ps1 cannot be loaded because running scripts is disabled on this system.
+```
+
+You need to change your PowerShell execution policy **before running `npm install`**:
+
+Open PowerShell as Administrator and run:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+
+After running the command, restart your terminal or VS Code.
+
+---
+
+In your terminal, make sure you are in the **root folder** (`Code-Battle`), then run:
+
+```bash
+npm install
+```
+
+This will install dependencies for all workspaces (backend, frontend, code runner, socket server).
+
+---
+
+### 4. Start the Database with Docker
+
+Run MySQL and phpMyAdmin using Docker Compose:
+
+```bash
+docker-compose -p Code-Battle up -d
+```
+
+- **phpMyAdmin:** [http://localhost:8081](http://localhost:8081)
+- **Credentials:**
+  - Host: `mysql`
+  - Port: `3306`
+  - Username: `root`
+  - Password: `root_password`
+  - Database: `my_database`
+
+---
+
+### 5. Configure Backend Database Connection
+
+Make sure your `backend/knexfile.ts` uses the same database credentials as above.
+
+---
+
+### 6. Run Database Migrations and Seed Data
+
+Set up the database tables and add initial data:
+
+```bash
+npm run be:db:migrate
+npm run be:db:seed
+```
+
+---
+
+### 7. Start All Project Servers
+
+To run everything (backend, frontend, code runner, socket server):
+
+```bash
+npm run all
+```
+
+This will open separate terminal windows for each service.
+
+- **Frontend:** [http://localhost:5173](http://localhost:5173) (Vite default)
+- **Backend API:** [http://localhost:5000](http://localhost:5000)
+- **Socket Server:** [http://localhost:3001](http://localhost:3001)
+- **Code Runner:** [http://localhost:5001](http://localhost:5001)
+
+_If any port is busy, check your terminal output for the actual port used._
+---
+
+### 8. Stop All Servers (Windows Only)
+
+To close all running servers:
+
+```bash
+npm run stop
+```
+
+---
 
 ## 🧩 Project Structure
-
-This repo uses workspaces and is organized into 4 main components:
 
 | Folder                  | Description                                              |
 | ----------------------- | -------------------------------------------------------- |
@@ -19,119 +146,6 @@ This repo uses workspaces and is organized into 4 main components:
 | `frontend/code-battle/` | Vue 3 web app with Monaco Editor for coding interface    |
 | `ts-code-runner/`       | Isolated TypeScript runner for user-submitted code       |
 | `socket-server/`        | WebSocket (Socket.IO) server for real-time communication |
-
----
-
-## 🛠 Setup Instructions
-
-### 1. Install Dependencies
-
-```bash
-npm install
-```
-
-Installs all workspace dependencies.
-
-### 2. 🐳 Docker Setup (Database)
-
-You can run the MySQL database and phpMyAdmin using Docker Compose.
-
-### Start MySQL & phpMyAdmin containers:
-
-```bash
-docker-compose -p Code-Battle up -d
-```
-
-### Access phpMyAdmin at:
-
-```
-http://localhost:8081
-```
-
-Use the following credentials:
-
-* Host: `mysql`
-* Port: `3306`
-* Username: `root`
-* Password: `root_password`
-* Database: `my_database`
-
-### Stop containers:
-
-```bash
-docker-compose down
-```
-
----
-
-Ensure your `knexfile.ts` matches these credentials to connect your backend to the MySQL container.
-
-### 3. Start Development
-
-* Backend only: `npm run backend`
-* Frontend only: `npm run frontend`
-* TS Runner only: `npm run ts-code-runner`
-* Socket Server only: `npm run socket-server`
-* Start both frontend & backend: `npm run dev`
-* Start everything (all 4): `npm run all`
-
-### 4. Stop All Servers (Windows only)
-
-```bash
-npm run stop
-```
-
-Kills all opened `cmd.exe` sessions.
-
----
----
----
-
-## ⚙️ Knex Usage (Database)
-
-Make sure `knexfile.ts` is configured properly with your local DB credentials.
-
-### Create Migration
-
-```bash
-npx knex migrate:make <filename>
-```
-
-### Run Migrations
-
-```bash
-npm run be:db:migrate
-```
-
-### Roll Back All Migrations
-
-```bash
-npm run be:db:rollback
-```
-
-### Reset & Seed (if implemented)
-
-```bash
-npm run be:db:reset
-```
-
----
-
-## 🧼 Tip: Fixing Stuck Ports (Windows)
-
-If a server crashes or port remains stuck:
-
-1. **Find the PID:**
-
-```bash
-netstat -ano | findstr :<PORT>
-```
-
-2. **Kill it:**
-
-```bash
-taskkill /pid <PID> /f
-```
 
 ---
 
@@ -147,9 +161,9 @@ taskkill /pid <PID> /f
 
 ---
 
-## 📁 Repository
+## 📚 More Documentation
 
-GitHub: [Code-Battle](https://github.com/t1ww/Code-Battle)
-Issues: [Submit Bug Reports](https://github.com/t1ww/Code-Battle/issues)
+- [API Documentation](API.md)
+- [Submit Issues](https://github.com/t1ww/Code-Battle/issues)
 
 ---
