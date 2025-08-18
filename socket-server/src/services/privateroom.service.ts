@@ -6,6 +6,7 @@ interface PrivateRoom {
     room_id: string;
     team1: Team | null;
     team2: Team | null;
+    creatorId: string; // add creator tracking
     pendingSwap?: {
         requesterId: string;
         targetTeam: "team1" | "team2";
@@ -16,22 +17,14 @@ export class PrivateRoomService {
     private rooms: Map<string, PrivateRoom> = new Map();
 
     /** Create a private room with team1 already set */
-    createRoom(initialPlayers: PlayerSession[]): PrivateRoom {
-        if (initialPlayers.length < 1 || initialPlayers.length > 3) {
-            throw new Error("Team must have between 1 and 3 players");
-        }
-
-        const team1: Team = {
-            team_id: uuidv4(),
-            players: initialPlayers,
-        };
-
+    createRoom(initialPlayer: PlayerSession): PrivateRoom {
+        const team1: Team = { team_id: uuidv4(), players: [initialPlayer] };
         const room: PrivateRoom = {
             room_id: uuidv4(),
             team1,
             team2: null,
+            creatorId: initialPlayer.player_id,
         };
-
         this.rooms.set(room.room_id, room);
         return room;
     }

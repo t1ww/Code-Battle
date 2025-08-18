@@ -33,17 +33,21 @@ const inviteLinkLabel = computed(() => {
 onMounted(() => {
   const player = getPlayerData()
   if (!player) return
-
+  // Emit event to join or create a private room
+  console.log('Joining or creating private room for player:', player)
   if (inviteId) {
     // Join an existing private room
+    console.log('Joining private room with inviteId:', inviteId)
     socket.emit('joinPrivateRoom', { inviteId, player })
   } else {
     // Create a new private room if no inviteId
-    socket.emit('createPrivateRoom', [player])
+    console.log('Creating new private room for player:', player)
+    socket.emit('createPrivateRoom', player)
   }
 
   // Listen for updates when joining an existing room
   socket.on('privateRoomJoined', (roomData) => {
+    console.log('Joined private room:', roomData)
     privateRoom.state.roomId = roomData.room_id
     privateRoom.state.team1 = roomData.room1
     privateRoom.state.team2 = roomData.team2
@@ -52,26 +56,34 @@ onMounted(() => {
 
   // Listen specifically for creator event
   socket.on('privateRoomCreated', (roomData) => {
+    console.log('Private room created:', roomData)
     privateRoom.state.roomId = roomData.room_id
     privateRoom.state.team1 = roomData.team1
     privateRoom.state.team2 = roomData.team2
-    privateRoom.state.inviteLink = `${window.location.origin}/privateRoom/${roomData.room_id}`
+    privateRoom.state.inviteLink = `${window.location.origin}${roomData.inviteLink}`
+  })
+
+  // Listen for team updates
+  socket.on('privateRoomUpdated', (roomData) => {
+    privateRoom.state.team1 = roomData.team1
+    privateRoom.state.team2 = roomData.team2
+  })
+
+  // Listen for swap requests
+  socket.on('swapRequest', (swap) => {
+    // show player swap request pointer
+    // lets player click to accept or decline
+    // socket.emit("confirmSwap"
   })
 })
 
 onBeforeUnmount(() => {
   const player = getPlayerData()
   if (!player) return
-
-  // emit leave room event
-  socket.emit('leavePrivateRoom', { room_id: privateRoom.state.roomId })
-
-  // optionally, if the current player is the host
-  if (privateRoom.state.team1?.players[0]?.player_id === player.player_id) {
-    socket.emit('deletePrivateRoom', { room_id: privateRoom.state.roomId })
-  }
+  const roomId = privateRoom.state.roomId
+  if (!roomId) return
+  socket.emit('leavePrivateRoom', { room_id: roomId })
 })
-
 </script>
 
 <template>

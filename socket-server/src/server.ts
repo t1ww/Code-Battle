@@ -7,7 +7,7 @@ import { ConnectionService } from "@/services/connection.service";
 import { MatchmakingService } from "@/services/matchmaking.service";
 import { TeamService } from "./services/team.service";
 import { TeamInviteService } from "@/services/team.invite.service";
-import { PrivateRoomService } from "@/services/privateroom.service";
+import { PrivateRoomService } from "@/services/privateRoom.service";
 import { PrivateRoomInviteService } from "@/services/privateRoom.invite.service";
 
 import type {
@@ -75,12 +75,17 @@ function sanitizeRoom(room: { room_id: string; team1: Team | null; team2: Team |
 }
 
 
-// Matchmaking loop every 6 seconds, tries to start matches for all modes
+// Matchmaking loop every 6 seconds, tries to start matches for all modes by alternating
+let alternate = true;
 setInterval(() => {
-    (["1v1", "3v3"] as MatchMode[]).forEach((mode) => {
-        console.log(`Attempt starting match for ${mode}`);
-        matchmakingService.startMatch(mode);
-    });
+    if (alternate) {
+        console.log(`Attempt starting match for ${"1v1"}`);
+        matchmakingService.startMatch("1v1");
+    } else {
+        console.log(`Attempt starting match for ${"3v3"}`);
+        matchmakingService.startMatch("3v3");
+    }
+    alternate = !alternate;
 }, 6000);
 
 io.on("connection", (socket) => {
@@ -221,25 +226,28 @@ io.on("connection", (socket) => {
     });
 
     // ==== PRIVATE ROOM EVENTS ====
-    socket.on("createPrivateRoom", (players: PlayerSession[]) => {
+    socket.on("createPrivateRoom", (player: PlayerSession) => {
         try {
-            const room = privateRoomService.createRoom(players);
+            // Attach the socket before passing to the service
+            const playerWithSocket = { ...player, socket };
+
+            const room = privateRoomService.createRoom(playerWithSocket);
             const inviteId = privateRoomInviteService.createInvite(room.room_id);
 
-            console.log(`Private room created with ID: ${room.room_id}, Invite ID: ${inviteId}`);
+            console.log(`Private room created with ID: ${room.room_id}, Invite ID: ${inviteId}, by ${socket.id}: ${player.name}`);
 
             socket.join(room.room_id);
 
-            // Emit both link and sanitized room to creator
+            const sanitizedRoom = sanitizeRoom(room);
             socket.emit("privateRoomCreated", {
-                room_id: room.room_id,
-                link: `/privateRoom/${inviteId}`,
-                room: sanitizeRoom(room),
+                ...sanitizedRoom,
+                inviteLink: `/privateRoom/${inviteId}`,
             });
         } catch (err: any) {
             socket.emit("error", { error_message: err.message });
         }
     });
+
 
     socket.on("joinPrivateRoom", ({ inviteId, player }: { inviteId: string, player: PlayerSession }) => {
         try {
@@ -250,11 +258,12 @@ io.on("connection", (socket) => {
             const room = privateRoomService.joinRoom(roomId, { ...player, socket });
 
             socket.join(roomId);
-            // Emit sanitized room
+            const sanitizedRoom = sanitizeRoom(room);
+            // Emit both link and sanitized room to joined player
+            console.log(`Player ${player.name} joined private room: ${roomId}`);
             io.to(roomId).emit("privateRoomJoined", {
-                room_id: room.room_id,
-                link: `/privateRoom/${inviteId}`,
-                room: sanitizeRoom(room),
+                ...sanitizedRoom,
+                inviteLink: `/privateRoom/${inviteId}`,
             });
         } catch (err: any) {
             socket.emit("error", { error_message: err.message });
@@ -287,8 +296,17 @@ io.on("connection", (socket) => {
 
     socket.on("leavePrivateRoom", ({ room_id }: { room_id: string }) => {
         const removed = privateRoomService.removePlayer(socket.id);
-        if (removed?.room) {
-            io.to(room_id).emit("privateRoomUpdated", sanitizeRoom(removed.room));
+        if (!removed?.room) return;
+
+        const room = removed.room;
+
+        // If the leaving player is the creator, delete the room entirely
+        if (removed.playerId === room.creatorId) {
+            privateRoomService.deleteRoom(room.room_id);
+            io.to(room.room_id).emit("privateRoomDeleted");
+        } else {
+            // Otherwise just update the room for remaining players
+            io.to(room.room_id).emit("privateRoomUpdated", sanitizeRoom(room));
         }
     });
 });
