@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\components\popups\TimeoutPopup.vue -->
 <template>
     <div class="popup-backdrop">
         <div class="popup-content">

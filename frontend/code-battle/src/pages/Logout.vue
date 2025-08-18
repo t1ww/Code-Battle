@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\pages\Logout.vue -->
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";

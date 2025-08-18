@@ -1,3 +1,4 @@
+// frontend\code-battle\src\types\privateRoom.d.ts
 export interface SwapRequest {
   fromTeamId: string
   toTeamId: string

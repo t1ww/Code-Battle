@@ -1,5 +1,5 @@
+<!-- frontend\code-battle\src\pages\PveLevelSelect.vue -->
 <script setup lang="ts">
-// levelDescriptions.ts
 const levelDescriptions = {
   Easy: "Simple algorithmic problems focused on basic programming concepts like arithmetic, conditionals, and loops. Time limit: 30 seconds.",
   Medium: "Moderate complexity challenges involving strings, arrays, and simple recursion or iteration. Time limit: 60 seconds.",

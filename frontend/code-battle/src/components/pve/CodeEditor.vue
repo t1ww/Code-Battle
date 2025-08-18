@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\components\pve\CodeEditor.vue -->
 <script setup lang="ts">
 import MonacoEditor from 'monaco-editor-vue3'
 import { inject } from 'vue';

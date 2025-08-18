@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\pages\PveGameplay.vue -->
 <template>
     <div class="container">
         <!-- In case question data is missing -->

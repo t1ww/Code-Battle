@@ -1,3 +1,4 @@
+// frontend\code-battle\src\stores\auth.ts
 import { ref } from "vue";
 import type { PlayerData } from "@/types/types";
 

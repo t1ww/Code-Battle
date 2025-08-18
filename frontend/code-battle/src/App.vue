@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\App.vue -->
 <script setup lang="ts">
 import Navbar from "@/components/etc/Navbar.vue";
 import BackButton from "@/components/etc/BackButton.vue";
@@ -22,7 +23,7 @@ onMounted(() => {
     router.push('/')
   })
 
-  socket.on('disconnect', (reason) => {
+  socket.on('disconnect', () => {
     triggerNotification("Disconnected from PVP server.", 2000)
     // Reset team info on disconnect
     teamStore.team_id = null

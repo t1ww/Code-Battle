@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\components\pvp\PlayerAvatar.vue -->
 <template>
     <div class="avatar-wrapper">
         <div class="avatar-circle">

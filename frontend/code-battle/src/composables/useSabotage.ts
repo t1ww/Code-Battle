@@ -1,4 +1,4 @@
-// composables/useSabotage.ts
+// frontend/code-battle/src/composables/useSabotage.ts
 import type { Ref } from "vue"
 
 export function useSabotage(code: Ref<string>, triggerNotification: (msg: string) => void) {

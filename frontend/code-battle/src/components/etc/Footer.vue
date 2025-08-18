@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\components\etc\Footer.vue -->
 <script setup lang="ts">
 </script>
 

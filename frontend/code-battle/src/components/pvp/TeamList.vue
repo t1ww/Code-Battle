@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\components\pvp\TeamList.vue -->
 <template>
     <div class="team-list">
         <h3 class="team-title">{{ title }}</h3>

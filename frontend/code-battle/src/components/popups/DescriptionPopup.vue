@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\components\popups\DescriptionPopup.vue -->
 <template>
     <transition name="slide-down">
         <div v-if="show" class="description-popup-panel">

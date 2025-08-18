@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\components\pvp\SearchIcon.vue -->
 <template>
     <svg viewBox="0 0 24 24" width="64" height="64">
         <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="2" fill="none" />

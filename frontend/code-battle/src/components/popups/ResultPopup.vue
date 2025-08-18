@@ -1,4 +1,4 @@
-<!-- src/components/pve/ResultPopup.vue -->
+<!-- frontend\code-battle\src\components\popups\ResultPopup.vue -->
 <template>
     <transition name="fade">
         <div v-if="show" class="popup-backdrop" @click.self="$emit('close')">

@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\pages\RegisterForm.vue -->
 <template>
   <div class="container">
     <form @submit.prevent="handleRegister" class="form-box">

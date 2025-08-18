@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\pages\LoginForm.vue -->
 <template>
   <div class="container">
     <form @submit.prevent="handleLogin" class="form-box">

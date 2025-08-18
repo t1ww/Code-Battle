@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\components\pvp\JoinTeamPage.vue -->
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
 import { onMounted } from 'vue'

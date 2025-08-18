@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\components\pvp\MatchFoundIcon.vue -->
 <template>
     <svg viewBox="0 0 24 24" width="64" height="64" fill="currentColor">
         <path d="M1 21h4V9H1v12zM23 10c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32

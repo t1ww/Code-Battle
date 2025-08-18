@@ -1,3 +1,4 @@
+// frontend\code-battle\src\stores\team.ts
 import { defineStore } from 'pinia'
 import { socket } from '@/clients/socket.api'
 

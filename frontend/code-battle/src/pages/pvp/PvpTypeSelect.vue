@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\pages\PvpTypeSelect.vue -->
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useTeamStore } from '@/stores/team'

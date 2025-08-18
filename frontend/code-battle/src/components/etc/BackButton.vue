@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\components\etc\BackButton.vue -->
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'

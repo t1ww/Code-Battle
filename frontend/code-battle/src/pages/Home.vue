@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\pages\Home.vue -->
 <script setup lang="ts">
 </script>
 

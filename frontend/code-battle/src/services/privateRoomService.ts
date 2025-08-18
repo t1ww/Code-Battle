@@ -1,3 +1,4 @@
+// frontend\code-battle\src\services\privateRoomService.ts
 import { socket } from '@/clients/socket.api'
 
 export function requestSwap(fromTeamId: string, toTeamId: string, requesterId: string, targetId: string) {

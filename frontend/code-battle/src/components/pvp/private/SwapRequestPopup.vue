@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\components\pvp\SwapRequestPopup.vue -->
 <script setup lang="ts">
 defineProps<{ swap: any }>()
 defineEmits(['accept', 'decline'])

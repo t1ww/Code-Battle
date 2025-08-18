@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\components\etc/Navbar.vue -->
 <script setup lang="ts">
 import { socket } from '@/clients/socket.api'
 import { computed, ref, onBeforeUnmount, onMounted, watch } from 'vue'

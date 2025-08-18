@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\components\popups\NotificationPopup.vue -->
 <template>
     <transition name="notif-slide">
         <div v-if="show" class="notification" @click="$emit('close')">

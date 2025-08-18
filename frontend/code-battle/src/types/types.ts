@@ -1,3 +1,4 @@
+// frontend\code-battle\src\types\types.ts
 export interface PlayerData {
   token: string | null;
   id: string | null;

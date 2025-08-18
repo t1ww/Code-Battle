@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\components\pvp\private\PrivateRoomTeamList.vue -->
 <script setup lang="ts">
 defineProps<{ team: { id: string, members: any[] }, title: string }>()
 </script>

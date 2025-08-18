@@ -1,4 +1,4 @@
-// composables/useTimer.ts
+// frontend/code-battle/src/composables/useTimer.ts
 import { computed, ref } from 'vue'
 
 export function useTimer(timeLimitEnabled: boolean, baseTime: number, onTimeout: () => void) {
