@@ -1,6 +1,6 @@
 <!-- frontend\code-battle\src\pages\pvp\PrivateRoom.vue -->
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePrivateRoomStore } from '@/stores/privateRoom'
 import { getPlayerData } from '@/stores/auth'
@@ -26,37 +26,59 @@ const copyInviteLink = async () => {
 
 // Computed properties
 const inviteLinkLabel = computed(() => {
-  return privateRoom.state.inviteLink.replace(window.location.origin + '/privateroom', '. . . ');
+  return privateRoom.state.inviteLink.replace(window.location.origin + '/privateRoom', '. . . ');
 })
 
 // OnMounted lifecycle hook to handle joining or creating a private room
 onMounted(() => {
   const player = getPlayerData()
-  // Ensure player data is available
   if (!player) return
 
   if (inviteId) {
     // Join an existing private room
-    socket.emit('joinPrivateRoom', { inviteId, players: [player] })
+    socket.emit('joinPrivateRoom', { inviteId, player })
   } else {
     // Create a new private room if no inviteId
     socket.emit('createPrivateRoom', [player])
   }
 
-  // Listen for room updates
+  // Listen for updates when joining an existing room
   socket.on('privateRoomJoined', (roomData) => {
-    privateRoom.state.teamA = roomData.team1 || { id: '', members: [] }
-    privateRoom.state.teamB = roomData.team2 || { id: '', members: [] }
-    privateRoom.state.inviteLink = `${window.location.origin}/private-room/${roomData.room_id}`
+    privateRoom.state.roomId = roomData.room_id
+    privateRoom.state.team1 = roomData.room1
+    privateRoom.state.team2 = roomData.team2
+    privateRoom.state.inviteLink = `${window.location.origin}/privateRoom/${roomData.room_id}`
+  })
+
+  // Listen specifically for creator event
+  socket.on('privateRoomCreated', (roomData) => {
+    privateRoom.state.roomId = roomData.room_id
+    privateRoom.state.team1 = roomData.team1
+    privateRoom.state.team2 = roomData.team2
+    privateRoom.state.inviteLink = `${window.location.origin}/privateRoom/${roomData.room_id}`
   })
 })
+
+onBeforeUnmount(() => {
+  const player = getPlayerData()
+  if (!player) return
+
+  // emit leave room event
+  socket.emit('leavePrivateRoom', { room_id: privateRoom.state.roomId })
+
+  // optionally, if the current player is the host
+  if (privateRoom.state.team1?.players[0]?.player_id === player.player_id) {
+    socket.emit('deletePrivateRoom', { room_id: privateRoom.state.roomId })
+  }
+})
+
 </script>
 
 <template>
   <div class="private-room">
     <div class="teams-grid">
-      <PrivateRoomTeamList :team="privateRoom.state.teamA" :title="'Team A'" />
-      <PrivateRoomTeamList :team="privateRoom.state.teamB" :title="'Team B'" />
+      <PrivateRoomTeamList :team="privateRoom.state.team1 ?? { team_id: '', players: [] }" :title="'Team A'" />
+      <PrivateRoomTeamList :team="privateRoom.state.team2 ?? { team_id: '', players: [] }" :title="'Team B'" />
     </div>
 
     <div class="room-footer">

@@ -226,27 +226,36 @@ io.on("connection", (socket) => {
             const room = privateRoomService.createRoom(players);
             const inviteId = privateRoomInviteService.createInvite(room.room_id);
 
-            socket.emit("privateRoomCreated", {
-                room_id: room.room_id,
-                link: `/privateroom/${inviteId}`
-            });
+            console.log(`Private room created with ID: ${room.room_id}, Invite ID: ${inviteId}`);
 
             socket.join(room.room_id);
+
+            // Emit both link and sanitized room to creator
+            socket.emit("privateRoomCreated", {
+                room_id: room.room_id,
+                link: `/privateRoom/${inviteId}`,
+                room: sanitizeRoom(room),
+            });
         } catch (err: any) {
             socket.emit("error", { error_message: err.message });
         }
     });
 
-    socket.on("joinPrivateRoom", ({ inviteId, players }: { inviteId: string, players: PlayerSession[] }) => {
+    socket.on("joinPrivateRoom", ({ inviteId, player }: { inviteId: string, player: PlayerSession }) => {
         try {
             const roomId = privateRoomInviteService.getRoomId(inviteId);
             if (!roomId) throw new Error("Invalid or expired invite");
 
-            const room = privateRoomService.joinRoom(roomId, players);
+            // Join as individual player
+            const room = privateRoomService.joinRoom(roomId, { ...player, socket });
 
             socket.join(roomId);
-            socket.emit("privateRoomJoined", room);
-            socket.to(roomId).emit("playerJoinedRoom", { room });
+            // Emit sanitized room
+            io.to(roomId).emit("privateRoomJoined", {
+                room_id: room.room_id,
+                link: `/privateRoom/${inviteId}`,
+                room: sanitizeRoom(room),
+            });
         } catch (err: any) {
             socket.emit("error", { error_message: err.message });
         }

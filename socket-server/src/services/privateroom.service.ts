@@ -36,23 +36,37 @@ export class PrivateRoomService {
         return room;
     }
 
-    /** Join as team2 */
-    joinRoom(room_id: string, players: PlayerSession[]): PrivateRoom {
+    /** Join a player, automatically choosing team with fewer members */
+    joinRoom(room_id: string, player: PlayerSession): PrivateRoom {
         const room = this.rooms.get(room_id);
         if (!room) throw new Error("Room not found");
-        if (room.team2) throw new Error("Room already has two teams");
 
-        if (players.length < 1 || players.length > 3) {
-            throw new Error("Team must have between 1 and 3 players");
+        // Initialize teams if empty
+        if (!room.team1) {
+            room.team1 = { team_id: uuidv4(), players: [player] };
+            return room;
+        }
+        if (!room.team2) {
+            room.team2 = { team_id: uuidv4(), players: [] };
         }
 
-        const team2: Team = {
-            team_id: uuidv4(),
-            players,
-        };
+        // Decide which team to join (team with fewer players, default team1)
+        const targetTeam = room.team1.players.length <= room.team2.players.length ? room.team1 : room.team2;
 
-        room.team2 = team2;
+        if (targetTeam.players.length >= 3) {
+            throw new Error("Both teams are full");
+        }
+
+        targetTeam.players.push(player);
         return room;
+    }
+
+    /** Get both teams from a room */
+    getTeams(room_id: string): { team1: Team; team2: Team } {
+        const room = this.rooms.get(room_id);
+        if (!room) throw new Error("Room not found");
+        if (!room.team1 || !room.team2) throw new Error("Both teams must be set");
+        return { team1: room.team1, team2: room.team2 };
     }
 
     /** Request or perform swap */

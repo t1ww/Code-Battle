@@ -7,9 +7,19 @@ export interface SwapRequest {
   status: 'pending' | 'accepted' | 'declined'
 }
 
+export interface Team {
+  team_id: string
+  players: {
+    player_id: string
+    name: string
+    email: string
+  }[]
+}
+
 export interface PrivateRoomState {
-  teamA: { id: string, members: any[] }
-  teamB: { id: string, members: any[] }
+  roomId: string
+  team1: Team | null
+  team2: Team | null
   swapRequests: SwapRequest[]
   inviteLink: string
 }

@@ -6,8 +6,9 @@ import { socket } from '@/clients/socket.api'
 
 export const usePrivateRoomStore = defineStore('privateRoom', () => {
   const state = ref<PrivateRoomState>({
-    teamA: { id: '', members: [] },
-    teamB: { id: '', members: [] },
+    roomId: '',
+    team1: { team_id: '', players: [] },
+    team2: { team_id: '', players: [] },
     swapRequests: [],
     inviteLink: ''
   })

@@ -48,7 +48,7 @@ const routes = [
   { name: "Matchmaking", path: "/matchmaking", component: Matchmaking, meta: { requiresAuth: true, online: true } },
   {
     name: "PrivateRoom",
-    path: "/private-room/:inviteId?",  // "?" makes it optional
+    path: "/privateRoom/:inviteId?",  // "?" makes it optional
     component: PrivateRoom,
     meta: { requiresAuth: true, online: true, backTo: "/pvpSelect" },
     props: true  // so route.params.inviteId is passed as a prop
