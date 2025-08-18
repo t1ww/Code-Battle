@@ -139,3 +139,4 @@ dist
 outer_temp_workspace/
 /ts-code-runner/temp
 .env.docker
+localnote.txt

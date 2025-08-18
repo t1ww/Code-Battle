@@ -16,6 +16,7 @@ import PveLevelView from "@/pages/pve/PveQuestionView.vue";
 import Matchmaking from "@/pages/pvp/Matchmaking.vue";
 import PveGameplay from "@/pages/pve/PveGameplay.vue";
 import JoinTeamPage from "@/components/pvp/JoinTeamPage.vue";
+import PrivateRoom from "@/pages/pvp/PrivateRoom.vue";
 import { isAuthenticated } from "@/stores/auth";
 
 /**
@@ -43,6 +44,12 @@ const routes = [
   { name: "PvpTypeSelect", path: "/pvpSelect", component: PvpTypeSelect, meta: { requiresAuth: true, online: true, backTo: "/" } },
   { name: "PvpTimeSelect", path: "/pvpTimeSelect", component: PvpTimeSelect, meta: { requiresAuth: true, online: true, backTo: "/pvpSelect" } },
   { name: "Matchmaking", path: "/matchmaking", component: Matchmaking, meta: { requiresAuth: true, online: true } },
+  { 
+    name: "PrivateRoom", 
+    path: "/private-room", 
+    component: PrivateRoom, 
+    meta: { requiresAuth: true, online: true, backTo: "/pvpSelect" } 
+  },
   // Private match (wip)
 
   // Account

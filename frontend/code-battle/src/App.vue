@@ -23,14 +23,11 @@ onMounted(() => {
   })
 
   socket.on('disconnect', (reason) => {
-    if (reason !== 'io client disconnect') {
-      triggerNotification("Disconnected from PVP server.", 2000)
-
-      // Reset team info on disconnect
-      teamStore.team_id = null
-      teamStore.members = []
-      teamStore.invite_link = ''
-    }
+    triggerNotification("Disconnected from PVP server.", 2000)
+    // Reset team info on disconnect
+    teamStore.team_id = null
+    teamStore.members = []
+    teamStore.invite_link = ''
   })
 })
 

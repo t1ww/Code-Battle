@@ -51,7 +51,7 @@ const getPrivateMessage = computed(() => {
 
       <!-- Private -->
       <div class="button-with-text">
-        <router-link :to="isPrivateDisabled ? {} : { name: '' }" id="pvp-private-button" class="mode-button"
+        <router-link :to="isPrivateDisabled ? {} : { name: 'PrivateRoom' }" id="pvp-private-button" class="mode-button"
           :class="{ disabled: isPrivateDisabled }">
           Private custom match
         </router-link>
