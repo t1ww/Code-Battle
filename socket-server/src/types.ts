@@ -1,3 +1,4 @@
+// socket-server/src/types.ts
 import type { Socket } from "socket.io";
 
 export type MatchMode = "1v1" | "3v3";

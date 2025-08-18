@@ -1,3 +1,4 @@
+// socket-server/src/services/connection.service.ts
 import { Socket } from "socket.io";
 
 interface ActiveConnection {

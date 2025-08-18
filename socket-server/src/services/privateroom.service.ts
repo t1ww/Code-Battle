@@ -1,4 +1,4 @@
-// services/privateroom.service.ts
+// socket-server/src/services/privateroom.service.ts
 import { v4 as uuidv4 } from "uuid";
 import type { PlayerSession, Team } from "@/types";
 
