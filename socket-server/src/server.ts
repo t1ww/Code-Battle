@@ -294,7 +294,7 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on("leavePrivateRoom", ({ room_id }: { room_id: string }) => {
+    socket.on("leavePrivateRoom", () => {
         const removed = privateRoomService.removePlayer(socket.id);
         if (!removed?.room) return;
 
@@ -302,10 +302,12 @@ io.on("connection", (socket) => {
 
         // If the leaving player is the creator, delete the room entirely
         if (removed.playerId === room.creatorId) {
+            console.log(`Room ${room.room_id} deleted by creator ${removed.playerId}`);
             privateRoomService.deleteRoom(room.room_id);
             io.to(room.room_id).emit("privateRoomDeleted");
         } else {
             // Otherwise just update the room for remaining players
+            console.log(`Player ${removed.playerId} left room ${room.room_id}`);
             io.to(room.room_id).emit("privateRoomUpdated", sanitizeRoom(room));
         }
     });

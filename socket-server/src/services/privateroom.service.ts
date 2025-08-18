@@ -118,27 +118,24 @@ export class PrivateRoomService {
     }
 
     /** Remove player by socket */
-    removePlayer(socketId: string): { room?: PrivateRoom; teamKey?: "team1" | "team2"; playerId?: string } | undefined {
-        for (const [room_id, room] of this.rooms) {
+    removePlayer(socketId: string): { room: PrivateRoom; teamKey: "team1" | "team2"; playerId: string } | undefined {
+        for (const [roomId, room] of this.rooms) {
             for (const teamKey of ["team1", "team2"] as const) {
                 const team = room[teamKey];
                 if (!team) continue;
 
-                const idx = team.players.findIndex((p) => p.socket.id === socketId);
+                const idx = team.players.findIndex(p => p.socket.id === socketId);
                 if (idx !== -1) {
                     const [removedPlayer] = team.players.splice(idx, 1);
 
-                    // If both teams empty → delete room
-                    if ((!room.team1 || room.team1.players.length === 0) &&
-                        (!room.team2 || room.team2.players.length === 0)) {
-                        this.rooms.delete(room_id);
-                    }
+                    // Note: don't delete the room here, server handles it separately
                     return { room, teamKey, playerId: removedPlayer.player_id };
                 }
             }
         }
         return undefined;
     }
+
 
     /** Delete room entirely */
     deleteRoom(room_id: string) {

@@ -49,9 +49,9 @@ onMounted(() => {
   socket.on('privateRoomJoined', (roomData) => {
     console.log('Joined private room:', roomData)
     privateRoom.state.roomId = roomData.room_id
-    privateRoom.state.team1 = roomData.room1
+    privateRoom.state.team1 = roomData.team1
     privateRoom.state.team2 = roomData.team2
-    privateRoom.state.inviteLink = `${window.location.origin}/privateRoom/${roomData.room_id}`
+    privateRoom.state.inviteLink = `${window.location.origin}${roomData.inviteLink}`
   })
 
   // Listen specifically for creator event
