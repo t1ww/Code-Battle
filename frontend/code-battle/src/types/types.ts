@@ -1,7 +1,7 @@
 // frontend\code-battle\src\types\types.ts
 export interface PlayerData {
   token: string | null;
-  id: string | null;
+  player_id: string | null;
   name: string | null;
   email: string | null;
   avatar_url?: string;

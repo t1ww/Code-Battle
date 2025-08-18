@@ -67,9 +67,9 @@ const handleLogout = () => {
 // Set self on mount for initial load
 onMounted(() => {
   const player = getPlayerData()
-  if (player?.id && player?.name) {
+  if (player?.player_id && player?.name) {
     self.value = {
-      id: player.id,
+      id: player.player_id,
       name: player.name,
       avatar_url: player.avatar_url ?? undefined,
     }
@@ -100,9 +100,9 @@ onMounted(() => {
 watch(isAuthenticated, (loggedIn) => {
   if (loggedIn) {
     const player = getPlayerData()
-    if (player?.id && player?.name) {
+    if (player?.player_id && player?.name) {
       self.value = {
-        id: player.id,
+        id: player.player_id,
         name: player.name,
         avatar_url: player.avatar_url ?? undefined,
       }

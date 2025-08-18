@@ -10,7 +10,7 @@ export function getPlayerData(): PlayerData | null {
 
   return {
     token,
-    id: localStorage.getItem("player_id"),
+    player_id: localStorage.getItem("player_id"),
     name: localStorage.getItem("player_name"),
     email: localStorage.getItem("player_email"),
   };

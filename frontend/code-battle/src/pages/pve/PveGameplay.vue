@@ -195,7 +195,7 @@ const submitCode = async () => {
             stopTimer()
             showClearedPopup.value = true
             const scorePayload: ScoreSubmitRequest = {
-                player_id: player.id!, // replace with actual player ID from state/store if dynamic
+                player_id: player.player_id!, // replace with actual player ID from state/store if dynamic
                 question_id: question_data.value.id.toString(),
                 score: finalScore.value,
                 language: "c++", // optionally make this reactive if you're tracking language

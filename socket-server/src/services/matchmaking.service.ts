@@ -97,23 +97,22 @@ export class MatchmakingService {
             const [p1, p2] = matchPlayers;
 
             p1.socket.emit("matchInfo", {
-                you: { id: p1.player_id, name: p1.name, email: p1.email, token: null },
+                you: { player_id: p1.player_id, name: p1.name, email: p1.email, token: null },
                 friends: [],
-                opponents: [{ id: p2.player_id, name: p2.name, email: p2.email, token: null }]
+                opponents: [{ player_id: p2.player_id, name: p2.name, email: p2.email, token: null }]
             });
 
             p2.socket.emit("matchInfo", {
-                you: { id: p2.player_id, name: p2.name, email: p2.email, token: null },
+                you: { player_id: p2.player_id, name: p2.name, email: p2.email, token: null },
                 friends: [],
-                opponents: [{ id: p1.player_id, name: p1.name, email: p1.email, token: null }]
+                opponents: [{ player_id: p1.player_id, name: p1.name, email: p1.email, token: null }]
             });
 
             matchPlayers.forEach(p => {
                 p.socket.emit("matchStarted", { player_id: p.player_id });
                 queue.delete(p.player_id);
             });
-
-
+            // ✅ Emit match started event
             return { message: "1v1 match started successfully" };
         }
 
@@ -129,13 +128,13 @@ export class MatchmakingService {
         const [teamA, teamB] = teams.slice(0, 2);
 
         const teamAData = teamA.players.map(p => ({
-            id: p.player_id,
+            player_id: p.player_id,
             name: p.name,
             email: p.email,
             token: null
         }));
         const teamBData = teamB.players.map(p => ({
-            id: p.player_id,
+            player_id: p.player_id,
             name: p.name,
             email: p.email,
             token: null
@@ -144,7 +143,7 @@ export class MatchmakingService {
         teamA.players.forEach(p => {
             p.socket.emit("matchInfo", {
                 you: { id: p.player_id, name: p.name, email: p.email, token: null },
-                friends: teamAData.filter(fp => fp.id !== p.player_id),
+                friends: teamAData.filter(fp => fp.player_id !== p.player_id),
                 opponents: teamBData
             });
 
@@ -157,7 +156,7 @@ export class MatchmakingService {
         teamB.players.forEach(p => {
             p.socket.emit("matchInfo", {
                 you: { id: p.player_id, name: p.name, email: p.email, token: null },
-                friends: teamBData.filter(fp => fp.id !== p.player_id),
+                friends: teamBData.filter(fp => fp.player_id !== p.player_id),
                 opponents: teamAData
             });
 

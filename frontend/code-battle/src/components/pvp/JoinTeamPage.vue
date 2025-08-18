@@ -10,12 +10,12 @@ const router = useRouter()
 const teamStore = useTeamStore()
 
 const self = getPlayerData()
-if (!self || !self.id || !self.name || !self.email) {
+if (!self || !self.player_id || !self.name || !self.email) {
     throw new Error('Player not authenticated or missing data')
 }
 
 const selfInfo = {
-    id: self.id,
+    id: self.player_id,
     name: self.name,
     email: self.email,
 }

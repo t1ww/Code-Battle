@@ -3,7 +3,7 @@
     <div class="team-list">
         <h3 class="team-title">{{ title }}</h3>
         <div class="players">
-            <div v-for="(player, i) in players" :key="player.id ?? i" class="player-slot">
+            <div v-for="(player, i) in players" :key="player.player_id ?? i" class="player-slot">
                 <PlayerAvatar :player="player" />
                 <div class="avatar-name">{{ player.name }}</div>
             </div>
@@ -16,7 +16,7 @@ import PlayerAvatar from '@/components/pvp/PlayerAvatar.vue'
 
 defineProps<{
     title: string
-    players: { id: string; name: string; avatar_url?: string }[]
+    players: { player_id: string; name: string; avatar_url?: string }[]
 }>()
 </script>
 

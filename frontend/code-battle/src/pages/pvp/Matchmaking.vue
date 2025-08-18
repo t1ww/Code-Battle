@@ -33,15 +33,17 @@ const match = ref<{
     friends: PlayerData[]
     opponents: PlayerData[]
 }>({
-    you: { token: null, id: '0', name: '', email: null },
+    you: { token: null, player_id: '0', name: '', email: null },
     friends: [],
     opponents: []
 })
 
 const mapToMinimal = (players: PlayerData[]) => {
-    return players
-        .filter(p => p.id && p.name)
-        .map(({ id, name, avatar_url }) => ({ id: id!, name: name!, avatar_url }))
+    return players.map(({ player_id, name, avatar_url }) => {
+        if (!player_id) throw new Error("Player is missing player_id")
+        if (!name) throw new Error(`Player ${player_id} is missing name`)
+        return { player_id, name, avatar_url }
+    })
 }
 
 const team1 = computed(() => {
@@ -58,9 +60,9 @@ const countdown = ref(3)
 let timer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
-    if (player?.id) {
+    if (player?.player_id) {
         if (mode.value === '1v1') {
-            socket.emit("queuePlayer", { player_id: player.id, name: player.name, email: player.email, mode: '1v1', timeLimit: timeLimit.value })
+            socket.emit("queuePlayer", { player_id: player.player_id, name: player.name, email: player.email, mode: '1v1', timeLimit: timeLimit.value })
         } else if (mode.value === '3v3') {
             if (!teamStore.team_id || teamStore.members.length < 3) {
                 errorMessage.value = 'You must be in a full team to queue for 3v3.'
