@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 
-export class InviteService {
+export class TeamInviteService {
     private inviteMap: Map<string, string> = new Map(); // inviteId -> teamId
 
     createInvite(teamId: string): string {

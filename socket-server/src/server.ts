@@ -1,12 +1,14 @@
 // server.ts (or main entry)
+// Import necessary modules and services
 import { createServer } from "http";
 import express from "express";
 import { Server } from "socket.io";
 import { ConnectionService } from "@/services/connection.service";
 import { MatchmakingService } from "@/services/matchmaking.service";
 import { TeamService } from "./services/team.service";
-import { InviteService } from "@/services/invite.service";
+import { TeamInviteService } from "@/services/team.invite.service";
 import { PrivateRoomService } from "@/services/privateroom.service";
+import { PrivateRoomInviteService } from "@/services/privateRoom.invite.service";
 
 import type {
     MatchMode,
@@ -16,17 +18,23 @@ import type {
     Team,
 } from "@/types";
 
+// Create an Express app and HTTP server
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
     cors: { origin: "*" },
 });
 
+// Initialize services
+// NEW: Connection and matchmaking services
 const connectionService = new ConnectionService();
 const matchmakingService = new MatchmakingService();
+// NEW: Private room services
 const teamService = new TeamService();
-const inviteService = new InviteService();
+const teamInviteService = new TeamInviteService();
+// NEW: Private room services
 const privateRoomService = new PrivateRoomService();
+const privateRoomInviteService = new PrivateRoomInviteService();
 
 // Helper: Remove socket from players before emitting to clients
 function sanitizeTeam(team: Team) {
@@ -99,7 +107,7 @@ io.on("connection", (socket) => {
         try {
             const playersWithSocket = players.map((p) => ({ ...p, socket }));
             const team = teamService.createTeam(playersWithSocket);
-            const inviteId = inviteService.createInvite(team.team_id);
+            const inviteId = teamInviteService.createInvite(team.team_id);
             socket.emit("teamCreated", {
                 team_id: team.team_id,
                 link: `/join/${inviteId}`, // frontend uses this now
@@ -120,7 +128,7 @@ io.on("connection", (socket) => {
             invite_id: string;
             player: PlayerSession;
         }) => {
-            const team_id = inviteService.getTeamId(invite_id);
+            const team_id = teamInviteService.getTeamId(invite_id);
 
             if (!team_id) {
                 socket.emit("error", { error_message: "Invalid or expired invite" });
@@ -213,24 +221,32 @@ io.on("connection", (socket) => {
     });
 
     // ==== PRIVATE ROOM EVENTS ====
-
     socket.on("createPrivateRoom", (players: PlayerSession[]) => {
         try {
-            const playersWithSocket = players.map((p) => ({ ...p, socket }));
-            const room = privateRoomService.createRoom(playersWithSocket);
+            const room = privateRoomService.createRoom(players);
+            const inviteId = privateRoomInviteService.createInvite(room.room_id);
+
+            socket.emit("privateRoomCreated", {
+                room_id: room.room_id,
+                link: `/privateroom/${inviteId}`
+            });
+
             socket.join(room.room_id);
-            socket.emit("privateRoomCreated", sanitizeRoom(room));
         } catch (err: any) {
             socket.emit("error", { error_message: err.message });
         }
     });
 
-    socket.on("joinPrivateRoom", ({ room_id, players }: { room_id: string; players: PlayerSession[] }) => {
+    socket.on("joinPrivateRoom", ({ inviteId, players }: { inviteId: string, players: PlayerSession[] }) => {
         try {
-            const playersWithSocket = players.map((p) => ({ ...p, socket }));
-            const room = privateRoomService.joinRoom(room_id, playersWithSocket);
-            playersWithSocket.forEach((p) => p.socket.join(room.room_id));
-            io.to(room.room_id).emit("privateRoomUpdated", sanitizeRoom(room));
+            const roomId = privateRoomInviteService.getRoomId(inviteId);
+            if (!roomId) throw new Error("Invalid or expired invite");
+
+            const room = privateRoomService.joinRoom(roomId, players);
+
+            socket.join(roomId);
+            socket.emit("privateRoomJoined", room);
+            socket.to(roomId).emit("playerJoinedRoom", { room });
         } catch (err: any) {
             socket.emit("error", { error_message: err.message });
         }

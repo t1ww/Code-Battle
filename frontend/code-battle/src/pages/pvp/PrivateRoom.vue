@@ -4,6 +4,16 @@ import PrivateRoomTeamList from '@/components/pvp/private/PrivateRoomTeamList.vu
 import SwapRequestPopup from '@/components/pvp/private/SwapRequestPopup.vue'
 
 const privateRoom = usePrivateRoomStore()
+
+const copyInviteLink = async () => {
+  if (!privateRoom.state.inviteLink) return
+  try {
+    await navigator.clipboard.writeText(privateRoom.state.inviteLink)
+    alert("Invite link copied!")
+  } catch (err) {
+    console.error("Failed to copy invite link", err)
+  }
+}
 </script>
 
 <template>
@@ -14,10 +24,21 @@ const privateRoom = usePrivateRoomStore()
     </div>
 
     <div class="room-footer">
-      <div class="invite">Invite link: {{ privateRoom.state.inviteLink }}</div>
-      <div class="time-limit">Time limit: <input type="checkbox" /></div>
+      <div class="invite">
+        Invite link:
+        <a :href="privateRoom.state.inviteLink" target="_blank">
+          {{ privateRoom.state.inviteLink }}
+        </a>
+        <button @click="copyInviteLink">Copy</button>
+      </div>
+
+      <div class="time-limit">
+        Time limit: <input type="checkbox" />
+      </div>
+
       <button class="start-btn">Start!</button>
     </div>
+
 
     <SwapRequestPopup v-for="swap in privateRoom.state.swapRequests" :key="swap.requesterId + swap.targetId"
       :swap="swap" @accept="privateRoom.acceptSwap(swap)" @decline="privateRoom.declineSwap(swap)" />
@@ -68,5 +89,32 @@ const privateRoom = usePrivateRoomStore()
   cursor: pointer;
   font-weight: bold;
   border-radius: 5px;
+}
+
+/* Invite link */
+.invite {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.invite a {
+  color: #4caf50;
+  text-decoration: underline;
+}
+
+.invite button {
+  background: #333;
+  border: 1px solid #4caf50;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.invite button:hover {
+  background: #4caf50;
+  color: black;
 }
 </style>
