@@ -10,4 +10,5 @@ export interface PrivateRoomState {
   teamA: { id: string, members: any[] }
   teamB: { id: string, members: any[] }
   swapRequests: SwapRequest[]
+  inviteLink: string
 }

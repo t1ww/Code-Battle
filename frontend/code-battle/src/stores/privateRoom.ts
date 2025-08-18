@@ -7,7 +7,8 @@ export const usePrivateRoomStore = defineStore('privateRoom', () => {
   const state = ref<PrivateRoomState>({
     teamA: { id: '', members: [] },
     teamB: { id: '', members: [] },
-    swapRequests: []
+    swapRequests: [],
+    inviteLink: ''
   })
 
   function sendSwapRequest(fromTeamId: string, toTeamId: string, requesterId: string, targetId: string) {
