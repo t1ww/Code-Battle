@@ -1,5 +1,5 @@
 <script setup lang="ts">
-defineProps<{ team: { id: string, members: any[] } }>()
+defineProps<{ team: { id: string, members: any[] }, title: string }>()
 </script>
 
 <template>
@@ -10,7 +10,7 @@ defineProps<{ team: { id: string, members: any[] } }>()
       <span>{{ member.name }}</span>
     </div>
     <!-- Empty slots for consistent height -->
-    <div v-for="n in (3 - team.members.length)" :key="'empty-'+n" class="team-slot"></div>
+    <div v-for="n in (3 - team.members.length)" :key="'empty-' + n" class="team-slot"></div>
   </div>
 </template>
 
@@ -36,7 +36,8 @@ defineProps<{ team: { id: string, members: any[] } }>()
   justify-content: center;
   align-items: center;
   border-bottom: 1px solid limegreen;
-  height: 60px; /* consistent row height */
+  height: 60px;
+  /* consistent row height */
 }
 
 .avatar-placeholder {

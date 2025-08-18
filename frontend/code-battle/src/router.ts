@@ -1,3 +1,5 @@
+// frontend\code-battle\src\router.ts
+// This file sets up the Vue Router for the Code Battle application.
 import { createRouter, createWebHistory } from "vue-router";
 
 // Importing all page components
@@ -44,13 +46,13 @@ const routes = [
   { name: "PvpTypeSelect", path: "/pvpSelect", component: PvpTypeSelect, meta: { requiresAuth: true, online: true, backTo: "/" } },
   { name: "PvpTimeSelect", path: "/pvpTimeSelect", component: PvpTimeSelect, meta: { requiresAuth: true, online: true, backTo: "/pvpSelect" } },
   { name: "Matchmaking", path: "/matchmaking", component: Matchmaking, meta: { requiresAuth: true, online: true } },
-  { 
-    name: "PrivateRoom", 
-    path: "/private-room", 
-    component: PrivateRoom, 
-    meta: { requiresAuth: true, online: true, backTo: "/pvpSelect" } 
+  {
+    name: "PrivateRoom",
+    path: "/private-room/:inviteId?",  // "?" makes it optional
+    component: PrivateRoom,
+    meta: { requiresAuth: true, online: true, backTo: "/pvpSelect" },
+    props: true  // so route.params.inviteId is passed as a prop
   },
-  // Private match (wip)
 
   // Account
   { name: "Login", path: "/login", component: Login, meta: { hideAuth: true } },

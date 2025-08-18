@@ -1,3 +1,4 @@
+// frontend\code-battle\src\stores\privateRoom.ts
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { PrivateRoomState, SwapRequest } from '@/types/privateRoom.d.ts'
@@ -11,32 +12,39 @@ export const usePrivateRoomStore = defineStore('privateRoom', () => {
     inviteLink: ''
   })
 
-  function sendSwapRequest(fromTeamId: string, toTeamId: string, requesterId: string, targetId: string) {
-    socket.emit('swapRequest', { fromTeamId, toTeamId, requesterId, targetId })
-  }
+  // --- socket listeners ---
+  socket.on('privateRoomCreated', (data: { room_id: string, link: string }) => {
+    state.value.inviteLink = `${window.location.origin}${data.link}`
+  })
 
-  function acceptSwap(swap: SwapRequest) {
-    socket.emit('swapAccept', swap)
-  }
-
-  function declineSwap(swap: SwapRequest) {
-    socket.emit('swapDecline', swap)
-  }
-
-  // Listen for socket events
   socket.on('swapRequest', (swap: SwapRequest) => {
     state.value.swapRequests.push(swap)
   })
   socket.on('swapAccepted', (swap: SwapRequest) => {
     state.value.swapRequests = state.value.swapRequests.filter(s => s !== swap)
-    // Optionally update teams here
   })
   socket.on('swapDeclined', (swap: SwapRequest) => {
     state.value.swapRequests = state.value.swapRequests.filter(s => s !== swap)
   })
 
+  // --- actions ---
+  function createRoom(players: any[]) {
+    socket.emit('createPrivateRoom', players)
+  }
+
+  function sendSwapRequest(fromTeamId: string, toTeamId: string, requesterId: string, targetId: string) {
+    socket.emit('swapRequest', { fromTeamId, toTeamId, requesterId, targetId })
+  }
+  function acceptSwap(swap: SwapRequest) {
+    socket.emit('swapAccept', swap)
+  }
+  function declineSwap(swap: SwapRequest) {
+    socket.emit('swapDecline', swap)
+  }
+
   return {
     state,
+    createRoom,
     sendSwapRequest,
     acceptSwap,
     declineSwap

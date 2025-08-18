@@ -1,10 +1,19 @@
+<!-- frontend\code-battle\src\pages\pvp\PrivateRoom.vue -->
 <script setup lang="ts">
+import { computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { usePrivateRoomStore } from '@/stores/privateRoom'
+import { getPlayerData } from '@/stores/auth'
 import PrivateRoomTeamList from '@/components/pvp/private/PrivateRoomTeamList.vue'
 import SwapRequestPopup from '@/components/pvp/private/SwapRequestPopup.vue'
+import { socket } from '@/clients/socket.api'
 
+// Initialize necessary constants
 const privateRoom = usePrivateRoomStore()
+const route = useRoute()
+const inviteId = route.params.inviteId as string | undefined
 
+// Function to copy invite link to clipboard
 const copyInviteLink = async () => {
   if (!privateRoom.state.inviteLink) return
   try {
@@ -14,22 +23,49 @@ const copyInviteLink = async () => {
     console.error("Failed to copy invite link", err)
   }
 }
+
+// Computed properties
+const inviteLinkLabel = computed(() => {
+  return privateRoom.state.inviteLink.replace(window.location.origin + '/privateroom', '. . . ');
+})
+
+// OnMounted lifecycle hook to handle joining or creating a private room
+onMounted(() => {
+  const player = getPlayerData()
+  // Ensure player data is available
+  if (!player) return
+
+  if (inviteId) {
+    // Join an existing private room
+    socket.emit('joinPrivateRoom', { inviteId, players: [player] })
+  } else {
+    // Create a new private room if no inviteId
+    socket.emit('createPrivateRoom', [player])
+  }
+
+  // Listen for room updates
+  socket.on('privateRoomJoined', (roomData) => {
+    privateRoom.state.teamA = roomData.team1 || { id: '', members: [] }
+    privateRoom.state.teamB = roomData.team2 || { id: '', members: [] }
+    privateRoom.state.inviteLink = `${window.location.origin}/private-room/${roomData.room_id}`
+  })
+})
 </script>
 
 <template>
   <div class="private-room">
     <div class="teams-grid">
-      <PrivateRoomTeamList :team="privateRoom.state.teamA" />
-      <PrivateRoomTeamList :team="privateRoom.state.teamB" />
+      <PrivateRoomTeamList :team="privateRoom.state.teamA" :title="'Team A'" />
+      <PrivateRoomTeamList :team="privateRoom.state.teamB" :title="'Team B'" />
     </div>
 
     <div class="room-footer">
       <div class="invite">
-        Invite link:
-        <a :href="privateRoom.state.inviteLink" target="_blank">
-          {{ privateRoom.state.inviteLink }}
-        </a>
-        <button @click="copyInviteLink">Copy</button>
+        <span class="label">Invite link:</span>
+        <button class="invite-btn" @click="copyInviteLink">
+          {{ inviteLinkLabel }}
+          <span class="copy-icon">📋</span>
+        </button>
       </div>
 
       <div class="time-limit">
@@ -58,9 +94,6 @@ const copyInviteLink = async () => {
 .teams-grid,
 .room-footer {
   width: 100%;
-  /* fill most of the screen */
-  max-width: 1400px;
-  /* allow much bigger max */
 }
 
 
@@ -76,8 +109,6 @@ const copyInviteLink = async () => {
   justify-content: space-between;
   align-items: center;
   margin-top: 1rem;
-  width: 70%;
-  max-width: 900px;
   color: white;
 }
 
@@ -94,27 +125,37 @@ const copyInviteLink = async () => {
 /* Invite link */
 .invite {
   display: flex;
-  gap: 0.5rem;
   align-items: center;
+  gap: 0.5rem;
   font-size: 0.9rem;
 }
 
-.invite a {
-  color: #4caf50;
-  text-decoration: underline;
+.label {
+  white-space: nowrap;
+  font-weight: bold;
 }
 
-.invite button {
+.invite-btn {
+  display: flex;
+  white-space: nowrap;
+  align-items: center;
+  gap: 0.25rem;
   background: #333;
   border: 1px solid #4caf50;
   color: white;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   cursor: pointer;
+  font-family: monospace;
+  /* makes the link easier to read */
 }
 
-.invite button:hover {
+.invite-btn:hover {
   background: #4caf50;
   color: black;
+}
+
+.copy-icon {
+  font-size: 0.85rem;
 }
 </style>
