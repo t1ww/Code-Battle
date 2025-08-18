@@ -4,8 +4,8 @@ import type { PlayerSession, Team } from "@/types";
 
 interface PrivateRoom {
     room_id: string;
-    team1: Team | null;
-    team2: Team | null;
+    team1: Team;
+    team2: Team;
     creatorId: string; // add creator tracking
     pendingSwap?: {
         requesterId: string;
@@ -19,10 +19,11 @@ export class PrivateRoomService {
     /** Create a private room with team1 already set */
     createRoom(initialPlayer: PlayerSession): PrivateRoom {
         const team1: Team = { team_id: uuidv4(), players: [initialPlayer] };
+        const team2: Team = { team_id: uuidv4(), players: [] };
         const room: PrivateRoom = {
             room_id: uuidv4(),
             team1,
-            team2: null,
+            team2,
             creatorId: initialPlayer.player_id,
         };
         this.rooms.set(room.room_id, room);
@@ -33,15 +34,6 @@ export class PrivateRoomService {
     joinRoom(room_id: string, player: PlayerSession): PrivateRoom {
         const room = this.rooms.get(room_id);
         if (!room) throw new Error("Room not found");
-
-        // Initialize teams if empty
-        if (!room.team1) {
-            room.team1 = { team_id: uuidv4(), players: [player] };
-            return room;
-        }
-        if (!room.team2) {
-            room.team2 = { team_id: uuidv4(), players: [] };
-        }
 
         // Decide which team to join (team with fewer players, default team1)
         const targetTeam = room.team1.players.length <= room.team2.players.length ? room.team1 : room.team2;
