@@ -10,6 +10,7 @@ import MessagePopup from '@/components/popups/MessagePopup.vue'
 import { socket } from '@/clients/socket.api'
 import { useNotification } from '@/composables/useNotification'
 import NotificationPopup from '@/components/popups/NotificationPopup.vue'
+import ChainCopyIcon from '@/components/pvp/private/ChainCopyIcon.vue'
 
 // Initialize necessary constants
 const privateRoom = usePrivateRoomStore()
@@ -111,7 +112,7 @@ onBeforeUnmount(() => {
         <span class="label">Invite link:</span>
         <button class="invite-btn" @click="copyInviteLink">
           {{ inviteLinkLabel }}
-          <span class="copy-icon">📋</span>
+          <ChainCopyIcon />
         </button>
       </div>
 
