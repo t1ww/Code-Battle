@@ -25,10 +25,7 @@
                     </div>
 
                     <div class="section">
-                        <label>
-                            Time limit:
-                            <input type="checkbox" :checked="timeLimitEnabled" disabled />
-                        </label>
+                        <CheckboxToggle :model-value="timeLimitEnabled" label="Time limit" disabled />
                     </div>
 
                     <div class="section modifier">
@@ -45,6 +42,8 @@
 </template>
 
 <script setup lang="ts">
+import CheckboxToggle from '../etc/CheckboxToggle.vue';
+
 defineProps<{
     show: boolean
     question: any

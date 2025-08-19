@@ -4,6 +4,7 @@ import { defineProps, defineEmits } from 'vue'
 const props = defineProps<{
     modelValue: boolean
     label?: string
+    disabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -11,13 +12,14 @@ const emit = defineEmits<{
 }>()
 
 function toggle() {
+    if (props.disabled) return
     emit('update:modelValue', !props.modelValue)
 }
 </script>
 
 <template>
-    <label class="checkbox-line">
-        <input type="checkbox" :checked="modelValue" @change="toggle" />
+    <label :class="['checkbox-line', { disabled }]">
+        <input type="checkbox" :checked="modelValue" @change="toggle" :disabled="disabled" />
         <span>{{ label }}</span>
     </label>
 </template>
@@ -83,5 +85,15 @@ function toggle() {
 
 .checkbox-line:hover span::before {
     border-color: #3e783e;
+}
+
+/* Disabled state */
+.checkbox-line.disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+.checkbox-line.disabled span::before {
+    background: #e0e0e0;       /* lighter gray background */
+    border-color: #aaa;         /* duller border */
 }
 </style>
