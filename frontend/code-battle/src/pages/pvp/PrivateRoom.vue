@@ -10,6 +10,7 @@ import { socket } from '@/clients/socket.api'
 import { useNotification } from '@/composables/useNotification'
 import NotificationPopup from '@/components/popups/NotificationPopup.vue'
 import ChainCopyIcon from '@/components/pvp/private/ChainCopyIcon.vue'
+import CheckboxToggle from '@/components/etc/CheckboxToggle.vue'
 
 // Initialize necessary constants
 const privateRoom = usePrivateRoomStore()
@@ -156,9 +157,7 @@ defineProps<{ inviteId?: string }>()
         </button>
       </div>
 
-      <div class="time-limit">
-        Time limit: <input type="checkbox" />
-      </div>
+      <CheckboxToggle v-model="privateRoom.state.timeLimit" label="Time Limit" />
 
       <button class="swap-btn" @click="handleSwapClick">
         <template v-if="pendingSwapByMe">Cancel</template>

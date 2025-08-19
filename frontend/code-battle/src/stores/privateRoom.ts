@@ -10,7 +10,8 @@ export const usePrivateRoomStore = defineStore('privateRoom', () => {
     team1: { team_id: '', players: [] },
     team2: { team_id: '', players: [] },
     swapRequests: [],
-    inviteLink: ''
+    inviteLink: '',
+    timeLimit: true,
   })
 
   // --- socket listeners ---

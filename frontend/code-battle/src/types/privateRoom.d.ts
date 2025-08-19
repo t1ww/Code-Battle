@@ -22,4 +22,5 @@ export interface PrivateRoomState {
   team2: Team | null
   swapRequests: SwapRequest[]
   inviteLink: string
+  timeLimit: boolean
 }
