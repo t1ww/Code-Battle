@@ -126,16 +126,28 @@ onMounted(() => {
       incomingSwapRequest.value = null
     }
   })
-})
 
-onBeforeUnmount(() => {
-  const player = getPlayerData()
-  if (!player) return
-  const roomId = privateRoom.state.roomId
-  if (!roomId) return
-  socket.emit('leavePrivateRoom', { room_id: roomId })
+  // Delete room on page refresh
+  const handleUnload = () => {
+    const player = getPlayerData()
+    const roomId = privateRoom.state.roomId
+    if (player && roomId) {
+      socket.emit('leavePrivateRoom', { room_id: roomId })
+    }
+  }
+  // Add event listener for beforeunload to handle room deletion
+  window.addEventListener('beforeunload', handleUnload)
+  onBeforeUnmount(() => {
+    window.removeEventListener('beforeunload', handleUnload)
+    // Clean up socket listeners
+    const player = getPlayerData()
+    if (!player) return
+    const roomId = privateRoom.state.roomId
+    if (!roomId) return
+    // Emit leave event
+    socket.emit('leavePrivateRoom', { room_id: roomId })
+  })
 })
-
 defineProps<{ inviteId?: string }>()
 </script>
 
@@ -143,9 +155,11 @@ defineProps<{ inviteId?: string }>()
   <NotificationPopup :show="showNotification" :message="notificationMessage" @close="showNotification = false" />
   <div class="private-room">
     <div class="teams-grid">
-      <PrivateRoomTeamList :team="privateRoom.state.team1 ?? { team_id: '', players: [] }" :teamName="'Team A'" :incomingSwapRequesterId="incomingSwapRequesterId" />
+      <PrivateRoomTeamList :team="privateRoom.state.team1 ?? { team_id: '', players: [] }" :teamName="'Team A'"
+        :incomingSwapRequesterId="incomingSwapRequesterId" />
       <div class="divider"><!-- Vertical divider --></div>
-      <PrivateRoomTeamList :team="privateRoom.state.team2 ?? { team_id: '', players: [] }" :teamName="'Team B'" :incomingSwapRequesterId="incomingSwapRequesterId" />
+      <PrivateRoomTeamList :team="privateRoom.state.team2 ?? { team_id: '', players: [] }" :teamName="'Team B'"
+        :incomingSwapRequesterId="incomingSwapRequesterId" />
     </div>
 
     <div class="room-footer">
@@ -183,6 +197,10 @@ defineProps<{ inviteId?: string }>()
 </template>
 
 <style scoped>
+button {
+  outline: none;
+}
+
 .private-room {
   margin-top: 10vh;
   /* navbar buffer */
@@ -208,13 +226,9 @@ defineProps<{ inviteId?: string }>()
 
 .divider {
   width: 1px;
-  /* thin line */
   background-color: limegreen;
-  /* same as border for consistency */
   align-self: center;
-  /* vertically center */
   height: 95%;
-  /* only cover part of the height */
 }
 
 .room-footer {
@@ -226,13 +240,25 @@ defineProps<{ inviteId?: string }>()
 }
 
 .start-btn {
-  background: gray;
+  background: rgb(0, 0, 0);
   border: none;
   padding: 0.5rem 1rem;
   color: white;
+  border: solid 1px;
+  border-color: var(--theme-color);
   cursor: pointer;
   font-weight: bold;
   border-radius: 5px;
+}
+
+.start-btn:hover {
+  background: #141414;
+  color: white;
+}
+
+.start-btn:active {
+  background: var(--theme-darker-color);
+  color: white;
 }
 
 /* Invite link */
@@ -253,9 +279,9 @@ defineProps<{ inviteId?: string }>()
   white-space: nowrap;
   align-items: center;
   gap: 0.25rem;
-  background: #333;
-  border: 1px solid #4caf50;
-  color: white;
+  background: #000000;
+  border: 1px solid var(--theme-lighter-color);
+  color: var(--theme-color);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   cursor: pointer;
@@ -264,8 +290,13 @@ defineProps<{ inviteId?: string }>()
 }
 
 .invite-btn:hover {
-  background: #4caf50;
+  background: var(--theme-lighter-color);
   color: black;
+}
+
+.invite-btn:active {
+  background: #000000;
+  color: var(--theme-darker-color);
 }
 
 .copy-icon {
@@ -273,12 +304,23 @@ defineProps<{ inviteId?: string }>()
 }
 
 /* Swap */
+.swap-btn:hover {
+  background: #444;
+  color: white;
+}
+
+.swap-btn:active {
+  background: #d2e7d7;
+  color: white;
+}
+
 .swap-btn.accept {
   background: rgb(0, 0, 0);
   border: solid 1px limegreen;
   color: white;
   margin-left: 0.5rem;
 }
+
 .swap-btn.decline {
   background: rgb(0, 0, 0);
   border: solid 1px red;

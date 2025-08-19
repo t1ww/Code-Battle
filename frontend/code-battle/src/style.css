@@ -11,7 +11,9 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --cmucolor: rgb(190, 106, 254);
+  --theme-color: #40ff39;
+  --theme-darker-color: #4caf50;
+  --theme-lighter-color: #87ff87;
 }
 
 a {
@@ -40,7 +42,7 @@ button {
   transition: border-color 0.25s;
 }
 button:hover {
-  border-color: #646cff;
+  border-color: var(--theme-color);
 }
 button:focus,
 button:focus-visible {
@@ -58,7 +60,7 @@ button:focus-visible {
     background-color: #ffffff;
   }
   a:hover {
-    color: #747bff;
+    color: #40ff39;
   }
   button {
     background-color: #f9f9f9;
