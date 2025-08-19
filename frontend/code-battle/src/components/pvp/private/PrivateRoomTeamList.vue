@@ -1,12 +1,12 @@
 <!-- frontend\code-battle\src\components\pvp\private\PrivateRoomTeamList.vue -->
 <script setup lang="ts">
 import type { Team } from '@/types/privateRoom'
-defineProps<{ team: Team , title: string }>()
+defineProps<{ team: Team, teamName: string }>()
 </script>
 
 <template>
   <div class="team-list">
-    <div class="team-title">Team {{ team.team_id }}</div>
+    <div class="team-name">{{ teamName }}</div>
     <div v-for="member in team.players" :key="member.player_id" class="team-slot">
       <span class="avatar-placeholder"></span>
       <span>{{ member.name }}</span>
@@ -20,16 +20,13 @@ defineProps<{ team: Team , title: string }>()
 .team-list {
   display: flex;
   flex-direction: column;
-  width: 20rem;
-  border-left: 1px solid limegreen;
-  border-right: 1px solid limegreen;
-  background: #35353546;
+  width: 24rem;
 }
 
-.team-title {
+.team-name {
   text-align: center;
   font-weight: bold;
-  padding: 0.75rem;
+  padding: 1rem;
   border-bottom: 1px solid limegreen;
 }
 
@@ -38,8 +35,10 @@ defineProps<{ team: Team , title: string }>()
   justify-content: center;
   align-items: center;
   border-bottom: 1px solid limegreen;
-  height: 60px;
-  /* consistent row height */
+  height: 5rem;
+}
+.team-slot:last-child {
+  border-bottom: none;
 }
 
 .avatar-placeholder {

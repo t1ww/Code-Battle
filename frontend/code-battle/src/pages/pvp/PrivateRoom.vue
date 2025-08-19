@@ -33,7 +33,7 @@ const copyInviteLink = async () => {
 
 // Computed properties
 const inviteLinkLabel = computed(() => {
-  return privateRoom.state.inviteLink.replace(window.location.origin + '/privateRoom', '. . . ');
+  return privateRoom.state.inviteLink.replace(`${window.location.origin}/privateRoom`, '... ');
 })
 
 // OnMounted lifecycle hook to handle joining or creating a private room
@@ -103,8 +103,9 @@ onBeforeUnmount(() => {
   <NotificationPopup :show="showNotification" :message="notificationMessage" @close="showNotification = false" />
   <div class="private-room">
     <div class="teams-grid">
-      <PrivateRoomTeamList :team="privateRoom.state.team1 ?? { team_id: '', players: [] }" :title="'Team A'" />
-      <PrivateRoomTeamList :team="privateRoom.state.team2 ?? { team_id: '', players: [] }" :title="'Team B'" />
+      <PrivateRoomTeamList :team="privateRoom.state.team1 ?? { team_id: '', players: [] }" :teamName="'Team A'" />
+      <div class="divider"><!-- Vertical divider --></div>
+      <PrivateRoomTeamList :team="privateRoom.state.team2 ?? { team_id: '', players: [] }" :teamName="'Team B'" />
     </div>
 
     <div class="room-footer">
@@ -150,12 +151,19 @@ onBeforeUnmount(() => {
   width: 100%;
 }
 
-
 .teams-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  border: 2px solid limegreen;
-  background: black;
+  grid-template-columns: 1fr auto 1fr; /* middle column for divider */
+  background: #35353546;
+  border: 1px solid limegreen;
+  border-radius: .5rem;
+}
+
+.divider {
+  width: 1px;                  /* thin line */
+  background-color: limegreen;  /* same as border for consistency */
+  align-self: center;           /* vertically center */
+  height: 95%;                  /* only cover part of the height */
 }
 
 .room-footer {
