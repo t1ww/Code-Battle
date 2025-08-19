@@ -6,6 +6,7 @@ import api from '@/clients/crud.api'
 import type { Question, LeaderboardEntry } from '@/types/types'
 import { getPlayerData } from '@/stores/auth'
 import { useQuestionStore } from '@/stores/questionStore'
+import CheckboxToggle from '@/components/etc/CheckboxToggle.vue'
 
 const route = useRoute()
 const level = route.query.mode as string || 'Easy'
@@ -93,7 +94,6 @@ onMounted(async () => {
     loading.value = false
   }
 })
-
 </script>
 
 <template>
@@ -178,11 +178,7 @@ onMounted(async () => {
         <hr />
 
         <div class="options">
-          <label class="checkbox-line">
-            <input type="checkbox" v-model="timeLimitEnabled" />
-            <span>Time limit :</span>
-          </label>
-
+          <CheckboxToggle v-model="timeLimitEnabled" label="Time limit :" />
           <div class="modifier">
             <span>Difficulty modifier :</span>
             <div class="modifier-cycle modifier">
@@ -277,7 +273,8 @@ h4 {
 .leaderboard-table {
   width: 100%;
   border-collapse: separate;
-  border-spacing: 0 0.4rem; /* vertical spacing between rows */
+  border-spacing: 0 0.4rem;
+  /* vertical spacing between rows */
   font-size: 0.85rem;
   margin-top: 0.3rem;
   table-layout: fixed;
@@ -331,7 +328,7 @@ h4 {
   color: #2a5d1e;
 }
 
-.test-cases > div {
+.test-cases>div {
   background: #daf1be;
   border: 1px solid #6eaa4f;
   border-radius: 0.4rem;
@@ -345,70 +342,6 @@ h4 {
   flex-wrap: wrap;
   gap: 1rem;
   align-items: center;
-}
-
-/* Checkbox (timer) */
-.checkbox-line {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  cursor: pointer;
-  user-select: none;
-  position: relative;
-}
-
-.checkbox-line input[type="checkbox"] {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-}
-
-.checkbox-line span {
-  flex-shrink: 0;
-  position: relative;
-  padding-left: 28px;
-  line-height: 1.2;
-}
-
-.checkbox-line span::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  border: 2px solid #559f55;
-  border-radius: 4px;
-  background: white;
-  box-sizing: border-box;
-  transition: background-color 0.3s, border-color 0.3s;
-}
-
-.checkbox-line input[type="checkbox"]:checked + span::before {
-  background-color: #559f55;
-  border-color: #3e783e;
-}
-
-.checkbox-line input[type="checkbox"]:checked + span::after {
-  content: "";
-  position: absolute;
-  left: 6px;
-  top: 50%;
-  transform: translateY(-50%) rotate(45deg);
-  width: 6px;
-  height: 12px;
-  border: solid white;
-  border-width: 0 3px 3px 0;
-  pointer-events: none;
-}
-
-/* Hover effect */
-.checkbox-line:hover span::before {
-  border-color: #3e783e;
 }
 
 /* Modifier */
