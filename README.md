@@ -157,10 +157,10 @@ npm run be:db:seed
 To run everything (backend, frontend, code runner, socket server):
 
 ```bash
-npm run all
+npm run dev
 ```
 
-This will open separate terminal windows for each service.
+This runs all services concurrently in one terminal. You can stop all servers safely at any time by pressing Ctrl+C.
 
 - **Frontend:** [http://localhost:5173](http://localhost:5173) (Vite default)
 - **Backend API:** [http://localhost:5000](http://localhost:5000)
@@ -168,16 +168,6 @@ This will open separate terminal windows for each service.
 - **Code Runner:** [http://localhost:5001](http://localhost:5001)
 
 _If any port is busy, check your terminal output for the actual port used._
----
-
-### 8. Stop All Servers (Windows Only)
-
-To close all running servers:
-
-```bash
-npm run stop
-```
-
 ---
 
 ## 🧩 Project Structure

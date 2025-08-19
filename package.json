@@ -12,25 +12,29 @@
   ],
   "scripts": {
     "jwt": "node jwt.generator.js --prefix utility",
-    "be": "npm run dev --prefix backend",
+    
     "fe": "npm run dev --prefix frontend/code-battle",
-    "tcr": "npm run dev --prefix ts-code-runner",
-    "ss": "npm run dev --prefix socket-server",
+    "frontend": "npm run fe",
+    
+    "be": "npm run dev --prefix backend",
     "be:db:reset": "npm run database:reset --prefix backend",
     "be:db:seed": "npm run database:seed --prefix backend",
     "be:db:migrate": "npx knex migrate:latest --knexfile knexfile.ts --cwd backend",
     "be:db:rollback": "npx knex migrate:rollback --all --knexfile knexfile.ts --cwd backend",
     "be:test": "npm test --prefix backend",
     "backend": "npm run be",
-    "frontend": "npm run fe",
     "backend:database:reset": "npm run be:db:reset",
     "backend:database:seed": "npm run be:db:seed",
     "backend:test": "npm run be:test",
+    
+    "tcr": "npm run dev --prefix ts-code-runner",
     "ts-code-runner": "npm run tcr",
+    
+    "ss": "npm run dev --prefix socket-server",
     "socket-server": "npm run ss",
-    "dev": "start \"Backend Server\" cmd /k \"npm run be\" && start \"Frontend Server\" cmd /k \"npm run fe\"",
-    "all": "start \"Backend Server\" cmd /k \"npm run be\" && start \"Frontend Server\" cmd /k \"npm run fe\" && start \"TS Runner\" cmd /k \"npm run tcr\" && start \"Socket Server\" cmd /k \"npm run ss\"",
-    "stop": "taskkill /F /IM cmd.exe /T"
+
+    "kill-ports": "npx kill-port 5000 5001 3001 5173",
+    "dev": "npm run kill-ports && concurrently -n BE,FE,TCR,SS -c cyan,green,yellow,magenta \"npm run be\" \"npm run fe\" \"npm run tcr\" \"npm run ss\""
   },
   "repository": {
     "type": "git",
@@ -45,7 +49,9 @@
   "homepage": "https://github.com/t1ww/Code-Battle#readme",
   "devDependencies": {
     "@types/jest": "^30.0.0",
+    "concurrently": "^9.2.0",
     "jest": "^30.0.4",
+    "kill-port": "^2.0.1",
     "mock-req-res": "^1.2.1",
     "ts-jest": "^29.4.0"
   },
