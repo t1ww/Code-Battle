@@ -1,3 +1,4 @@
+// jwt.generator.js
 const crypto = require("crypto");
 
 function generateJwtSecret() {
