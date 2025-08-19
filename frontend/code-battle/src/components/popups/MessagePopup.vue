@@ -1,19 +1,19 @@
-<!-- frontend\code-battle\src\components\popups\ClearedPopup.vue -->
+<!-- frontend\code-battle\src\components\popups\MessagePopup.vue -->
 <template>
     <div class="popup-backdrop">
         <div class="popup-content">
-            <h2>{{ Message }}</h2>
-            <router-link :to="{ name: linkToName }">
-                <button>Ok</button>
-            </router-link>
+            <h2>{{ title }}</h2>
+            <p>{{ message }}</p>
+            <button v-on:click="buttonOnClick">Ok</button>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
 defineProps<{
-    Message: string
-    linkToName: string
+    title: string
+    message: string
+    buttonOnClick: () => void
 }>()
 </script>
 
@@ -36,6 +36,11 @@ defineProps<{
     padding: 2rem;
     border-radius: 12px;
     text-align: center;
+}
+
+.popup-content h2,
+.popup-content p {
+    color: black;
 }
 
 .popup-content button {

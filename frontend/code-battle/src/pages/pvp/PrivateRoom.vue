@@ -1,17 +1,20 @@
 <!-- frontend\code-battle\src\pages\pvp\PrivateRoom.vue -->
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { usePrivateRoomStore } from '@/stores/privateRoom'
 import { getPlayerData } from '@/stores/auth'
 import PrivateRoomTeamList from '@/components/pvp/private/PrivateRoomTeamList.vue'
 import SwapRequestPopup from '@/components/pvp/private/SwapRequestPopup.vue'
+import MessagePopup from '@/components/popups/MessagePopup.vue'
 import { socket } from '@/clients/socket.api'
 
 // Initialize necessary constants
 const privateRoom = usePrivateRoomStore()
 const route = useRoute()
+const router = useRouter()
 const inviteId = route.params.inviteId as string | undefined
+const roomDeleted = ref(false);
 
 // Function to copy invite link to clipboard
 const copyInviteLink = async () => {
@@ -44,7 +47,7 @@ onMounted(() => {
     console.log('Creating new private room for player:', player)
     socket.emit('createPrivateRoom', player)
   }
-  
+
   // Listen for team updates
   socket.on('privateRoomUpdated', (roomData) => {
     privateRoom.state.team1 = roomData.team1
@@ -68,7 +71,11 @@ onMounted(() => {
     privateRoom.state.inviteLink = `${window.location.origin}${roomData.inviteLink}`
   })
 
-
+  // Listen for room deletion
+  socket.on('privateRoomDeleted', () => {
+    console.log('Private room deleted by host.')
+    roomDeleted.value = true;
+  })
 
   // Listen for swap requests
   socket.on('swapRequest', (swap) => {
@@ -113,6 +120,12 @@ onBeforeUnmount(() => {
 
     <SwapRequestPopup v-for="swap in privateRoom.state.swapRequests" :key="swap.requesterId + swap.targetId"
       :swap="swap" @accept="privateRoom.acceptSwap(swap)" @decline="privateRoom.declineSwap(swap)" />
+
+    <div v-if="roomDeleted" class="room-deleted">
+      <MessagePopup title="Room Deleted" message="The room has been deleted by the creator." :buttonOnClick="() => {
+        router.push({ name: 'PvpTypeSelect' })
+      }" />
+    </div>
   </div>
 </template>
 

@@ -25,11 +25,11 @@ onMounted(async () => {
     if (inviteId && !teamStore.team_id) {
         try {
             await teamStore.joinTeamWithInvite(inviteId, selfInfo)
-            router.push({ path: '/pvpSelect' })
+            router.push({ name: 'PvpTypeSelect' })
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : ''
             alert(`Failed to join team: ${errorMessage ? ': ' + errorMessage : ''}`)
-            router.push({ path: '/' })
+            router.push({ name: 'Home' })
         }
     }
 })
