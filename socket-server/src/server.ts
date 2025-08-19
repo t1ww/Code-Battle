@@ -343,6 +343,19 @@ io.on("connection", (socket) => {
             io.to(room.room_id).emit("privateRoomUpdated", sanitizeRoomForUpdate(room));
         }
     });
+    
+    socket.on("cancelPendingSwap", ({ room_id, player_id }: { room_id: string; player_id: string }) => {
+        try {
+            const cancelled = privateRoomService.cancelPendingSwap(room_id, player_id);
+            if (cancelled) {
+                io.to(room_id).emit("swapCancelled", { cancelledBy: player_id });
+            } else {
+                socket.emit("error", { error_message: "No pending swap to cancel" });
+            }
+        } catch (err: any) {
+            socket.emit("error", { error_message: err.message });
+        }
+    });
 });
 
 const PORT = 3001;

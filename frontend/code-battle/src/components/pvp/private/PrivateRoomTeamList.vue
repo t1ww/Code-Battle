@@ -1,13 +1,14 @@
 <!-- frontend\code-battle\src\components\pvp\private\PrivateRoomTeamList.vue -->
 <script setup lang="ts">
 import type { Team } from '@/types/privateRoom'
-defineProps<{ team: Team, teamName: string }>()
+defineProps<{ team: Team, teamName: string, incomingSwapRequesterId: string }>()
 </script>
 
 <template>
   <div class="team-list">
     <div class="team-name">{{ teamName }}</div>
-    <div v-for="member in team.players" :key="member.player_id" class="team-slot">
+    <div v-for="member in team.players" :key="member.player_id" class="team-slot"
+      :class="{ 'swap-requester': member.player_id === incomingSwapRequesterId }">
       <span class="avatar-placeholder"></span>
       <span>{{ member.name }}</span>
     </div>
@@ -37,6 +38,7 @@ defineProps<{ team: Team, teamName: string }>()
   border-bottom: 1px solid limegreen;
   height: 5rem;
 }
+
 .team-slot:last-child {
   border-bottom: none;
 }
@@ -47,5 +49,10 @@ defineProps<{ team: Team, teamName: string }>()
   background: gray;
   border-radius: 50%;
   margin-right: 0.5rem;
+}
+
+.swap-requester {
+  border-bottom: 2px solid yellow;
+  background: rgba(255, 255, 0, 0.2);
 }
 </style>

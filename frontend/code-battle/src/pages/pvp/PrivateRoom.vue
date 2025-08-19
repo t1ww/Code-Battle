@@ -5,7 +5,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { usePrivateRoomStore } from '@/stores/privateRoom'
 import { getPlayerData } from '@/stores/auth'
 import PrivateRoomTeamList from '@/components/pvp/private/PrivateRoomTeamList.vue'
-import SwapRequestPopup from '@/components/pvp/private/SwapRequestPopup.vue'
 import MessagePopup from '@/components/popups/MessagePopup.vue'
 import { socket } from '@/clients/socket.api'
 import { useNotification } from '@/composables/useNotification'
@@ -19,6 +18,9 @@ const router = useRouter()
 const { showNotification, notificationMessage, triggerNotification } = useNotification()
 const inviteId = route.params.inviteId as string | undefined
 const roomDeleted = ref(false);
+// State to track pending and incoming swap requests
+const pendingSwapByMe = ref(false)
+const incomingSwapRequest = ref<string | null>(null) // requesterId
 
 // Function to copy invite link to clipboard
 const copyInviteLink = async () => {
@@ -30,10 +32,34 @@ const copyInviteLink = async () => {
     console.error("Failed to copy invite link", err)
   }
 }
+// Function to handle swap requests
+const handleSwapClick = () => {
+  const player = getPlayerData()
+  const roomId = privateRoom.state.roomId
+  if (!player || !roomId) return
+
+  if (pendingSwapByMe.value) {
+    // Cancel your own pending request
+    socket.emit('cancelPendingSwap', { room_id: roomId, player_id: player.player_id })
+  } else if (incomingSwapRequest.value) {
+    // Accept the incoming swap
+    socket.emit('confirmSwap', { room_id: roomId, player_id: player.player_id })
+    incomingSwapRequest.value = null
+  } else {
+    // Make a swap request
+    socket.emit('swapTeam', { room_id: roomId, player_id: player.player_id })
+  }
+}
+const declineSwap = () => {
+  if (incomingSwapRequest.value) incomingSwapRequest.value = null
+}
 
 // Computed properties
 const inviteLinkLabel = computed(() => {
   return privateRoom.state.inviteLink.replace(`${window.location.origin}/privateRoom`, '... ');
+})
+const incomingSwapRequesterId = computed(() => {
+  return incomingSwapRequest.value || ''
 })
 
 // OnMounted lifecycle hook to handle joining or creating a private room
@@ -82,12 +108,22 @@ onMounted(() => {
     roomDeleted.value = true;
   })
 
-  // Listen for swap requests
-  socket.on('swapRequest', (swap) => {
-    // Show player swap request pointer next to their avatar in TeamList
-    console.log('Swap request received:', swap)
-    // lets player click to accept or decline
-    // socket.emit("confirmSwap"
+  socket.on('swapRequest', ({ requesterId }) => {
+    if (requesterId === getPlayerData()?.player_id) {
+      pendingSwapByMe.value = true
+    } else {
+      incomingSwapRequest.value = requesterId
+    }
+  })
+
+  // Listen for swap cancelled events
+  socket.on('swapCancelled', ({ cancelledBy }) => {
+    if (cancelledBy === getPlayerData()?.player_id) {
+      pendingSwapByMe.value = false
+    }
+    if (incomingSwapRequest.value === cancelledBy) {
+      incomingSwapRequest.value = null
+    }
   })
 })
 
@@ -98,15 +134,17 @@ onBeforeUnmount(() => {
   if (!roomId) return
   socket.emit('leavePrivateRoom', { room_id: roomId })
 })
+
+defineProps<{ inviteId?: string }>()
 </script>
 
 <template>
   <NotificationPopup :show="showNotification" :message="notificationMessage" @close="showNotification = false" />
   <div class="private-room">
     <div class="teams-grid">
-      <PrivateRoomTeamList :team="privateRoom.state.team1 ?? { team_id: '', players: [] }" :teamName="'Team A'" />
+      <PrivateRoomTeamList :team="privateRoom.state.team1 ?? { team_id: '', players: [] }" :teamName="'Team A'" :incomingSwapRequesterId="incomingSwapRequesterId" />
       <div class="divider"><!-- Vertical divider --></div>
-      <PrivateRoomTeamList :team="privateRoom.state.team2 ?? { team_id: '', players: [] }" :teamName="'Team B'" />
+      <PrivateRoomTeamList :team="privateRoom.state.team2 ?? { team_id: '', players: [] }" :teamName="'Team B'" :incomingSwapRequesterId="incomingSwapRequesterId" />
     </div>
 
     <div class="room-footer">
@@ -122,12 +160,20 @@ onBeforeUnmount(() => {
         Time limit: <input type="checkbox" />
       </div>
 
+      <button class="swap-btn" @click="handleSwapClick">
+        <template v-if="pendingSwapByMe">Cancel</template>
+        <template v-else-if="incomingSwapRequest">Accept</template>
+        <template v-else>Swap</template>
+      </button>
+
+      <!-- Optional Decline button for incoming swaps -->
+      <button v-if="incomingSwapRequest" class="swap-btn decline" @click="declineSwap">
+        Decline
+      </button>
+
       <button class="start-btn">Start!</button>
     </div>
 
-
-    <SwapRequestPopup v-for="swap in privateRoom.state.swapRequests" :key="swap.requesterId + swap.targetId"
-      :swap="swap" @accept="privateRoom.acceptSwap(swap)" @decline="privateRoom.declineSwap(swap)" />
 
     <div v-if="roomDeleted" class="room-deleted">
       <MessagePopup title="Room Deleted" message="The room has been deleted by the creator." :buttonOnClick="() => {
@@ -154,17 +200,22 @@ onBeforeUnmount(() => {
 
 .teams-grid {
   display: grid;
-  grid-template-columns: 1fr auto 1fr; /* middle column for divider */
+  grid-template-columns: 1fr auto 1fr;
+  /* middle column for divider */
   background: #35353546;
   border: 1px solid limegreen;
   border-radius: .5rem;
 }
 
 .divider {
-  width: 1px;                  /* thin line */
-  background-color: limegreen;  /* same as border for consistency */
-  align-self: center;           /* vertically center */
-  height: 95%;                  /* only cover part of the height */
+  width: 1px;
+  /* thin line */
+  background-color: limegreen;
+  /* same as border for consistency */
+  align-self: center;
+  /* vertically center */
+  height: 95%;
+  /* only cover part of the height */
 }
 
 .room-footer {
@@ -220,5 +271,19 @@ onBeforeUnmount(() => {
 
 .copy-icon {
   font-size: 0.85rem;
+}
+
+/* Swap */
+.swap-btn.accept {
+  background: rgb(0, 0, 0);
+  border: solid 1px limegreen;
+  color: white;
+  margin-left: 0.5rem;
+}
+.swap-btn.decline {
+  background: rgb(0, 0, 0);
+  border: solid 1px red;
+  color: white;
+  margin-left: 0.5rem;
 }
 </style>
