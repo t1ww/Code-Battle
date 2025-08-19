@@ -84,7 +84,8 @@ onMounted(() => {
 
   // Listen for swap requests
   socket.on('swapRequest', (swap) => {
-    // show player swap request pointer
+    // Show player swap request pointer next to their avatar in TeamList
+    console.log('Swap request received:', swap)
     // lets player click to accept or decline
     // socket.emit("confirmSwap"
   })

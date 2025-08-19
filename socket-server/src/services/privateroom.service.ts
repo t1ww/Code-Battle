@@ -112,6 +112,27 @@ export class PrivateRoomService {
         return { swapped: true, room };
     }
 
+    cancelPendingSwap(room_id: string, player_id: string): boolean {
+        const room = this.rooms.get(room_id);
+        if (!room || !room.pendingSwap) return false;
+
+        const { requesterId, targetTeam } = room.pendingSwap;
+
+        // Cancel if the player was either requester or in the target team
+        if (requesterId === player_id) {
+            room.pendingSwap = undefined;
+            return true;
+        }
+
+        const targetTeamObj = targetTeam === "team1" ? room.team1 : room.team2;
+        if (targetTeamObj.players.some(p => p.player_id === player_id)) {
+            room.pendingSwap = undefined;
+            return true;
+        }
+
+        return false;
+    }
+
     /** Get room */
     getRoom(room_id: string): PrivateRoom | undefined {
         return this.rooms.get(room_id);
@@ -135,7 +156,6 @@ export class PrivateRoomService {
         }
         return undefined;
     }
-
 
     /** Delete room entirely */
     deleteRoom(room_id: string) {

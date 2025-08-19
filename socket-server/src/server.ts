@@ -99,8 +99,6 @@ function sanitizeRoomForUpdate(room: { team1: Team | null; team2: Team | null })
     };
 }
 
-
-
 // Matchmaking loop every 6 seconds, tries to start matches for all modes by alternating
 let alternate = true;
 setInterval(() => {
@@ -329,13 +327,18 @@ io.on("connection", (socket) => {
 
         const room = removed.room;
 
-        // If the leaving player is the creator, delete the room entirely
+        // Cancel pending swap if this player was involved
+        const cancelled = privateRoomService.cancelPendingSwap(room.room_id, removed.playerId);
+        if (cancelled) {
+            io.to(room.room_id).emit("swapCancelled", { cancelledBy: removed.playerId });
+        }
+
+        // Notify remaining players in the room or delete the room if the player left was the creator
         if (removed.playerId === room.creatorId) {
             console.log(`Room ${room.room_id} deleted by creator ${removed.playerId}`);
             privateRoomService.deleteRoom(room.room_id);
             io.to(room.room_id).emit("privateRoomDeleted");
         } else {
-            // Otherwise just update the room for remaining players
             console.log(`Player ${removed.playerId} left room ${room.room_id}`);
             io.to(room.room_id).emit("privateRoomUpdated", sanitizeRoomForUpdate(room));
         }
