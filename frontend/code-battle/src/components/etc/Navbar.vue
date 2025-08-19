@@ -19,7 +19,7 @@ const isLoggedIn = computed(() => !!self.value)
 const showLogout = ref(false);
 
 const online = computed(() => route.meta.online === true)
-const canAddPlayer = computed(() => route.meta.online === true && !teamStore.isFull)
+const canAddPlayer = computed(() => route.meta.canFormTeam === true && !teamStore.isFull)
 
 // Team formation
 const selfAvatar = computed(() => {

@@ -8,11 +8,14 @@ import PrivateRoomTeamList from '@/components/pvp/private/PrivateRoomTeamList.vu
 import SwapRequestPopup from '@/components/pvp/private/SwapRequestPopup.vue'
 import MessagePopup from '@/components/popups/MessagePopup.vue'
 import { socket } from '@/clients/socket.api'
+import { useNotification } from '@/composables/useNotification'
+import NotificationPopup from '@/components/popups/NotificationPopup.vue'
 
 // Initialize necessary constants
 const privateRoom = usePrivateRoomStore()
 const route = useRoute()
 const router = useRouter()
+const { showNotification, notificationMessage, triggerNotification } = useNotification()
 const inviteId = route.params.inviteId as string | undefined
 const roomDeleted = ref(false);
 
@@ -21,7 +24,7 @@ const copyInviteLink = async () => {
   if (!privateRoom.state.inviteLink) return
   try {
     await navigator.clipboard.writeText(privateRoom.state.inviteLink)
-    alert("Invite link copied!")
+    triggerNotification("Invite link copied", 1000)
   } catch (err) {
     console.error("Failed to copy invite link", err)
   }
@@ -50,6 +53,7 @@ onMounted(() => {
 
   // Listen for team updates
   socket.on('privateRoomUpdated', (roomData) => {
+    console.log('Private room updated:', roomData)
     privateRoom.state.team1 = roomData.team1
     privateRoom.state.team2 = roomData.team2
   })
@@ -95,6 +99,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <NotificationPopup :show="showNotification" :message="notificationMessage" @close="showNotification = false" />
   <div class="private-room">
     <div class="teams-grid">
       <PrivateRoomTeamList :team="privateRoom.state.team1 ?? { team_id: '', players: [] }" :title="'Team A'" />

@@ -29,6 +29,7 @@ import { isAuthenticated } from "@/stores/auth";
  * - requiresAuth:   Route is only accessible when the user is logged in.
  * - backTo:         Optional path the back button should navigate to from this route.
  * - online:         Paths that will requires socket connections.
+ * - canFormTeam:    Whether the user can form a team in this route.
  */
 
 let connected = false
@@ -43,7 +44,7 @@ const routes = [
   { name: "PveGameplay", path: "/pveGameplay", component: PveGameplay, meta: { requiresAuth: true } },
 
   // pvp
-  { name: "PvpTypeSelect", path: "/pvpSelect", component: PvpTypeSelect, meta: { requiresAuth: true, online: true, backTo: "/" } },
+  { name: "PvpTypeSelect", path: "/pvpSelect", component: PvpTypeSelect, meta: { requiresAuth: true, online: true, canFormTeam: true, backTo: "/" } },
   { name: "PvpTimeSelect", path: "/pvpTimeSelect", component: PvpTimeSelect, meta: { requiresAuth: true, online: true, backTo: "/pvpSelect" } },
   { name: "Matchmaking", path: "/matchmaking", component: Matchmaking, meta: { requiresAuth: true, online: true } },
   {
