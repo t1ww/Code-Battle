@@ -44,7 +44,12 @@ onMounted(() => {
     console.log('Creating new private room for player:', player)
     socket.emit('createPrivateRoom', player)
   }
-
+  
+  // Listen for team updates
+  socket.on('privateRoomUpdated', (roomData) => {
+    privateRoom.state.team1 = roomData.team1
+    privateRoom.state.team2 = roomData.team2
+  })
   // Listen for updates when joining an existing room
   socket.on('privateRoomJoined', (roomData) => {
     console.log('Joined private room:', roomData)
@@ -63,11 +68,7 @@ onMounted(() => {
     privateRoom.state.inviteLink = `${window.location.origin}${roomData.inviteLink}`
   })
 
-  // Listen for team updates
-  socket.on('privateRoomUpdated', (roomData) => {
-    privateRoom.state.team1 = roomData.team1
-    privateRoom.state.team2 = roomData.team2
-  })
+
 
   // Listen for swap requests
   socket.on('swapRequest', (swap) => {

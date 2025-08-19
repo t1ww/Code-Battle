@@ -74,6 +74,32 @@ function sanitizeRoom(room: { room_id: string; team1: Team | null; team2: Team |
     };
 }
 
+function sanitizeRoomForUpdate(room: { team1: Team | null; team2: Team | null }) {
+    return {
+        team1: room.team1
+            ? {
+                team_id: room.team1.team_id,
+                players: room.team1.players.map(({ player_id, name, email }) => ({
+                    player_id,
+                    name,
+                    email,
+                })),
+            }
+            : undefined,
+        team2: room.team2
+            ? {
+                team_id: room.team2.team_id,
+                players: room.team2.players.map(({ player_id, name, email }) => ({
+                    player_id,
+                    name,
+                    email,
+                })),
+            }
+            : undefined,
+    };
+}
+
+
 
 // Matchmaking loop every 6 seconds, tries to start matches for all modes by alternating
 let alternate = true;
@@ -248,23 +274,26 @@ io.on("connection", (socket) => {
         }
     });
 
-
     socket.on("joinPrivateRoom", ({ inviteId, player }: { inviteId: string, player: PlayerSession }) => {
         try {
             const roomId = privateRoomInviteService.getRoomId(inviteId);
             if (!roomId) throw new Error("Invalid or expired invite");
 
-            // Join as individual player
             const room = privateRoomService.joinRoom(roomId, { ...player, socket });
 
             socket.join(roomId);
             const sanitizedRoom = sanitizeRoom(room);
-            // Emit both link and sanitized room to joined player
+            const sanitizedRoomForUpdate = sanitizeRoomForUpdate(room);
             console.log(`Player ${player.name} joined private room: ${roomId}`);
-            io.to(roomId).emit("privateRoomJoined", {
+
+            // Send full snapshot only to the joiner
+            socket.emit("privateRoomJoined", {
                 ...sanitizedRoom,
                 inviteLink: `/privateRoom/${inviteId}`,
             });
+
+            // Notify everyone else already in the room (socket.to instead of io.to to avoid sending to the joiner)
+            socket.to(roomId).emit("privateRoomUpdated", sanitizedRoomForUpdate);
         } catch (err: any) {
             socket.emit("error", { error_message: err.message });
         }
@@ -274,7 +303,7 @@ io.on("connection", (socket) => {
         try {
             const result = privateRoomService.requestSwap(room_id, player_id);
             if (result.swapped) {
-                io.to(room_id).emit("privateRoomUpdated", sanitizeRoom(result.room));
+                io.to(room_id).emit("privateRoomUpdated", sanitizeRoomForUpdate(result.room));
             } else if (result.pending) {
                 io.to(room_id).emit("swapRequest", { requesterId: player_id });
             }
@@ -287,7 +316,7 @@ io.on("connection", (socket) => {
         try {
             const result = privateRoomService.confirmSwap(room_id, player_id);
             if (result.swapped) {
-                io.to(room_id).emit("privateRoomUpdated", sanitizeRoom(result.room));
+                io.to(room_id).emit("privateRoomUpdated", sanitizeRoomForUpdate(result.room));
             }
         } catch (err: any) {
             socket.emit("error", { error_message: err.message });
@@ -308,7 +337,7 @@ io.on("connection", (socket) => {
         } else {
             // Otherwise just update the room for remaining players
             console.log(`Player ${removed.playerId} left room ${room.room_id}`);
-            io.to(room.room_id).emit("privateRoomUpdated", sanitizeRoom(room));
+            io.to(room.room_id).emit("privateRoomUpdated", sanitizeRoomForUpdate(room));
         }
     });
 });
