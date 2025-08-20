@@ -30,6 +30,11 @@ onMounted(() => {
     teamStore.members = []
     teamStore.invite_link = ''
   })
+
+  // For team matchmaking
+  socket.on("teamMembersJoinMatchmaking", () => {
+    router.push({name: 'Matchmaking'})
+  });
 })
 
 onBeforeUnmount(() => {

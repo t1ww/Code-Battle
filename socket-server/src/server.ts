@@ -190,7 +190,6 @@ io.on("connection", (socket) => {
         }
     );
 
-
     // Queue a player or team for matchmaking
     socket.on("queuePlayer", (data: QueuePlayerData1v1) => {
         try {
@@ -220,9 +219,9 @@ io.on("connection", (socket) => {
     });
 
     // Queue an existing team by ID
-    socket.on("queueTeam", ({ team_id, mode }: { team_id: string; mode: MatchMode }) => {
+    socket.on("queueTeam", (data: QueuePlayerData3v3) => {
         try {
-            const team = teamService.getTeam(team_id);
+            const team = teamService.getTeam(data.team_id);
             if (!team) {
                 socket.emit("queueResponse", { error_message: "Team not found" });
                 return;
@@ -233,11 +232,13 @@ io.on("connection", (socket) => {
                 socket.emit("queueResponse", `Matchmaking error with following message: ${result.error_message}`);
                 return;
             }
-
-            socket.emit("queueResponse", result);
+            // Bring team members to matchmaking page
+            socket.to(data.team_id).emit("teamMembersJoinMatchmaking");
+            // Successful queue
+            io.to(data.team_id).emit("queueResponse", result);
         } catch (err) {
             console.error("Error during matchmaking initiation:", err);
-            socket.emit("queueResponse", { error_message: "Matchmaking service unavailable. Please try again later." });
+            io.to(data.team_id).emit("queueResponse", { error_message: "Matchmaking service unavailable. Please try again later." });
         }
     });
 
@@ -343,7 +344,7 @@ io.on("connection", (socket) => {
             io.to(room.room_id).emit("privateRoomUpdated", sanitizeRoomForUpdate(room));
         }
     });
-    
+
     socket.on("cancelPendingSwap", ({ room_id, player_id }: { room_id: string; player_id: string }) => {
         try {
             const cancelled = privateRoomService.cancelPendingSwap(room_id, player_id);

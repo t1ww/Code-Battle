@@ -16,7 +16,6 @@ export interface QueuePlayerData1v1 {
 
 export interface QueuePlayerData3v3 {
     team_id: string;
-    players: QueuePlayerData[];
     timeLimit: boolean;
 }
 

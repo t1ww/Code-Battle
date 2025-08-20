@@ -17,7 +17,7 @@ import { useTeamStore } from '@/stores/team'
 const router = useRouter()
 
 const player = getPlayerData()
-const teamStore = useTeamStore()
+const team = useTeamStore()
 
 type MatchState = 'searching' | 'found' | 'showingTeams' | 'countdown' | 'started'
 
@@ -62,9 +62,11 @@ let timer: ReturnType<typeof setInterval> | null = null
 onMounted(() => {
     if (player?.player_id) {
         if (mode.value === '1v1') {
-            socket.emit("queuePlayer", { player_id: player.player_id, name: player.name, email: player.email, mode: '1v1', timeLimit: timeLimit.value })
-        } else if (mode.value === '3v3') {
-            if (!teamStore.team_id || teamStore.members.length < 3) {
+            console.log('Queue for 1v1.')
+            socket.emit("queuePlayer", { player_id: player.player_id, name: player.name, email: player.email, timeLimit: timeLimit.value })
+        } else if (mode.value === '3v3' && team.isLeader) {
+            console.log('Queue for 3v3.')
+            if (!team.team_id || team.members.length < 3) {
                 errorMessage.value = 'You must be in a full team to queue for 3v3.'
                 // redirect after showing error (optional delay)
                 setTimeout(() => {
@@ -72,7 +74,7 @@ onMounted(() => {
                 }, 1000)
                 return
             }
-            socket.emit('queueTeam', { team_id: teamStore.team_id, mode: '3v3' })
+            socket.emit('queueTeam', { team_id: team.team_id, timeLimit: timeLimit.value })
         } else {
             // Error
             errorMessage.value = 'Invalid match mode selected.'
