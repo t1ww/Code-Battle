@@ -1,5 +1,5 @@
 // jwt.generator.js
-const crypto = require("crypto");
+import crypto from "crypto";
 
 function generateJwtSecret() {
   // Generate 32 random bytes (256 bits)

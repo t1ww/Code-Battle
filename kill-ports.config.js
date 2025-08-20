@@ -1,6 +1,6 @@
 // kill-ports.config.js
-const kill = require('kill-port');
-const detect = require('detect-port').default;
+import kill from 'kill-port';
+import detect from 'detect-port';
 
 const ports = [5000, 5001, 3001, 5173];
 
