@@ -31,7 +31,7 @@ export class PrivateRoomService {
     }
 
     /** Join a player, automatically choosing team with fewer members */
-    joinRoom(room_id: string, player: PlayerSession): PrivateRoom {
+    joinRoom(room_id: string, player: PlayerSession): { room: PrivateRoom; enteredTeam: "team1" | "team2" } {
         const room = this.rooms.get(room_id);
         if (!room) throw new Error("Room not found");
 
@@ -43,7 +43,21 @@ export class PrivateRoomService {
         }
 
         targetTeam.players.push(player);
-        return room;
+        return { room, enteredTeam: targetTeam === room.team1 ? "team1" : "team2" };
+    }
+
+    /** Get which team a player is on */
+    getPlayerTeam(room_id: string, player_id: string): "team1" | "team2" | null {
+        const room = this.rooms.get(room_id);
+        if (!room) throw new Error("Room not found");
+
+        if (room.team1.players.some(p => p.player_id === player_id)) {
+            return "team1";
+        }
+        if (room.team2.players.some(p => p.player_id === player_id)) {
+            return "team2";
+        }
+        return null; // not in the room
     }
 
     /** Get both teams from a room */

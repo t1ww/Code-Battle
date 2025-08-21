@@ -265,7 +265,9 @@ io.on("connection", (socket) => {
 
             console.log(`Private room created with ID: ${room.room_id}, Invite ID: ${inviteId}, by ${socket.id}: ${player.name}`);
 
+            // Join the socket to the private room and team1
             socket.join(room.room_id);
+            socket.join(`${room.room_id}-team1`);
 
             const sanitizedRoom = sanitizeRoom(room);
             socket.emit("privateRoomCreated", {
@@ -282,9 +284,13 @@ io.on("connection", (socket) => {
             const roomId = privateRoomInviteService.getRoomId(inviteId);
             if (!roomId) throw new Error("Invalid or expired invite");
 
-            const room = privateRoomService.joinRoom(roomId, { ...player, socket });
+            const { room, enteredTeam } = privateRoomService.joinRoom(roomId, { ...player, socket });
 
+            // Join the socket to the private room and entered team
             socket.join(roomId);
+            socket.join(`${roomId}-${enteredTeam}`);
+            
+            // Sanitize the room data before sending
             const sanitizedRoom = sanitizeRoom(room);
             const sanitizedRoomForUpdate = sanitizeRoomForUpdate(room);
             console.log(`Player ${player.name} joined private room: ${roomId}`);
@@ -305,10 +311,21 @@ io.on("connection", (socket) => {
     socket.on("swapTeam", ({ room_id, player_id }: { room_id: string; player_id: string }) => {
         try {
             const result = privateRoomService.requestSwap(room_id, player_id);
+
             if (result.swapped) {
                 io.to(room_id).emit("privateRoomUpdated", sanitizeRoomForUpdate(result.room));
             } else if (result.pending) {
-                io.to(room_id).emit("swapRequest", { requesterId: player_id });
+                // Figure out which team the requester was on
+                const playerTeam = privateRoomService.getPlayerTeam(room_id, player_id);
+                if (!playerTeam) {
+                    throw new Error("Could not determine requester’s team");
+                }
+                // Target the opposing team
+                const targetTeam = playerTeam === "team1" ? "team2" : "team1";
+                console.log(`Swap requested by ${player_id} (from ${playerTeam}) in room ${room_id}`);
+
+                // Instead of notifying the whole room, only notify the target team
+                io.to(`${room_id}-${targetTeam}`).emit("swapRequest", { requesterId: player_id });
             }
         } catch (err: any) {
             socket.emit("error", { error_message: err.message });
