@@ -32,8 +32,9 @@ onMounted(() => {
   })
 
   // For team matchmaking
-  socket.on("teamMembersJoinMatchmaking", () => {
-    router.push({name: 'Matchmaking'})
+  socket.on("teamMembersJoinMatchmaking", (data) => {
+    console.log("Team leader started matchmaking, joining with team members")
+    router.push({ name: 'Matchmaking', query: { mode: '3v3', timeLimit: data.timeLimit } });
   });
 })
 

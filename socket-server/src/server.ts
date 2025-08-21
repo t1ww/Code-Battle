@@ -5,7 +5,7 @@ import express from "express";
 import { Server } from "socket.io";
 import { ConnectionService } from "@/services/connection.service";
 import { MatchmakingService } from "@/services/matchmaking.service";
-import { TeamService } from "./services/team.service";
+import { TeamService } from "@/services/team.service";
 import { TeamInviteService } from "@/services/team.invite.service";
 import { PrivateRoomService } from "@/services/privateRoom.service";
 import { PrivateRoomInviteService } from "@/services/privateRoom.invite.service";
@@ -116,6 +116,7 @@ io.on("connection", (socket) => {
     // Handle new socket connection
     connectionService.handleConnect(socket);
 
+    // ==== CONNECTION EVENTS ====
     // Handle socket disconnect
     socket.on("disconnect", () => {
         connectionService.handleDisconnect(socket.id);
@@ -131,6 +132,7 @@ io.on("connection", (socket) => {
         }
     });
 
+    // ==== TEAM FORMATION EVENTS ====
     // Create a new team with players attached to current socket
     socket.on("createTeam", (players: PlayerSession[]) => {
         try {
@@ -190,6 +192,7 @@ io.on("connection", (socket) => {
         }
     );
 
+    // ==== 1v1 MATCHMAKING EVENTS ====
     // Queue a player or team for matchmaking
     socket.on("queuePlayer", (data: QueuePlayerData1v1) => {
         try {
@@ -218,6 +221,7 @@ io.on("connection", (socket) => {
         }
     });
 
+    // ==== 3v3 TEAM QUEUE EVENTS ====
     // Queue an existing team by ID
     socket.on("queueTeam", (data: QueuePlayerData3v3) => {
         try {
@@ -233,7 +237,7 @@ io.on("connection", (socket) => {
                 return;
             }
             // Bring team members to matchmaking page
-            socket.to(data.team_id).emit("teamMembersJoinMatchmaking");
+            socket.to(data.team_id).emit("teamMembersJoinMatchmaking", data.timeLimit);
             // Successful queue
             io.to(data.team_id).emit("queueResponse", result);
         } catch (err) {

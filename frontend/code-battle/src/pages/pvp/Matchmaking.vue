@@ -64,17 +64,24 @@ onMounted(() => {
         if (mode.value === '1v1') {
             console.log('Queue for 1v1.')
             socket.emit("queuePlayer", { player_id: player.player_id, name: player.name, email: player.email, timeLimit: timeLimit.value })
-        } else if (mode.value === '3v3' && team.isLeader) {
-            console.log('Queue for 3v3.')
+        } else if (mode.value === '3v3') {
+            // Not a team
             if (!team.team_id || team.members.length < 3) {
                 errorMessage.value = 'You must be in a full team to queue for 3v3.'
-                // redirect after showing error (optional delay)
                 setTimeout(() => {
                     router.replace({ name: 'PvpTypeSelect' })
                 }, 1000)
                 return
             }
-            socket.emit('queueTeam', { team_id: team.team_id, timeLimit: timeLimit.value })
+            // Is team leader, else is member
+            if (team.isLeader) {
+                console.log('Leader queueing for 3v3.')
+                socket.emit('queueTeam', { team_id: team.team_id, timeLimit: timeLimit.value })
+            } else {
+                console.log('Member waiting for 3v3 matchmaking.')
+                // members don’t emit queue themselves, they just stay on page
+            }
+
         } else {
             // Error
             errorMessage.value = 'Invalid match mode selected.'
