@@ -59,8 +59,6 @@
     <ConfidentLostPopup v-if="showConfidentLostPopup" :finalScore="finalScore"
         @close="showConfidentLostPopup = false" />
 
-    <!-- Notifications -->
-    <NotificationPopup :show="showNotification" :message="notificationMessage" @close="showNotification = false" />
 </template>
 
 <script setup lang="ts">
@@ -77,13 +75,12 @@ import router from '@/router'
 import api from '@/clients/crud.api'
 
 // Composables
-import { useNotification } from '@/composables/useNotification'
+import { triggerNotification } from '@/composables/notificationService'
 import { useSabotage } from '@/composables/useSabotage'
 import { useTimer } from '@/composables/useTimer'
 
 // Popup components
 import ResultPopup from '@/components/popups/ResultPopup.vue'
-import NotificationPopup from '@/components/popups/NotificationPopup.vue'
 import ConfidentLostPopup from '@/components/popups/ConfidentLostPopup.vue'
 import TimeoutPopup from '@/components/popups/TimeoutPopup.vue'
 import ClearedPopup from '@/components/popups/ClearedPopup.vue'
@@ -113,7 +110,6 @@ const MODIFIER_BONUS = 1.25
 const player = getPlayerData();
 
 // Composables setup
-const { showNotification, notificationMessage, triggerNotification } = useNotification()
 const { startSabotage, stopSabotage } = useSabotage(code, triggerNotification)
 const { timeLeft, formattedTime, startTimer, stopTimer } = useTimer(timeLimitEnabled, question_data.value?.time_limit ?? 0, () => {
     showTimeoutPopup.value = true

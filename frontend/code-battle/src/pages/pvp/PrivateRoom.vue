@@ -7,16 +7,14 @@ import { getPlayerData } from '@/stores/auth'
 import PrivateRoomTeamList from '@/components/pvp/private/PrivateRoomTeamList.vue'
 import MessagePopup from '@/components/popups/MessagePopup.vue'
 import { socket } from '@/clients/socket.api'
-import { useNotification } from '@/composables/useNotification'
-import NotificationPopup from '@/components/popups/NotificationPopup.vue'
 import ChainCopyIcon from '@/components/pvp/private/ChainCopyIcon.vue'
 import CheckboxToggle from '@/components/etc/CheckboxToggle.vue'
+import { triggerNotification } from '@/composables/notificationService'
 
 // Initialize necessary constants
 const privateRoom = usePrivateRoomStore()
 const route = useRoute()
 const router = useRouter()
-const { showNotification, notificationMessage, triggerNotification } = useNotification()
 const inviteId = route.params.inviteId as string | undefined
 const roomDeleted = ref(false);
 // State to track pending and incoming swap requests
@@ -28,7 +26,8 @@ const copyInviteLink = async () => {
   if (!privateRoom.state.inviteLink) return
   try {
     await navigator.clipboard.writeText(privateRoom.state.inviteLink)
-    triggerNotification("Invite link copied", 1000)
+    console.log("Invite link copied:", privateRoom.state.inviteLink)
+    triggerNotification('Invite link copied!', 1500)
   } catch (err) {
     console.error("Failed to copy invite link", err)
   }
@@ -152,7 +151,6 @@ defineProps<{ inviteId?: string }>()
 </script>
 
 <template>
-  <NotificationPopup :show="showNotification" :message="notificationMessage" @close="showNotification = false" />
   <div class="private-room">
     <div class="teams-grid">
       <PrivateRoomTeamList :team="privateRoom.state.team1 ?? { team_id: '', players: [] }" :teamName="'Team A'"

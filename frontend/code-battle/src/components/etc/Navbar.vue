@@ -5,6 +5,7 @@ import { computed, ref, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useTeamStore } from '@/stores/team'
 import { getPlayerData, isAuthenticated } from '@/stores/auth'
 import { useRoute, useRouter } from 'vue-router'
+import { triggerNotification } from '@/composables/notificationService'
 
 import PlayerAvatar from '@/components/pvp/PlayerAvatar.vue'
 
@@ -35,6 +36,7 @@ const teammates = computed(() =>
 )
 
 const createOrShareTeam = async () => {
+  // If not already in a team, create one
   if (!teamStore.team_id && self.value) {
     await teamStore.createTeam({
       player_id: self.value.id,
@@ -42,13 +44,18 @@ const createOrShareTeam = async () => {
     })
   }
 
+  // Copy invite link to clipboard
   const link = teamStore.invite_link.startsWith('http')
     ? teamStore.invite_link
     : `${window.location.origin}${teamStore.invite_link}`
 
   await navigator.clipboard.writeText(link)
-  alert('Invite link copied!')
+
+  console.log("Invite link copied:", link)
+  // Emit event instead of alert
+  triggerNotification('Invite link copied!', 1200)
 }
+
 
 // Login
 const goToLogin = () => {

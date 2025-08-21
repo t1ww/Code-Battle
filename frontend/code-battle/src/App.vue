@@ -6,11 +6,9 @@ import NotificationPopup from "./components/popups/NotificationPopup.vue";
 import { onMounted, onBeforeUnmount } from 'vue'
 import { RouterView } from "vue-router";
 import { socket } from '@/clients/socket.api'
-import { useNotification } from '@/composables/useNotification'
+import { showNotification, notificationMessage, triggerNotification } from '@/composables/notificationService'
 import router from "@/router";
 import { useTeamStore } from "@/stores/team";
-
-const { showNotification, notificationMessage, triggerNotification } = useNotification()
 
 onMounted(() => {
   const teamStore = useTeamStore()
@@ -55,7 +53,7 @@ window.addEventListener("online", () => {
 
 <template>
   <NotificationPopup :show="showNotification" :message="notificationMessage" @close="showNotification = false" />
-  <Navbar />
+  <Navbar @notify="triggerNotification" />
   <BackButton />
   <div class="router-container">
     <router-view :key="$route.fullPath" />
