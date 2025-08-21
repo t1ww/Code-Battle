@@ -289,7 +289,7 @@ io.on("connection", (socket) => {
             // Join the socket to the private room and entered team
             socket.join(roomId);
             socket.join(`${roomId}-${enteredTeam}`);
-            
+
             // Sanitize the room data before sending
             const sanitizedRoom = sanitizeRoom(room);
             const sanitizedRoomForUpdate = sanitizeRoomForUpdate(room);
@@ -313,18 +313,28 @@ io.on("connection", (socket) => {
             const result = privateRoomService.requestSwap(room_id, player_id);
 
             if (result.swapped) {
+                // Determine old and new team
+                const newTeam = privateRoomService.getPlayerTeam(room_id, player_id); // after swap
+                if (!newTeam) throw new Error(`Cannot determine new team for player ${player_id} in room ${room_id}`);
+                const oldTeam = newTeam === "team1" ? "team2" : "team1";
+
+                // Move socket to new team room
+                const playerSocket = result.room[newTeam]?.players.find(p => p.player_id === player_id)?.socket;
+                if (playerSocket) {
+                    playerSocket.leave(`${room_id}-${oldTeam}`);
+                    playerSocket.join(`${room_id}-${newTeam}`);
+                }
+
+                // Broadcast updated room state to everyone
                 io.to(room_id).emit("privateRoomUpdated", sanitizeRoomForUpdate(result.room));
             } else if (result.pending) {
-                // Figure out which team the requester was on
                 const playerTeam = privateRoomService.getPlayerTeam(room_id, player_id);
-                if (!playerTeam) {
-                    throw new Error("Could not determine requester’s team");
-                }
-                // Target the opposing team
+                if (!playerTeam) throw new Error("Could not determine requester’s team");
+
                 const targetTeam = playerTeam === "team1" ? "team2" : "team1";
                 console.log(`Swap requested by ${player_id} (from ${playerTeam}) in room ${room_id}`);
 
-                // Instead of notifying the whole room, only notify the target team
+                // Notify only the target team
                 io.to(`${room_id}-${targetTeam}`).emit("swapRequest", { requesterId: player_id });
             }
         } catch (err: any) {
@@ -335,13 +345,27 @@ io.on("connection", (socket) => {
     socket.on("confirmSwap", ({ room_id, player_id }: { room_id: string; player_id: string }) => {
         try {
             const result = privateRoomService.confirmSwap(room_id, player_id);
+
             if (result.swapped) {
+                const newTeam = privateRoomService.getPlayerTeam(room_id, player_id); // new team
+                 if (!newTeam) throw new Error(`Cannot determine new team for player ${player_id} in room ${room_id}`);
+                const oldTeam = newTeam === "team1" ? "team2" : "team1";
+
+                // Move socket to new team room
+                const playerSocket = result.room[newTeam]?.players.find(p => p.player_id === player_id)?.socket;
+                if (playerSocket) {
+                    playerSocket.leave(`${room_id}-${oldTeam}`);
+                    playerSocket.join(`${room_id}-${newTeam}`);
+                }
+
+                // Notify all clients with updated room state
                 io.to(room_id).emit("privateRoomUpdated", sanitizeRoomForUpdate(result.room));
             }
         } catch (err: any) {
             socket.emit("error", { error_message: err.message });
         }
     });
+
 
     socket.on("leavePrivateRoom", () => {
         const removed = privateRoomService.removePlayer(socket.id);
