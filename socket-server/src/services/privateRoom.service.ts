@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from "uuid";
 import type { PlayerSession, Team } from "@/types";
 import { Socket } from "socket.io";
 
+// PlayerSession includes a Socket, but service should only handle player data.
+// Consider using a type like PlayerData without the socket.
 interface PrivateRoom {
     room_id: string;
     team1: Team;
@@ -113,7 +115,7 @@ export class PrivateRoomService {
         if (!targetTeamObj.players.some(p => p.player_id === player_id)) {
             throw new Error("You are not in the target team for this swap");
         }
-        
+
         const requesterTeamObj = oppositeTeamObj;
         const requester = requesterTeamObj.players.find(p => p.player_id === requesterId)!;
         const confirmer = targetTeamObj.players.find(p => p.player_id === player_id)!;
