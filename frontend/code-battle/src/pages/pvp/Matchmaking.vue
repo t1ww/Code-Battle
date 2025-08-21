@@ -63,7 +63,7 @@ onMounted(() => {
     if (player?.player_id) {
         if (mode.value === '1v1') {
             console.log('Queue for 1v1.')
-            socket.emit("queuePlayer", { player_id: player.player_id, name: player.name, email: player.email, timeLimit: timeLimit.value })
+            socket.emit("queuePlayer", { player: { player_id: player.player_id, name: player.name, email: player.email }, timeLimit: timeLimit.value })
         } else if (mode.value === '3v3') {
             // Not a team
             if (!team.team_id || team.members.length < 3) {
@@ -132,10 +132,10 @@ onMounted(() => {
                         } else {
                             countdown.value--
                         }
-                    }, 1000)
-                }, 1000)
-            }, 1000)
-        }, 2400);
+                    }, 1000) // 1 second countdown
+                }, 1000) // 1 second before showing countdown
+            }, 1000) // 1 second before showing teams
+        }, 1800) // 1.8 seconds before showing teams;
     })
 })
 
