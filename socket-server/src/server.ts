@@ -121,13 +121,35 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
         connectionService.handleDisconnect(socket.id);
 
-        const removed = teamService.removePlayerBySocket(socket);
-        if (removed) {
-            const { team, playerId } = removed;
+        // Handle normal team removal
+        const removedTeam = teamService.removePlayerBySocket(socket);
+        if (removedTeam) {
+            const { team, playerId } = removedTeam;
             io.to(team.team_id).emit("teamLeft", playerId);
 
             if (team.players.length === 0) {
                 teamService.removeTeam(team.team_id);
+            }
+        }
+
+        // Handle private room cleanup
+        const removedRoom = privateRoomService.removePlayer(socket.id);
+        if (removedRoom?.room) {
+            const room = removedRoom.room;
+
+            // Cancel any pending swap requests involving this player
+            const cancelled = privateRoomService.cancelPendingSwap(room.room_id, removedRoom.playerId);
+            if (cancelled) {
+                io.to(room.room_id).emit("swapCancelled", { cancelledBy: removedRoom.playerId });
+                io.to(room.room_id).emit("swapClear"); // clear UI for everyone
+            }
+
+            // If the player was the room creator, delete the room
+            if (removedRoom.playerId === room.creatorId) {
+                privateRoomService.deleteRoom(room.room_id);
+                io.to(room.room_id).emit("privateRoomDeleted");
+            } else {
+                io.to(room.room_id).emit("privateRoomUpdated", sanitizeRoomForUpdate(room));
             }
         }
     });
@@ -335,7 +357,9 @@ io.on("connection", (socket) => {
                 console.log(`Swap requested by ${player_id} (from ${playerTeam}) in room ${room_id}`);
 
                 // Notify only the target team
-                io.to(`${room_id}-${targetTeam}`).emit("swapRequest", { requesterId: player_id });
+                io.to(`${room_id}-${targetTeam}`).emit("swapRequested", { requesterId: player_id });
+                // Notify the requester that their request was sent
+                socket.emit("swapRequestedByme");
             }
         } catch (err: any) {
             socket.emit("error", { error_message: err.message });
@@ -348,7 +372,7 @@ io.on("connection", (socket) => {
 
             if (result.swapped) {
                 const newTeam = privateRoomService.getPlayerTeam(room_id, player_id); // new team
-                 if (!newTeam) throw new Error(`Cannot determine new team for player ${player_id} in room ${room_id}`);
+                if (!newTeam) throw new Error(`Cannot determine new team for player ${player_id} in room ${room_id}`);
                 const oldTeam = newTeam === "team1" ? "team2" : "team1";
 
                 // Move socket to new team room
@@ -360,12 +384,13 @@ io.on("connection", (socket) => {
 
                 // Notify all clients with updated room state
                 io.to(room_id).emit("privateRoomUpdated", sanitizeRoomForUpdate(result.room));
+                // Notify the everyone to clear swap UI
+                io.to(`${room_id}`).emit('swapClear');
             }
         } catch (err: any) {
             socket.emit("error", { error_message: err.message });
         }
     });
-
 
     socket.on("leavePrivateRoom", () => {
         const removed = privateRoomService.removePlayer(socket.id);

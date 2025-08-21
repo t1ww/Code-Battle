@@ -19,6 +19,7 @@ const inviteId = route.params.inviteId as string | undefined
 const roomDeleted = ref(false);
 // State to track pending and incoming swap requests
 const pendingSwapByMe = ref(false)
+const pendingSwapByTeammate = ref(false)
 const incomingSwapRequest = ref<string | null>(null) // requesterId
 
 // Function to copy invite link to clipboard
@@ -108,12 +109,11 @@ onMounted(() => {
     roomDeleted.value = true;
   })
 
-  socket.on('swapRequest', ({ requesterId }) => {
-    if (requesterId === getPlayerData()?.player_id) {
-      pendingSwapByMe.value = true
-    } else {
-      incomingSwapRequest.value = requesterId
-    }
+  socket.on('swapRequested', ({ requesterId }) => {
+    incomingSwapRequest.value = requesterId
+  })
+  socket.on('swapRequestedByme', () => {
+    pendingSwapByMe.value = true
   })
 
   // Listen for swap cancelled events
@@ -124,6 +124,13 @@ onMounted(() => {
     if (incomingSwapRequest.value === cancelledBy) {
       incomingSwapRequest.value = null
     }
+  })
+
+  // Listen for swap confirmation
+  socket.on('swapClear', () => {
+    pendingSwapByMe.value = false
+    pendingSwapByTeammate.value = false;
+    incomingSwapRequest.value = null
   })
 
   // Delete room on page refresh
