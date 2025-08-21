@@ -20,7 +20,10 @@ const roomDeleted = ref(false);
 // State to track pending and incoming swap requests
 const pendingSwapByMe = ref(false)
 const pendingSwapByTeammate = ref(false)
-const incomingSwapRequest = ref<string | null>(null) // requesterId
+const pendingSwapByOpponent = ref(false)
+const incomingSwapRequester = ref<string | null>(null) // requesterId
+const swapLocked = ref(false) // To prevent multiple swap requests
+const swapDeclined = ref(false) // To prevent multiple swap requests
 
 // Function to copy invite link to clipboard
 const copyInviteLink = async () => {
@@ -42,17 +45,25 @@ const handleSwapClick = () => {
   if (pendingSwapByMe.value) {
     // Cancel your own pending request
     socket.emit('cancelPendingSwap', { room_id: roomId, player_id: player.player_id })
-  } else if (incomingSwapRequest.value) {
+  } else if (incomingSwapRequester.value) {
     // Accept the incoming swap
-    socket.emit('confirmSwap', { room_id: roomId, player_id: player.player_id })
-    incomingSwapRequest.value = null
+    socket.emit('confirmSwap', { room_id: roomId, player_id: player.player_id, requesterId: incomingSwapRequester.value })
+    incomingSwapRequester.value = null
   } else {
     // Make a swap request
     socket.emit('swapTeam', { room_id: roomId, player_id: player.player_id })
   }
 }
 const declineSwap = () => {
-  if (incomingSwapRequest.value) incomingSwapRequest.value = null
+  swapDeclined.value = true;
+}
+const swapClear = () => {
+  pendingSwapByMe.value = false
+  pendingSwapByOpponent.value = false
+  pendingSwapByTeammate.value = false
+  incomingSwapRequester.value = null
+  swapLocked.value = false
+  swapDeclined.value = false
 }
 
 // Computed properties
@@ -60,7 +71,7 @@ const inviteLinkLabel = computed(() => {
   return privateRoom.state.inviteLink.replace(`${window.location.origin}/privateRoom`, '... ');
 })
 const incomingSwapRequesterId = computed(() => {
-  return incomingSwapRequest.value || ''
+  return incomingSwapRequester.value || ''
 })
 
 // OnMounted lifecycle hook to handle joining or creating a private room
@@ -109,28 +120,36 @@ onMounted(() => {
     roomDeleted.value = true;
   })
 
-  socket.on('swapRequested', ({ requesterId }) => {
-    incomingSwapRequest.value = requesterId
-  })
-  socket.on('swapRequestedByme', () => {
+  // Listen for swap requests
+  socket.on('swapRequestByme', () => {
     pendingSwapByMe.value = true
+    swapLocked.value = true
+  })
+
+  socket.on('swapRequestByOpponent', ({ requesterId }) => {
+    pendingSwapByOpponent.value = true
+    incomingSwapRequester.value = requesterId
+    swapLocked.value = true
+  })
+
+  socket.on('swapRequestByTeammate', ({ requesterId }) => {
+    pendingSwapByTeammate.value = true
+    incomingSwapRequester.value = requesterId
+    swapLocked.value = true
   })
 
   // Listen for swap cancelled events
   socket.on('swapCancelled', ({ cancelledBy }) => {
-    if (cancelledBy === getPlayerData()?.player_id) {
-      pendingSwapByMe.value = false
-    }
-    if (incomingSwapRequest.value === cancelledBy) {
-      incomingSwapRequest.value = null
+    swapClear()
+    if (cancelledBy === 'me') {
+      // Do something specific if the swap was cancelled by the user who initiated it here.
+      triggerNotification('Swap request cancelled', 1500)
     }
   })
 
   // Listen for swap confirmation
   socket.on('swapClear', () => {
-    pendingSwapByMe.value = false
-    pendingSwapByTeammate.value = false;
-    incomingSwapRequest.value = null
+    swapClear()
   })
 
   // Delete room on page refresh
@@ -178,20 +197,23 @@ defineProps<{ inviteId?: string }>()
 
       <CheckboxToggle v-model="privateRoom.state.timeLimit" label="Time Limit" />
 
-      <button class="swap-btn" @click="handleSwapClick">
+      <button v-if="!pendingSwapByTeammate && !swapDeclined" class="swap-btn" @click="handleSwapClick">
         <template v-if="pendingSwapByMe">Cancel</template>
-        <template v-else-if="incomingSwapRequest">Accept</template>
+        <template v-else-if="pendingSwapByOpponent">Accept</template>
         <template v-else>Swap</template>
       </button>
 
-      <!-- Optional Decline button for incoming swaps -->
-      <button v-if="incomingSwapRequest" class="swap-btn decline" @click="declineSwap">
+      <!-- Decline button for incoming swaps -->
+      <button v-if="pendingSwapByOpponent && !pendingSwapByTeammate && !swapDeclined" class="swap-btn decline"
+        @click="declineSwap">
         Decline
       </button>
 
-      <button class="start-btn">Start!</button>
+      <!-- Show start button when there's no pending swap -->
+      <button v-if="!pendingSwapByOpponent && !pendingSwapByTeammate && !pendingSwapByMe" class="start-btn">
+        Start!
+      </button>
     </div>
-
 
     <div v-if="roomDeleted" class="room-deleted">
       <MessagePopup title="Room Deleted" message="The room has been deleted by the creator." :buttonOnClick="() => {
@@ -309,16 +331,6 @@ button {
 }
 
 /* Swap */
-.swap-btn:hover {
-  background: #444;
-  color: white;
-}
-
-.swap-btn:active {
-  background: #d2e7d7;
-  color: white;
-}
-
 .swap-btn.accept {
   background: rgb(0, 0, 0);
   border: solid 1px limegreen;

@@ -1,6 +1,7 @@
 // socket-server/src/services/privateroom.service.ts
 import { v4 as uuidv4 } from "uuid";
 import type { PlayerSession, Team } from "@/types";
+import { Socket } from "socket.io";
 
 interface PrivateRoom {
     room_id: string;
@@ -9,6 +10,7 @@ interface PrivateRoom {
     creatorId: string; // add creator tracking
     pendingSwap?: {
         requesterId: string;
+        requesterSocket: Socket;
         targetTeam: "team1" | "team2";
     };
 }
@@ -69,7 +71,7 @@ export class PrivateRoomService {
     }
 
     /** Request or perform swap */
-    requestSwap(room_id: string, player_id: string) {
+    requestSwap(room_id: string, player_id: string, requesterSocket: Socket) {
         const room = this.rooms.get(room_id);
         if (!room?.team1 || !room.team2) throw new Error("Room must have two teams to swap");
 
@@ -92,13 +94,14 @@ export class PrivateRoomService {
         // Both full → store pending swap
         room.pendingSwap = {
             requesterId: player_id,
+            requesterSocket: requesterSocket,
             targetTeam: targetTeamKey,
         };
         return { swapped: false, pending: true, room };
     }
 
     /** Confirm swap */
-    confirmSwap(room_id: string, player_id: string) {
+    confirmSwap(room_id: string, player_id: string, confirmerSocket: Socket) {
         const room = this.rooms.get(room_id);
         if (!room?.team1 || !room.team2) throw new Error("Room not found or incomplete");
         if (!room.pendingSwap) throw new Error("No pending swap request");
@@ -110,14 +113,16 @@ export class PrivateRoomService {
         if (!targetTeamObj.players.some(p => p.player_id === player_id)) {
             throw new Error("You are not in the target team for this swap");
         }
-
+        
         const requesterTeamObj = oppositeTeamObj;
         const requester = requesterTeamObj.players.find(p => p.player_id === requesterId)!;
         const confirmer = targetTeamObj.players.find(p => p.player_id === player_id)!;
 
+        // Remove both players from their current teams
         requesterTeamObj.players = requesterTeamObj.players.filter(p => p.player_id !== requesterId);
         targetTeamObj.players = targetTeamObj.players.filter(p => p.player_id !== player_id);
 
+        // Add them to each other's teams
         requesterTeamObj.players.push(confirmer);
         targetTeamObj.players.push(requester);
 
