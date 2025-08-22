@@ -142,7 +142,7 @@ export class MatchmakingService {
 
         teamA.players.forEach(p => {
             p.socket.emit("matchInfo", {
-                you: { id: p.player_id, name: p.name, email: p.email, token: null },
+                you: { player_id: p.player_id, name: p.name, email: p.email, token: null },
                 friends: teamAData.filter(fp => fp.player_id !== p.player_id),
                 opponents: teamBData
             });
@@ -155,7 +155,7 @@ export class MatchmakingService {
 
         teamB.players.forEach(p => {
             p.socket.emit("matchInfo", {
-                you: { id: p.player_id, name: p.name, email: p.email, token: null },
+                you: { player_id: p.player_id, name: p.name, email: p.email, token: null },
                 friends: teamBData.filter(fp => fp.player_id !== p.player_id),
                 opponents: teamAData
             });
