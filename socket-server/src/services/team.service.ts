@@ -7,7 +7,11 @@ export class TeamService {
 
     createTeam(players: PlayerSession[]): Team {
         const team_id = uuidv4();
-        const team: Team = { team_id, players };
+        const leaderId = players[0].player_id; // first player is the leader
+
+        // Use assertion to "extend" without changing the interface
+        const team = { team_id, players, leaderId } as Team & { leaderId: string };
+
         this.teams.set(team_id, team);
         return team;
     }
@@ -20,7 +24,7 @@ export class TeamService {
         this.teams.delete(team_id);
     }
 
-    // NEW: find the team a socket belongs to
+    // Find the team a socket belongs to
     getTeamBySocket(socket: any): Team | undefined {
         for (const team of this.teams.values()) {
             if (team.players.some(p => p.socket.id === socket.id)) {
@@ -30,7 +34,7 @@ export class TeamService {
         return undefined;
     }
 
-    // NEW: remove a player from a team by socket
+    // Remove a player from a team by socket
     removePlayerBySocket(socket: any): { team: Team; playerId: string } | null {
         const team = this.getTeamBySocket(socket);
         if (!team) return null;

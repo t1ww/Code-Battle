@@ -95,6 +95,17 @@ onMounted(() => {
       self.value = null
     }
   })
+  socket.on('teamDisbanded', () => {
+    // Clear team info from the store
+    teamStore.team_id = null
+    teamStore.members = []
+    teamStore.invite_link = ''
+
+    // Notify the user
+    if (self.value) {
+      triggerNotification('Your team has been disbanded.', 2000)
+    }
+  })
 
   socket.on('disconnect', () => {
     teamStore.team_id = null

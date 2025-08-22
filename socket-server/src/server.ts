@@ -99,6 +99,16 @@ function sanitizeRoomForUpdate(room: { team1: Team | null; team2: Team | null })
     };
 }
 
+function disbandTeam(team: Team) {
+    // Notify remaining player (if any) that team is disbanded
+    io.to(team.team_id).emit("teamDisbanded");
+    // Make all players leave the socket room
+    team.players.forEach(p => p.socket.leave(team.team_id));
+    // Remove the team from the service
+    console.log(`Disbanding team ${team.team_id} with players: ${team.players.map(p => p.name).join(", ")}`);
+    teamService.removeTeam(team.team_id);
+}
+
 // Matchmaking loop every 6 seconds, tries to start matches for all modes by alternating
 let alternate = true;
 setInterval(() => {
@@ -128,22 +138,31 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
         connectionService.handleDisconnect(socket.id);
 
-        // Handle 1v1 removal
         const removedPlayer = socket.data.player as PlayerSession;
-        if (removedPlayer) {
-            matchmakingService.cancelPlayerQueue(removedPlayer.player_id);
-        }
+        if (!removedPlayer) return;
 
-        // Handle normal team removal
-        const removedTeam = teamService.removePlayerBySocket(socket);
-        if (removedTeam) {
-            matchmakingService.cancelTeamQueue(removedTeam.team.team_id);
-            const { team, playerId } = removedTeam;
-            socket.leave(team.team_id);
-            io.to(team.team_id).emit("teamLeft", playerId);
+        // Cancel 1v1 queue if needed
+        matchmakingService.cancelPlayerQueue(removedPlayer.player_id);
 
-            if (team.players.length === 0) {
-                teamService.removeTeam(team.team_id);
+        // Get the team the player belongs to
+        const team = teamService.getTeamBySocket(socket) as (Team & { leaderId: string }) | undefined;
+
+        // If the player is a leader, disband the team
+        if (team && removedPlayer.player_id === team.leaderId) {
+            disbandTeam(team);
+        } else if (team) {
+            // Otherwise, just remove the player
+            const removedTeam = teamService.removePlayerBySocket(socket);
+            if (removedTeam) {
+                matchmakingService.cancelTeamQueue(removedTeam.team.team_id);
+                const { team, playerId } = removedTeam;
+                socket.leave(team.team_id);
+                io.to(team.team_id).emit("teamLeft", playerId);
+
+                // If the team now has ≤1 player, disband it anyway
+                if (team.players.length <= 1) {
+                    disbandTeam(team);
+                }
             }
         }
 
@@ -269,7 +288,7 @@ io.on("connection", (socket) => {
             matchmakingService.cancelPlayerQueue(removedPlayer.player_id);
         }
     });
-        
+
     // ==== 3v3 TEAM QUEUE EVENTS ====
     // Queue an existing team by ID
     socket.on("queueTeam", (data: QueuePlayerData3v3) => {
@@ -304,8 +323,8 @@ io.on("connection", (socket) => {
             socket.leave(team.team_id);
             io.to(team.team_id).emit("teamLeft", playerId);
 
-            if (team.players.length === 0) {
-                teamService.removeTeam(team.team_id);
+            if (team.players.length <= 1) {
+                disbandTeam(team);
             }
         }
     });
