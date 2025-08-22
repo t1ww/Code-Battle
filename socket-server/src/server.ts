@@ -117,13 +117,27 @@ io.on("connection", (socket) => {
     connectionService.handleConnect(socket);
 
     // ==== CONNECTION EVENTS ====
+    // Attach player info to the socket
+    socket.on("sendsPlayerInfo", (player) => {
+        // Attach the socket to the player session
+        socket.data.player = { ...player, socket };
+        console.log(`Player connected: ${player.name} (${socket.id})`);
+    });
+
     // Handle socket disconnect
     socket.on("disconnect", () => {
         connectionService.handleDisconnect(socket.id);
 
+        // Handle 1v1 removal
+        const removedPlayer = socket.data.player as PlayerSession;
+        if (removedPlayer) {
+            matchmakingService.cancelPlayerQueue(removedPlayer.player_id);
+        }
+
         // Handle normal team removal
         const removedTeam = teamService.removePlayerBySocket(socket);
         if (removedTeam) {
+            matchmakingService.cancelTeamQueue(removedTeam.team.team_id);
             const { team, playerId } = removedTeam;
             socket.leave(team.team_id);
             io.to(team.team_id).emit("teamLeft", playerId);
@@ -247,7 +261,15 @@ io.on("connection", (socket) => {
             socket.emit("queueResponse", { error_message: "Matchmaking service unavailable. Please try again later." });
         }
     });
-
+    // Cancel a player's queue
+    socket.on("cancelQueue", () => {
+        // Handle 1v1 removal
+        const removedPlayer = socket.data.player as PlayerSession;
+        if (removedPlayer) {
+            matchmakingService.cancelPlayerQueue(removedPlayer.player_id);
+        }
+    });
+        
     // ==== 3v3 TEAM QUEUE EVENTS ====
     // Queue an existing team by ID
     socket.on("queueTeam", (data: QueuePlayerData3v3) => {
@@ -272,7 +294,21 @@ io.on("connection", (socket) => {
             io.to(data.team_id).emit("queueResponse", { error_message: "Matchmaking service unavailable. Please try again later." });
         }
     });
+    // Cancel team's queue
+    socket.on("cancelQueueTeam", () => {
+        // Handle 3v3 removal
+        const removedTeam = teamService.removePlayerBySocket(socket);
+        if (removedTeam) {
+            matchmakingService.cancelTeamQueue(removedTeam.team.team_id);
+            const { team, playerId } = removedTeam;
+            socket.leave(team.team_id);
+            io.to(team.team_id).emit("teamLeft", playerId);
 
+            if (team.players.length === 0) {
+                teamService.removeTeam(team.team_id);
+            }
+        }
+    });
 
     // Start match manually (fallback or test)
     socket.on("startMatch", (data: { mode?: MatchMode }) => {
