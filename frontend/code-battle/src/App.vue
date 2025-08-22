@@ -9,11 +9,21 @@ import { socket } from '@/clients/socket.api'
 import { showNotification, notificationMessage, triggerNotification } from '@/composables/notificationService'
 import router from "@/router";
 import { useTeamStore } from "@/stores/team";
+import { getPlayerData } from "@/stores/auth";
 
 onMounted(() => {
   const teamStore = useTeamStore()
   socket.on('connect', () => {
     triggerNotification("Connected to PVP server.", 2000)
+    const playerData = getPlayerData();
+    if (!playerData) {
+      console.error("Player data not found, cannot send player info to server.");
+      return;
+    }
+    socket.emit('sendsPlayerInfo', {
+      player_id: playerData.player_id,
+      name: playerData.name,
+    })
   })
 
   socket.on('connect_error', () => {

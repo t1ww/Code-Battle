@@ -29,7 +29,7 @@ const io = new Server(server, {
 // NEW: Connection and matchmaking services
 const connectionService = new ConnectionService();
 const matchmakingService = new MatchmakingService();
-// NEW: Private room services
+// NEW: Team services
 const teamService = new TeamService();
 const teamInviteService = new TeamInviteService();
 // NEW: Private room services
@@ -99,6 +99,16 @@ function sanitizeRoomForUpdate(room: { team1: Team | null; team2: Team | null })
     };
 }
 
+function disbandTeam(team: Team) {
+    // Notify remaining player (if any) that team is disbanded
+    io.to(team.team_id).emit("teamDisbanded");
+    // Make all players leave the socket room
+    team.players.forEach(p => p.socket.leave(team.team_id));
+    // Remove the team from the service
+    console.log(`Disbanding team ${team.team_id} with players: ${team.players.map(p => p.name).join(", ")}`);
+    teamService.removeTeam(team.team_id);
+}
+
 // Matchmaking loop every 6 seconds, tries to start matches for all modes by alternating
 let alternate = true;
 setInterval(() => {
@@ -117,25 +127,56 @@ io.on("connection", (socket) => {
     connectionService.handleConnect(socket);
 
     // ==== CONNECTION EVENTS ====
+    // Attach player info to the socket
+    socket.on("sendsPlayerInfo", (player) => {
+        // Attach the socket to the player session
+        socket.data.player = { ...player, socket };
+        console.log(`Player connected: ${player.name} (${socket.id})`);
+    });
+
     // Handle socket disconnect
     socket.on("disconnect", () => {
         connectionService.handleDisconnect(socket.id);
 
-        // Handle normal team removal
-        const removedTeam = teamService.removePlayerBySocket(socket);
-        if (removedTeam) {
-            const { team, playerId } = removedTeam;
-            io.to(team.team_id).emit("teamLeft", playerId);
+        const removedPlayer = socket.data.player as PlayerSession;
+        if (!removedPlayer) return;
 
-            if (team.players.length === 0) {
-                teamService.removeTeam(team.team_id);
+        // Cancel 1v1 queue if needed
+        matchmakingService.cancelPlayerQueue(removedPlayer.player_id);
+
+        // Get the team the player belongs to
+        const team = teamService.getTeamBySocket(socket) as (Team & { leaderId: string }) | undefined;
+
+        // If the player is a leader, disband the team
+        if (team && removedPlayer.player_id === team.leaderId) {
+            disbandTeam(team);
+        } else if (team) {
+            // Otherwise, just remove the player
+            const removedTeam = teamService.removePlayerBySocket(socket);
+            if (removedTeam) {
+                const { team, playerId } = removedTeam;
+                socket.leave(team.team_id);
+                io.to(team.team_id).emit("teamLeft", playerId);
+
+                // If the team now has ≤1 player, disband it anyway
+                if (team.players.length <= 1) {
+                    disbandTeam(team);
+                }
             }
         }
+        if (team) {
+            matchmakingService.cancelTeamQueue(team.team_id);
+        }
+
 
         // Handle private room cleanup
         const removedRoom = privateRoomService.removePlayer(socket.id);
         if (removedRoom?.room) {
             const room = removedRoom.room;
+            // Leave the room and teams
+            socket.leave(room.room_id);
+            socket.leave(`${room.room_id}-team1`);
+            socket.leave(`${room.room_id}-team2`);
 
             // Cancel any pending swap requests involving this player
             const cancelled = privateRoomService.cancelPendingSwap(room.room_id, removedRoom.playerId);
@@ -242,6 +283,17 @@ io.on("connection", (socket) => {
             socket.emit("queueResponse", { error_message: "Matchmaking service unavailable. Please try again later." });
         }
     });
+    // Cancel a player's queue
+    socket.on("cancelQueue", () => {
+        // Handle 1v1 removal
+        const removedPlayer = socket.data.player as PlayerSession;
+        if (!removedPlayer) return;
+
+        // Cancel the player's matchmaking queue
+        matchmakingService.cancelPlayerQueue(removedPlayer.player_id);
+        // Notify the player that the queue was canceled
+        socket.emit("playerQueueCanceled");
+    });
 
     // ==== 3v3 TEAM QUEUE EVENTS ====
     // Queue an existing team by ID
@@ -267,7 +319,17 @@ io.on("connection", (socket) => {
             io.to(data.team_id).emit("queueResponse", { error_message: "Matchmaking service unavailable. Please try again later." });
         }
     });
+    // Cancel team's queue
+    socket.on("cancelQueueTeam", () => {
+        const team = teamService.getTeamBySocket(socket);
+        if (!team) return;
+        // Cancel the team's matchmaking queue
+        matchmakingService.cancelTeamQueue(team.team_id);
 
+        // Notify all team members that the queue was canceled  
+        console.log(`Team queue canceled for team ${team.team_id} by ${socket.data.player?.name || socket.id}`);
+        io.to(team.team_id).emit("teamQueueCanceled", { canceledBy: socket.data.player.name });
+    });
 
     // Start match manually (fallback or test)
     socket.on("startMatch", (data: { mode?: MatchMode }) => {
@@ -332,7 +394,15 @@ io.on("connection", (socket) => {
 
     socket.on("swapTeam", ({ room_id, player_id }: { room_id: string; player_id: string }) => {
         try {
-            const result = privateRoomService.requestSwap(room_id, player_id, socket);
+            const result = privateRoomService.requestSwap(
+                room_id,
+                player_id,
+                socket,
+                (room, by) => {
+                    io.to(room.room_id).emit("swapCancelled", { cancelledBy: by });
+                    io.to(room.room_id).emit("swapClear");
+                }
+            );
 
             if (result.swapped) {
                 // Determine old and new team
@@ -356,8 +426,9 @@ io.on("connection", (socket) => {
                 io.to(`${room_id}-${targetTeam}`).emit("swapRequestByOpponent", { requesterId: player_id });
                 // Notify the teammate that request was sent and they can't request again
                 socket.to(`${room_id}-${currentTeam}`).emit("swapRequestByTeammate", { requesterId: player_id });
-                // Notify the requester that their request was sent
-                socket.emit("swapRequestByme");
+                // Notify the requester that their request was sent and Send to requester timer info
+                const totalTime = 15000; // match the timeout in requestSwap
+                socket.emit("swapRequestByme", { requesterId: player_id, swapTime: totalTime });
             }
         } catch (err: any) {
             socket.emit("error", { error_message: err.message });
@@ -395,11 +466,27 @@ io.on("connection", (socket) => {
         }
     });
 
+    socket.on("rejectSwap", ({ room_id, player_id }) => {
+        const result = privateRoomService.rejectSwap(room_id, player_id, (room) => {
+            io.to(room.room_id).emit("swapCancelled", { cancelledBy: "allRejected" });
+            io.to(room.room_id).emit("swapClear");
+        });
+
+        if (!result) {
+            socket.emit("error", { error_message: "Reject failed" });
+        }
+    });
+
+
     socket.on("leavePrivateRoom", () => {
         const removed = privateRoomService.removePlayer(socket.id);
         if (!removed?.room) return;
 
         const room = removed.room;
+        // Leave the room and teams
+        socket.leave(room.room_id);
+        socket.leave(`${room.room_id}-team1`);
+        socket.leave(`${room.room_id}-team2`);
 
         // Cancel pending swap if this player was involved
         const cancelled = privateRoomService.cancelPendingSwap(room.room_id, removed.playerId);

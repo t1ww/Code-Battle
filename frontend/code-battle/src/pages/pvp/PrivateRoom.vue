@@ -24,6 +24,9 @@ const pendingSwapByOpponent = ref(false)
 const incomingSwapRequester = ref<string | null>(null) // requesterId
 const swapLocked = ref(false) // To prevent multiple swap requests
 const swapDeclined = ref(false) // To prevent multiple swap requests
+// Countdown timer state
+const swapCountdown = ref<number | null>(null)
+let countdownInterval: ReturnType<typeof setInterval> | null = null
 
 // Function to copy invite link to clipboard
 const copyInviteLink = async () => {
@@ -54,9 +57,16 @@ const handleSwapClick = () => {
     socket.emit('swapTeam', { room_id: roomId, player_id: player.player_id })
   }
 }
+
 const declineSwap = () => {
-  swapDeclined.value = true;
+  const player = getPlayerData()
+  const roomId = privateRoom.state.roomId
+  if (!player || !roomId) return
+
+  socket.emit("rejectSwap", { room_id: roomId, player_id: player.player_id })
+  swapDeclined.value = true
 }
+
 const swapClear = () => {
   pendingSwapByMe.value = false
   pendingSwapByOpponent.value = false
@@ -64,7 +74,13 @@ const swapClear = () => {
   incomingSwapRequester.value = null
   swapLocked.value = false
   swapDeclined.value = false
+
+  // Reset countdown
+  if (countdownInterval) clearInterval(countdownInterval)
+  countdownInterval = null
+  swapCountdown.value = null
 }
+
 
 // Computed properties
 const inviteLinkLabel = computed(() => {
@@ -89,6 +105,16 @@ onMounted(() => {
     console.log('Creating new private room for player:', player)
     socket.emit('createPrivateRoom', player)
   }
+
+  // Listen for error events
+  socket.on("error", ({ error_message }) => {
+    console.error("Socket error:", error_message)
+
+    // Example: redirect back to PvpTypeSelect with a popup
+    triggerNotification(error_message, 2500)
+    // Send player back to PvpTypeSelect
+    router.push({ name: "PvpTypeSelect" })
+  })
 
   // Listen for team updates
   socket.on('privateRoomUpdated', (roomData) => {
@@ -121,9 +147,23 @@ onMounted(() => {
   })
 
   // Listen for swap requests
-  socket.on('swapRequestByme', () => {
+  socket.on('swapRequestByme', ({ swapTime }) => {
     pendingSwapByMe.value = true
     swapLocked.value = true
+
+    // Start countdown (in seconds)
+    swapCountdown.value = swapTime / 1000
+    if (countdownInterval) clearInterval(countdownInterval)
+    countdownInterval = setInterval(() => {
+      if (swapCountdown.value !== null) {
+        swapCountdown.value--
+        if (swapCountdown.value <= 0) {
+          clearInterval(countdownInterval!)
+          countdownInterval = null
+          swapCountdown.value = null
+        }
+      }
+    }, 1000)
   })
 
   socket.on('swapRequestByOpponent', ({ requesterId }) => {
@@ -198,7 +238,9 @@ defineProps<{ inviteId?: string }>()
       <CheckboxToggle v-model="privateRoom.state.timeLimit" label="Time Limit" />
 
       <button v-if="!pendingSwapByTeammate && !swapDeclined" class="swap-btn" @click="handleSwapClick">
-        <template v-if="pendingSwapByMe">Cancel</template>
+        <template v-if="pendingSwapByMe">
+          Cancel ({{ swapCountdown ?? '' }})
+        </template>
         <template v-else-if="pendingSwapByOpponent">Accept</template>
         <template v-else>Swap</template>
       </button>

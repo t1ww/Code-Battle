@@ -142,7 +142,7 @@ export class MatchmakingService {
 
         teamA.players.forEach(p => {
             p.socket.emit("matchInfo", {
-                you: { id: p.player_id, name: p.name, email: p.email, token: null },
+                you: { player_id: p.player_id, name: p.name, email: p.email, token: null },
                 friends: teamAData.filter(fp => fp.player_id !== p.player_id),
                 opponents: teamBData
             });
@@ -155,7 +155,7 @@ export class MatchmakingService {
 
         teamB.players.forEach(p => {
             p.socket.emit("matchInfo", {
-                you: { id: p.player_id, name: p.name, email: p.email, token: null },
+                you: { player_id: p.player_id, name: p.name, email: p.email, token: null },
                 friends: teamBData.filter(fp => fp.player_id !== p.player_id),
                 opponents: teamAData
             });
@@ -170,5 +170,21 @@ export class MatchmakingService {
         queue.delete(teamB.team_id);
 
         return { message: "3v3 match started successfully" };
+    }
+
+    cancelTeamQueue(teamId: string): { message?: string; error_message?: string } {
+        if (this.queue3v3.has(teamId)) {
+            this.queue3v3.delete(teamId);
+            return { message: `Team ${teamId} removed from matchmaking queue` };
+        }
+        return { error_message: `Team ${teamId} was not in matchmaking queue` };
+    }
+
+    cancelPlayerQueue(playerId: string): { message?: string; error_message?: string } {
+        if (this.queue1v1.has(playerId)) {
+            this.queue1v1.delete(playerId);
+            return { message: `Player ${playerId} removed from matchmaking queue` };
+        }
+        return { error_message: `Player ${playerId} was not in matchmaking queue` };
     }
 }
