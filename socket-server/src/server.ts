@@ -29,7 +29,7 @@ const io = new Server(server, {
 // NEW: Connection and matchmaking services
 const connectionService = new ConnectionService();
 const matchmakingService = new MatchmakingService();
-// NEW: Private room services
+// NEW: Team services
 const teamService = new TeamService();
 const teamInviteService = new TeamInviteService();
 // NEW: Private room services
