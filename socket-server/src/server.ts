@@ -125,6 +125,7 @@ io.on("connection", (socket) => {
         const removedTeam = teamService.removePlayerBySocket(socket);
         if (removedTeam) {
             const { team, playerId } = removedTeam;
+            socket.leave(team.team_id);
             io.to(team.team_id).emit("teamLeft", playerId);
 
             if (team.players.length === 0) {
@@ -136,6 +137,10 @@ io.on("connection", (socket) => {
         const removedRoom = privateRoomService.removePlayer(socket.id);
         if (removedRoom?.room) {
             const room = removedRoom.room;
+            // Leave the room and teams
+            socket.leave(room.room_id);
+            socket.leave(`${room.room_id}-team1`);
+            socket.leave(`${room.room_id}-team2`);
 
             // Cancel any pending swap requests involving this player
             const cancelled = privateRoomService.cancelPendingSwap(room.room_id, removedRoom.playerId);
@@ -400,6 +405,10 @@ io.on("connection", (socket) => {
         if (!removed?.room) return;
 
         const room = removed.room;
+        // Leave the room and teams
+        socket.leave(room.room_id);
+        socket.leave(`${room.room_id}-team1`);
+        socket.leave(`${room.room_id}-team2`);
 
         // Cancel pending swap if this player was involved
         const cancelled = privateRoomService.cancelPendingSwap(room.room_id, removed.playerId);
