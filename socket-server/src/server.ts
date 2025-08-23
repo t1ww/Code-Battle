@@ -424,8 +424,9 @@ io.on("connection", (socket) => {
                 io.to(`${room_id}-${targetTeam}`).emit("swapRequestByOpponent", { requesterId: player_id });
                 // Notify the teammate that request was sent and they can't request again
                 socket.to(`${room_id}-${currentTeam}`).emit("swapRequestByTeammate", { requesterId: player_id });
-                // Notify the requester that their request was sent
-                socket.emit("swapRequestByme");
+                // Notify the requester that their request was sent and Send to requester timer info
+                const totalTime = 15000; // match the timeout in requestSwap
+                socket.emit("swapRequestByme", { requesterId: player_id, swapTime: totalTime });
             }
         } catch (err: any) {
             socket.emit("error", { error_message: err.message });
