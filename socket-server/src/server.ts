@@ -392,7 +392,15 @@ io.on("connection", (socket) => {
 
     socket.on("swapTeam", ({ room_id, player_id }: { room_id: string; player_id: string }) => {
         try {
-            const result = privateRoomService.requestSwap(room_id, player_id, socket);
+            const result = privateRoomService.requestSwap(
+                room_id,
+                player_id,
+                socket,
+                (room, by) => {
+                    io.to(room.room_id).emit("swapCancelled", { cancelledBy: by });
+                    io.to(room.room_id).emit("swapClear");
+                }
+            );
 
             if (result.swapped) {
                 // Determine old and new team

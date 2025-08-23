@@ -14,6 +14,7 @@ interface PrivateRoom {
         requesterId: string;
         requesterSocket: Socket;
         targetTeam: "team1" | "team2";
+        timeoutId?: NodeJS.Timeout;
     };
 }
 
@@ -73,7 +74,12 @@ export class PrivateRoomService {
     }
 
     /** Request or perform swap */
-    requestSwap(room_id: string, player_id: string, requesterSocket: Socket) {
+    requestSwap(
+        room_id: string,
+        player_id: string,
+        requesterSocket: Socket,
+        onExpire: (room: PrivateRoom, by: string) => void
+    ) {
         const room = this.rooms.get(room_id);
         if (!room?.team1 || !room.team2) throw new Error("Room must have two teams to swap");
 
@@ -84,8 +90,8 @@ export class PrivateRoomService {
 
         if (!fromTeam || !toTeam) throw new Error("Teams not set properly");
 
+        // If target team has space, swap immediately
         if (toTeam.players.length < 3) {
-            // Direct move
             const player = fromTeam.players.find(p => p.player_id === player_id)!;
             fromTeam.players = fromTeam.players.filter(p => p.player_id !== player_id);
             toTeam.players.push(player);
@@ -93,12 +99,26 @@ export class PrivateRoomService {
             return { swapped: true, room };
         }
 
-        // Both full → store pending swap
+        // If a swap is already pending, reject this request
+        if (room.pendingSwap) {
+            return { swapped: false, pending: "alreadyPending", room };
+        }
+
+        // Both teams full → store pending swap with auto-expire
+        const timeoutId = setTimeout(() => {
+            if (room.pendingSwap?.requesterId === player_id) {
+                this.cancelPendingSwap(room.room_id, player_id);
+                onExpire(room, player_id);
+            }
+        }, 15000);
+
         room.pendingSwap = {
             requesterId: player_id,
-            requesterSocket: requesterSocket,
+            requesterSocket,
             targetTeam: targetTeamKey,
+            timeoutId,
         };
+
         return { swapped: false, pending: true, room };
     }
 
@@ -128,6 +148,10 @@ export class PrivateRoomService {
         requesterTeamObj.players.push(confirmer);
         targetTeamObj.players.push(requester);
 
+        // Clear pending swap and timeout
+        if (room.pendingSwap?.timeoutId) {
+            clearTimeout(room.pendingSwap.timeoutId);
+        }
         room.pendingSwap = undefined;
 
         return { swapped: true, room };
@@ -141,12 +165,20 @@ export class PrivateRoomService {
 
         // Cancel if the player was either requester or in the target team
         if (requesterId === player_id) {
+            // Clear pending swap and timeout
+            if (room.pendingSwap?.timeoutId) {
+                clearTimeout(room.pendingSwap.timeoutId);
+            }
             room.pendingSwap = undefined;
             return true;
         }
 
         const targetTeamObj = targetTeam === "team1" ? room.team1 : room.team2;
         if (targetTeamObj.players.some(p => p.player_id === player_id)) {
+            // Clear pending swap and timeout
+            if (room.pendingSwap?.timeoutId) {
+                clearTimeout(room.pendingSwap.timeoutId);
+            }
             room.pendingSwap = undefined;
             return true;
         }
