@@ -464,6 +464,18 @@ io.on("connection", (socket) => {
         }
     });
 
+    socket.on("rejectSwap", ({ room_id, player_id }) => {
+        const result = privateRoomService.rejectSwap(room_id, player_id, (room) => {
+            io.to(room.room_id).emit("swapCancelled", { cancelledBy: "allRejected" });
+            io.to(room.room_id).emit("swapClear");
+        });
+
+        if (!result) {
+            socket.emit("error", { error_message: "Reject failed" });
+        }
+    });
+
+
     socket.on("leavePrivateRoom", () => {
         const removed = privateRoomService.removePlayer(socket.id);
         if (!removed?.room) return;

@@ -15,6 +15,7 @@ interface PrivateRoom {
         requesterSocket: Socket;
         targetTeam: "team1" | "team2";
         timeoutId?: NodeJS.Timeout;
+        rejectCount: number;
     };
 }
 
@@ -117,6 +118,7 @@ export class PrivateRoomService {
             requesterSocket,
             targetTeam: targetTeamKey,
             timeoutId,
+            rejectCount: 0,
         };
 
         return { swapped: false, pending: true, room };
@@ -155,6 +157,34 @@ export class PrivateRoomService {
         room.pendingSwap = undefined;
 
         return { swapped: true, room };
+    }
+
+    /** Reject swap */
+    rejectSwap(room_id: string, player_id: string, onAllRejected: (room: PrivateRoom) => void): boolean {
+        const room = this.rooms.get(room_id);
+        if (!room?.pendingSwap) return false;
+
+        // Ensure the player is in the target team
+        const { targetTeam } = room.pendingSwap;
+        const targetTeamObj = targetTeam === "team1" ? room.team1 : room.team2;
+
+        // Only allow rejections from the target team
+        if (!targetTeamObj.players.some(p => p.player_id === player_id)) {
+            return false;
+        }
+
+        room.pendingSwap.rejectCount++;
+
+        // If all 3 rejected → cancel
+        if (room.pendingSwap.rejectCount >= targetTeamObj.players.length) {
+            if (room.pendingSwap.timeoutId) clearTimeout(room.pendingSwap.timeoutId);
+            room.pendingSwap = undefined;
+            console.log("All players in target team rejected the swap");
+            onAllRejected(room);
+            return true;
+        }
+
+        return false;
     }
 
     cancelPendingSwap(room_id: string, player_id: string): boolean {

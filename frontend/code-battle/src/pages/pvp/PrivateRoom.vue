@@ -57,9 +57,16 @@ const handleSwapClick = () => {
     socket.emit('swapTeam', { room_id: roomId, player_id: player.player_id })
   }
 }
+
 const declineSwap = () => {
-  swapDeclined.value = true;
+  const player = getPlayerData()
+  const roomId = privateRoom.state.roomId
+  if (!player || !roomId) return
+
+  socket.emit("rejectSwap", { room_id: roomId, player_id: player.player_id })
+  swapDeclined.value = true
 }
+
 const swapClear = () => {
   pendingSwapByMe.value = false
   pendingSwapByOpponent.value = false
