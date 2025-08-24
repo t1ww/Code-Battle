@@ -10,7 +10,7 @@ const route = useRoute()
 const backTo = computed(() => route.meta.backTo as string | undefined)
 // Navigate manually to a controlled path
 function handleBack() {
-    router.push(backTo.value || '/')
+    router.replace(backTo.value || '/')
 }
 </script>
 

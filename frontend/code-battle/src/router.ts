@@ -46,7 +46,7 @@ const routes = [
   // pvp
   { name: "PvpTypeSelect", path: "/pvpSelect", component: PvpTypeSelect, meta: { requiresAuth: true, online: true, canFormTeam: true, backTo: "/" } },
   { name: "PvpTimeSelect", path: "/pvpTimeSelect", component: PvpTimeSelect, meta: { requiresAuth: true, online: true, backTo: "/pvpSelect" } },
-  { name: "Matchmaking", path: "/matchmaking", component: Matchmaking, meta: { requiresAuth: true, online: true, backTo: "/pvpSelect" } },
+  { name: "Matchmaking", path: "/matchmaking", component: Matchmaking, meta: { requiresAuth: true, online: true } },
   {
     name: "PrivateRoom",
     path: "/privateRoom/:inviteId?",  // "?" makes it optional

@@ -3,7 +3,7 @@ import { PlayerSession, Team } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 
 export class TeamService {
-    private teams: Map<string, Team> = new Map();
+    private teams: Map<string, Team & { leaderId: string }> = new Map();
 
     createTeam(players: PlayerSession[]): Team {
         const team_id = uuidv4();
@@ -16,7 +16,7 @@ export class TeamService {
         return team;
     }
 
-    getTeam(team_id: string): Team | undefined {
+    getTeam(team_id: string): Team & { leaderId: string } | undefined {
         return this.teams.get(team_id);
     }
 
@@ -25,7 +25,7 @@ export class TeamService {
     }
 
     // Find the team a socket belongs to
-    getTeamBySocket(socket: any): Team | undefined {
+    getTeamBySocket(socket: any): Team & { leaderId: string } | undefined {
         for (const team of this.teams.values()) {
             if (team.players.some(p => p.socket.id === socket.id)) {
                 return team;
@@ -35,7 +35,7 @@ export class TeamService {
     }
 
     // Remove a player from a team by socket
-    removePlayerBySocket(socket: any): { team: Team; playerId: string } | null {
+    removePlayerBySocket(socket: any): { team: Team & { leaderId: string }; playerId: string } | null {
         const team = this.getTeamBySocket(socket);
         if (!team) return null;
 

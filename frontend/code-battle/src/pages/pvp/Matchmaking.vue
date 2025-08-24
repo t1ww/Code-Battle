@@ -13,6 +13,7 @@ import { socket } from '@/clients/socket.api'
 
 import { getPlayerData } from "@/stores/auth"
 import { useTeamStore } from '@/stores/team'
+import { triggerNotification } from '@/composables/notificationService'
 
 const router = useRouter()
 
@@ -44,6 +45,14 @@ const mapToMinimal = (players: PlayerData[]) => {
         if (!name) throw new Error(`Player ${player_id} is missing name`)
         return { player_id, name, avatar_url }
     })
+}
+
+function cancelMatchmaking() {
+    if (mode.value === '1v1') {
+        socket.emit("cancelQueue")
+    } else if (mode.value === '3v3') {
+        socket.emit("cancelQueueTeam")
+    }
 }
 
 const team1 = computed(() => {
@@ -137,18 +146,24 @@ onMounted(() => {
             }, 1000) // 1 second before showing teams
         }, 1800) // 1.8 seconds before showing teams;
     })
+
+    // Handle player queue cancellation
+    socket.on("playerQueueCanceled", () => {
+        console.log(`Player queue canceled, redirecting…`);
+        triggerNotification(`Player queue canceled, redirecting…`);
+        router.replace({ name: "PvpTypeSelect" });
+    });
+
+    // Handle team queue cancellation
+    socket.on("teamQueueCanceled", (data: { canceledBy: string }) => {
+        console.log(`Team queue canceled by ${data.canceledBy}, redirecting…`);
+        triggerNotification(`Team queue canceled by ${data.canceledBy}, redirecting…`);
+        router.replace({ name: "PvpTypeSelect" });
+    });
 })
 
 onBeforeUnmount(() => {
     if (timer) clearInterval(timer)
-
-    // Cancel queue when leaving page
-    if (mode.value === '1v1') {
-        socket.emit("cancelQueue")
-    } else if (mode.value === '3v3' && team.isLeader) {
-        socket.emit("cancelQueueTeam")
-    }
-
     // Clean up socket listeners
     socket.off("matchInfo")
     socket.off("queueResponse")
@@ -161,6 +176,8 @@ onBeforeUnmount(() => {
 <template>
     <div class="matchmaking-container">
         <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+
+        <!-- Cancel Matchmaking Button -->
 
         <div v-if="state === 'searching'">
             <SearchIcon />
@@ -183,6 +200,10 @@ onBeforeUnmount(() => {
         <div v-else-if="state === 'started'">
             <h1>MATCH START!</h1>
         </div>
+
+        <button v-if="state !== 'started'" class="cancel-btn" @click="cancelMatchmaking">
+            Cancel Matchmaking
+        </button>
     </div>
 </template>
 

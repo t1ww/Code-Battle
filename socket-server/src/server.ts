@@ -154,7 +154,6 @@ io.on("connection", (socket) => {
             // Otherwise, just remove the player
             const removedTeam = teamService.removePlayerBySocket(socket);
             if (removedTeam) {
-                matchmakingService.cancelTeamQueue(removedTeam.team.team_id);
                 const { team, playerId } = removedTeam;
                 socket.leave(team.team_id);
                 io.to(team.team_id).emit("teamLeft", playerId);
@@ -165,6 +164,10 @@ io.on("connection", (socket) => {
                 }
             }
         }
+        if (team) {
+            matchmakingService.cancelTeamQueue(team.team_id);
+        }
+
 
         // Handle private room cleanup
         const removedRoom = privateRoomService.removePlayer(socket.id);
@@ -284,9 +287,12 @@ io.on("connection", (socket) => {
     socket.on("cancelQueue", () => {
         // Handle 1v1 removal
         const removedPlayer = socket.data.player as PlayerSession;
-        if (removedPlayer) {
-            matchmakingService.cancelPlayerQueue(removedPlayer.player_id);
-        }
+        if (!removedPlayer) return;
+
+        // Cancel the player's matchmaking queue
+        matchmakingService.cancelPlayerQueue(removedPlayer.player_id);
+        // Notify the player that the queue was canceled
+        socket.emit("playerQueueCanceled");
     });
 
     // ==== 3v3 TEAM QUEUE EVENTS ====
@@ -315,18 +321,14 @@ io.on("connection", (socket) => {
     });
     // Cancel team's queue
     socket.on("cancelQueueTeam", () => {
-        // Handle 3v3 removal
-        const removedTeam = teamService.removePlayerBySocket(socket);
-        if (removedTeam) {
-            matchmakingService.cancelTeamQueue(removedTeam.team.team_id);
-            const { team, playerId } = removedTeam;
-            socket.leave(team.team_id);
-            io.to(team.team_id).emit("teamLeft", playerId);
+        const team = teamService.getTeamBySocket(socket);
+        if (!team) return;
+        // Cancel the team's matchmaking queue
+        matchmakingService.cancelTeamQueue(team.team_id);
 
-            if (team.players.length <= 1) {
-                disbandTeam(team);
-            }
-        }
+        // Notify all team members that the queue was canceled  
+        console.log(`Team queue canceled for team ${team.team_id} by ${socket.data.player?.name || socket.id}`);
+        io.to(team.team_id).emit("teamQueueCanceled", { canceledBy: socket.data.player.name });
     });
 
     // Start match manually (fallback or test)
