@@ -106,6 +106,16 @@ onMounted(() => {
     socket.emit('createPrivateRoom', player)
   }
 
+  // Listen for error events
+  socket.on("error", ({ error_message }) => {
+    console.error("Socket error:", error_message)
+
+    // Example: redirect back to PvpTypeSelect with a popup
+    triggerNotification(error_message, 2500)
+    // Send player back to PvpTypeSelect
+    router.push({ name: "PvpTypeSelect" })
+  })
+
   // Listen for team updates
   socket.on('privateRoomUpdated', (roomData) => {
     console.log('Private room updated:', roomData)
