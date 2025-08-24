@@ -142,6 +142,14 @@ onMounted(() => {
 onBeforeUnmount(() => {
     if (timer) clearInterval(timer)
 
+    // Cancel queue when leaving page
+    if (mode.value === '1v1') {
+        socket.emit("cancelQueue")
+    } else if (mode.value === '3v3' && team.isLeader) {
+        socket.emit("cancelQueueTeam")
+    }
+
+    // Clean up socket listeners
     socket.off("matchInfo")
     socket.off("queueResponse")
     socket.off("matchResponse")
