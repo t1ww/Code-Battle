@@ -248,6 +248,7 @@ _If any port is busy, check your terminal output for the actual port used._
 ## 📚 More Documentation
 
 - [API Documentation](API.md)
+- [Tech stacks](TechStack.md)
 - [Submit Issues](https://github.com/t1ww/Code-Battle/issues)
 
 ---
