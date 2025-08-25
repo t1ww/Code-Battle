@@ -147,6 +147,10 @@ io.on("connection", (socket) => {
         // Get the team the player belongs to
         const team = teamService.getTeamBySocket(socket) as (Team & { leaderId: string }) | undefined;
 
+        if (team) {
+            matchmakingService.cancelTeamQueue(team.team_id);
+            io.to(team.team_id).emit("teamQueueCanceled", { canceledBy: socket.data.player.name });
+        }
         // If the player is a leader, disband the team
         if (team && removedPlayer.player_id === team.leaderId) {
             disbandTeam(team);
@@ -164,10 +168,6 @@ io.on("connection", (socket) => {
                 }
             }
         }
-        if (team) {
-            matchmakingService.cancelTeamQueue(team.team_id);
-        }
-
 
         // Handle private room cleanup
         const removedRoom = privateRoomService.removePlayer(socket.id);
