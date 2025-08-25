@@ -9,7 +9,7 @@ export class QuestionController {
     async getQuestionById(req: Request, res: Response) {
         // ✅ UTC-04 ID 4: Invalid input format
         if (!req.params || typeof req.params !== "object" || !("id" in req.params)) {
-            res.status(400).json({ error_message: "Invalid input format, required question_id" });
+            res.status(400).json({ error_message: "Invalid input format, required question_id." });
             return;
         }
 
@@ -17,7 +17,7 @@ export class QuestionController {
 
         // ✅ UTC-04 ID 3: Empty question ID
         if (!question_id) {
-            res.status(400).json({ error_message: "Question ID is required" });
+            res.status(400).json({ error_message: "Question ID is required." });
             return;
         }
 
@@ -44,7 +44,7 @@ export class QuestionController {
             !("level" in req.query)
         ) {
             res.status(400).json({
-                error_message: "Invalid input format, required level of; Easy, Medium, Hard",
+                error_message: "Invalid input format, required level of; Easy, Medium, Hard.",
             });
             return;
         }
@@ -54,7 +54,7 @@ export class QuestionController {
         // ✅ UTC-05 ID 4: Empty input
         if (!level) {
             res.status(400).json({
-                error_message: "Level input must not be empty",
+                error_message: "Level input must not be empty.",
             });
             return;
         }
@@ -62,7 +62,7 @@ export class QuestionController {
         // ✅ UTC-05 ID 2: Invalid level
         if (!["Easy", "Medium", "Hard"].includes(level)) {
             res.status(400).json({
-                error_message: "Invalid level input",
+                error_message: "Invalid level input.",
             });
             return;
         }
@@ -71,14 +71,14 @@ export class QuestionController {
             const question: QuestionResponse | null | { error_message: string } = await this.questionService.getAQuestion(level as "Easy" | "Medium" | "Hard");
 
             if (!question) {
-                res.status(404).json({ error_message: "Question not found" });
+                res.status(404).json({ error_message: "Question not found." });
                 return;
             }
 
             // ✅ UTC-05 ID 1: Valid level
             res.status(200).json(question);
         } catch {
-            res.status(500).json({ error_message: "Error fetching question" });
+            res.status(500).json({ error_message: "Error fetching question." });
         }
     }
 
@@ -86,7 +86,7 @@ export class QuestionController {
         // Validate request body format
         if (!req.body || typeof req.body !== "object") {
             res.status(400).json({
-                error_message: "Invalid input format for creating question",
+                error_message: "Invalid input format for creating question.",
             });
             return;
         }
@@ -97,7 +97,7 @@ export class QuestionController {
             res.status(201).json(newQuestion);
         } catch (err) {
             // Handle possible errors
-            const errorMessage = err instanceof Error ? err.message : "Error creating question";
+            const errorMessage = err instanceof Error ? err.message : "Error creating question.";
             res.status(400).json({ error_message: errorMessage });
         }
     }
@@ -106,7 +106,7 @@ export class QuestionController {
         // Validate path param presence and format
         if (!req.params || typeof req.params !== "object" || !("id" in req.params)) {
             res.status(400).json({
-                error_message: "Invalid input format, required question_id",
+                error_message: "Invalid input format, required question_id.",
             });
             return;
         }
@@ -116,7 +116,7 @@ export class QuestionController {
         // Validate that question ID is not empty
         if (!question_id) {
             res.status(400).json({
-                error_message: "Question ID is required",
+                error_message: "Question ID is required.",
             });
             return;
         }
@@ -124,7 +124,7 @@ export class QuestionController {
         // Validate request body format
         if (!req.body || typeof req.body !== "object") {
             res.status(400).json({
-                error_message: "Invalid input format for updating question",
+                error_message: "Invalid input format for updating question.",
             });
             return;
         }
@@ -135,14 +135,14 @@ export class QuestionController {
 
             // Handle case where question does not exist
             if (!updated) {
-                res.status(404).json({ error_message: "Question not found" });
+                res.status(404).json({ error_message: "Question not found." });
                 return;
             }
 
             res.status(200).json(updated);
         } catch (err) {
             // Handle possible errors
-            const errorMessage = err instanceof Error ? err.message : "Error updating question";
+            const errorMessage = err instanceof Error ? err.message : "Error updating question.";
             res.status(400).json({ error_message: errorMessage });
         }
     }

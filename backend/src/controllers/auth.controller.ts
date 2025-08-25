@@ -19,7 +19,7 @@ export const register = async (
     !("password" in req.body) ||
     !("confirm_password" in req.body)
   ) {
-    res.status(400).json({ error_message: "Invalid RegisterRequest format" });
+    res.status(400).json({ error_message: "Invalid RegisterRequest format." });
     return;
   }
 
@@ -28,7 +28,7 @@ export const register = async (
 
   // ✅ UTC-01 ID 5: Empty fields
   if (!username || !email || !password || !confirm_password) {
-    res.status(400).json({ error_message: "All fields are required" });
+    res.status(400).json({ error_message: "All fields are required." });
     return;
   }
 
@@ -66,7 +66,7 @@ export const login = async (
     !("password" in req.body)
   ) {
     res.status(400).json({
-      error_message: "Invalid LoginRequest format",
+      error_message: "Invalid LoginRequest format.",
       token: null,
       player_info: null,
     });
@@ -77,7 +77,7 @@ export const login = async (
   // ✅ UTC-02 ID 4: Empty email or password
   if (!email || !password) {
     res.status(400).json({
-      error_message: "All fields are required",
+      error_message: "All fields are required.",
       token: null,
       player_info: null,
     });

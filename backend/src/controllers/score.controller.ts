@@ -32,11 +32,10 @@ export const submitScore = async (req: Request, res: Response) => {
         return;
     }
 
+    // Successful submission
     try {
-        await scoreService.submitScore(body as SubmitScoreDTO); // pass full object
-
-        // ✅ UTC-06 ID 1: Valid score submission
-        res.status(200).json({ message: "Score successfully submitted" });
+        const result = await scoreService.submitScore(body as SubmitScoreDTO); // pass full object
+        res.status(200).json(result); // <-- send the actual message from service
     } catch (err) {
         res.status(500).json({
             error_message: "Failed to submit score",

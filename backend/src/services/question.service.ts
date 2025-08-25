@@ -14,7 +14,7 @@ export class QuestionService {
     async getQuestionById(question_id: string): Promise<QuestionResponseWithError> {
         // ✅ UTC-16 ID 3: Empty question ID
         if (!question_id) {
-            return { error_message: "Question ID is required" };
+            return { error_message: "Question ID is required." };
         }
 
         const [questionRows] = await pool.query<RowDataPacket[]>(
@@ -24,7 +24,7 @@ export class QuestionService {
 
         // ✅ UTC-16 ID 2: Question not found
         if (questionRows.length === 0) {
-            return { error_message: "Question not found" };
+            return { error_message: "Question not found." };
         }
 
         const question = questionRows[0];
@@ -53,13 +53,13 @@ export class QuestionService {
     async getAQuestion(level: "Easy" | "Medium" | "Hard"): Promise<QuestionResponseWithError> {
         // ✅ UTC-17 ID 3: Empty input
         if (!level) {
-            return { error_message: "Level input must not be empty" };
+            return { error_message: "Level input must not be empty." };
         }
 
         // ✅ UTC-17 ID 2: Invalid level
         const validLevels = ["Easy", "Medium", "Hard"];
         if (!validLevels.includes(level)) {
-            return { error_message: "Invalid level input" };
+            return { error_message: "Invalid level input." };
         }
 
         const [questionRows] = await pool.query<RowDataPacket[]>(
@@ -69,7 +69,7 @@ export class QuestionService {
 
         // No questions found for the level
         if (questionRows.length === 0) {
-            return { error_message: "No questions found" };
+            return { error_message: "No questions found." };
         }
         const question = questionRows[0];
 
@@ -95,7 +95,7 @@ export class QuestionService {
 
     async createQuestion(data: CreateQuestionInput): Promise<QuestionResponseWithError> {
         if (!data.question_name || !data.description || !data.time_limit || !data.level) {
-            return { error_message: "All fields are required" };
+            return { error_message: "All fields are required." };
         }
 
         try {
@@ -115,7 +115,7 @@ export class QuestionService {
 
             return this.getQuestionById(questionId);
         } catch {
-            return { error_message: "Failed to create question" };
+            return { error_message: "Failed to create question." };
         }
     }
 
@@ -160,7 +160,7 @@ export class QuestionService {
 
             return this.getQuestionById(id);
         } catch {
-            return { error_message: "Failed to update question" };
+            return { error_message: "Failed to update question." };
         }
     }
 }

@@ -7,21 +7,21 @@ const playerService = new PlayerService();
 
 export const getProfile = async (req: Request, res: Response) => {
   if (!req.params || typeof req.params !== "object" || !("player_id" in req.params)) {
-    res.status(400).json({ error_message: "Invalid input format, required player_id" });
+    res.status(400).json({ error_message: "Invalid input format, required player_id." });
     return;
   }
 
   const { player_id } = req.params;
 
   if (!player_id) {
-    res.status(400).json({ error_message: "Player ID is required" });
+    res.status(400).json({ error_message: "Player ID is required." });
     return;
   }
 
   const player: PlayerResponse | null | { error_message: string; } = await playerService.getPlayerById(player_id);
 
   if (!player) {
-    res.status(404).json({ error_message: "Player not found" });
+    res.status(404).json({ error_message: "Player not found." });
     return;
   }
 

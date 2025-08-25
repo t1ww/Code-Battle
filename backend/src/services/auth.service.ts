@@ -20,7 +20,7 @@ export class AuthService {
   ): Promise<RegisterResponse> {
     // ✅ UTC-09 ID 3: Handle empty fields 
     if (!username || !email || !password) {
-      return { error_message: "All fields are required" };
+      return { error_message: "All fields are required." };
     }
 
     try {
@@ -31,7 +31,7 @@ export class AuthService {
         [email]
       );
       if (Array.isArray(existingEmail) && existingEmail.length > 0) {
-        return { error_message: "Email already registered" };
+        return { error_message: "Email already registered." };
       }
 
       // Check for existing username
@@ -40,7 +40,7 @@ export class AuthService {
         [username]
       );
       if (Array.isArray(existingUsername) && existingUsername.length > 0) {
-        return { error_message: "Username already taken" };
+        return { error_message: "Username already taken." };
       }
 
       const hashed = await bcrypt.hash(password, 10);
@@ -63,7 +63,7 @@ export class AuthService {
   ): Promise<LoginResponse> {
     // ✅ UTC-10 ID 4: Empty fields
     if (!email || !password) {
-      return { error_message: "All fields are required", token: null, player_info: null };
+      return { error_message: "All fields are required.", token: null, player_info: null };
     }
 
     try {
@@ -74,7 +74,7 @@ export class AuthService {
 
       // ✅ UTC-10 ID 3: Email not found
       if (!rows.length) {
-        return { error_message: "Incorrect email or password", token: null, player_info: null };
+        return { error_message: "Incorrect email or password.", token: null, player_info: null };
       }
 
       const player = rows[0];
@@ -83,7 +83,7 @@ export class AuthService {
 
       // ✅ UTC-10 ID 2: Wrong password
       if (!match) {
-        return { error_message: "Incorrect email or password", token: null, player_info: null };
+        return { error_message: "Incorrect email or password.", token: null, player_info: null };
       }
 
       // ✅ UTC-10 ID 1: Valid login

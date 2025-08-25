@@ -10,7 +10,7 @@ export class PlayerService {
 
     // ✅ UTC-11 ID 2: Empty fields
     if (!username || !email || !password || !confirm_password) {
-      return { error_message: "All fields are required" };
+      return { error_message: "All fields are required." };
     }
 
     try {
@@ -23,14 +23,14 @@ export class PlayerService {
 
       return { error_message: null };
     } catch (err) {
-      return { error_message: "Failed to create player" };
+      return { error_message: "Failed to create player." };
     }
   }
 
   async getPlayerById(id: string): Promise<PlayerResponse | { error_message: string }> {
     // ✅ UTC-12 ID 3: Empty player ID
     if (!id) {
-      return { error_message: "Player ID is required" };
+      return { error_message: "Player ID is required." };
     }
 
     const [rows] = await pool.query<RowDataPacket[]>(
@@ -40,7 +40,7 @@ export class PlayerService {
 
     // ✅ UTC-12 ID 2: Player not found
     if (rows.length === 0) {
-      return { error_message: "Player not found" };
+      return { error_message: "Player not found." };
     }
 
     const player = rows[0];
@@ -57,13 +57,13 @@ export class PlayerService {
   async getPlayerByEmail(email: string): Promise<PlayerResponse | { error_message: string }> {
     // ✅ UTC-13 ID 4: Empty email
     if (!email) {
-      return { error_message: "Email is required" };
+      return { error_message: "Email is required." };
     }
 
     // ✅ UTC-13 ID 3: Invalid email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return { error_message: "Invalid email format" };
+      return { error_message: "Invalid email format." };
     }
 
     const [rows] = await pool.query<RowDataPacket[]>(
@@ -73,7 +73,7 @@ export class PlayerService {
 
     // ✅ UTC-13 ID 2: Email not registered
     if (rows.length === 0) {
-      return { error_message: "Player not found" };
+      return { error_message: "Player not found." };
     }
 
     const player = rows[0];
