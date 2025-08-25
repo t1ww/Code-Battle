@@ -9,15 +9,14 @@ A real-time code battle web app with live multiplayer functionality, built as a 
 
 Follow these steps to set up and run the entire Code Battle project from scratch.
 
+---
+
 ### 1. Prerequisites
 
 Before you begin, make sure you have these tools installed:
 
-- [Node.js & npm](https://nodejs.org/)  
-  _Download and install from the official website. This is required to run the project._
-  **After installing Node.js, please close and re-open VS Code to ensure the terminal recognizes the new installation.**
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)  
-  _Download and install to run the database and phpMyAdmin containers._
+## Node.js & npm  
+  _Download and install from the [official website](https://nodejs.org/). This is required to run the project._
 
 _You can check if Node.js and npm are installed by running:_
 
@@ -26,13 +25,65 @@ node -v
 npm -v
 ```
 
+  **‼️After installing Node.js, please close and re-open VS Code to ensure the terminal recognizes the new installation. ‼️**
+
+## Docker Desktop  
+  _Download and install [from here](https://www.docker.com/products/docker-desktop/), to run the database and phpMyAdmin containers._
+
 _You can check if Docker is running by opening Docker Desktop or running:_
 
 ```bash
 docker info
 ```
 
+## g++ / GCC Compiler (required for C++ code runner)
+
+> _Note: After you're done you can see expected output below._
+
+### Windows
+
+1. Install [MinGW-w64](https://sourceforge.net/projects/mingw)
+   You can also follow this [YouTube Tutorial](https://www.youtube.com/watch?v=JsO58opI3SQ)
+2. Add `C:\<path-to-gcc>\bin` to your system `PATH`.
+3. Open a new terminal and verify installation:
+
+```bash
+g++ --version
+```
+
 ---
+
+### macOS
+
+Install Xcode Command Line Tools:
+
+```bash
+xcode-select --install
+g++ --version
+```
+
+---
+
+### Linux (Ubuntu/Debian)
+
+```bash
+sudo apt update
+sudo apt install build-essential
+g++ --version
+```
+
+---
+
+### Expected Output
+
+You should see something like:
+
+```
+g++ (MinGW.org GCC-6.3.0-1) 6.3.0
+Copyright (C) 2016 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+```
 
 ### 2. Clone the Repository (If you haven't)
 
