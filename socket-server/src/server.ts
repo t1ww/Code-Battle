@@ -147,6 +147,7 @@ io.on("connection", (socket) => {
         // Get the team the player belongs to
         const team = teamService.getTeamBySocket(socket) as (Team & { leaderId: string }) | undefined;
 
+        // Cancel team queue first
         if (team) {
             matchmakingService.cancelTeamQueue(team.team_id);
             io.to(team.team_id).emit("teamQueueCanceled", { canceledBy: socket.data.player.name });
