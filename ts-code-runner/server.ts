@@ -22,8 +22,25 @@ fs.ensureDirSync(TEMP_DIR);
 app.post("/run", async (req, res): Promise<any> => {
     const { code, test_cases: test_cases, score_pct } = req.body;
 
-    if (!code || !Array.isArray(test_cases)) {
+    if (!Array.isArray(test_cases)) {
         return res.status(400).json({ error: "Invalid input" });
+    }
+    if (!code || !code.trim()) {
+        const results = test_cases.map(({ input, expected_output, score }) => ({
+            input,
+            output: "",
+            expected_output,
+            passed: false,
+            score
+        }));
+
+        const total_score = 0;
+
+        return res.json({
+            passed: false,
+            total_score,
+            results
+        });
     }
 
     const scoreMultiplier = typeof score_pct === "number" ? score_pct : 1;
