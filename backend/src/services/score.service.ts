@@ -26,7 +26,7 @@ export class ScoreService {
                 );
                 return { message: "Score successfully updated, new highscore." };
             } else {
-                return { message: "Score successfully not updated, previous score is higher." };
+                return { message: "Score successfully not updated, previous score is higher or equal." };
             }
         } else {
             // Insert new score record
