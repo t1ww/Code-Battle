@@ -25,7 +25,7 @@ node -v
 npm -v
 ```
 
-  **‼️After installing Node.js, please close and re-open VS Code to ensure the terminal recognizes the new installation. ‼️**
+  **⚠️After installing Node.js, please close and re-open VS Code to ensure the terminal recognizes the new installation. ⚠️**
 
 ## Docker Desktop  
   _Download and install [from here](https://www.docker.com/products/docker-desktop/), to run the database and phpMyAdmin containers._
@@ -84,6 +84,7 @@ Copyright (C) 2016 Free Software Foundation, Inc.
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ```
+  **⚠️After installing MinGW, please close and re-open VS Code to ensure the terminal recognizes the new installation. ⚠️**
 
 ### 2. Clone the Repository (If you haven't)
 
