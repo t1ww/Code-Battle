@@ -1,3 +1,4 @@
+// backend\src\dtos\player.dto.ts
 export interface PlayerResponse {
   id: string;
   username: string;

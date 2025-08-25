@@ -1,3 +1,4 @@
+// backend\src\routes\score.route.ts
 import { Router, Request, Response, NextFunction } from "express";
 import * as scoreController from "@/controllers/score.controller";
 

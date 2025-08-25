@@ -1,3 +1,4 @@
+// backend\src\dtos\score.dto.ts
 export enum ModifierState {
     None = "None",
     Sabotage = "Sabotage",

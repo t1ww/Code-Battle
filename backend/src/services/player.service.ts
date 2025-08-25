@@ -1,3 +1,4 @@
+// backend\src\services\player.service.ts
 import pool from "@/clients/database.client";
 import { PlayerResponse } from "../dtos/player.dto";
 import { RowDataPacket } from "mysql2";

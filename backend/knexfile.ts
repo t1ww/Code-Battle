@@ -1,3 +1,4 @@
+// backend\knexfile.ts
 import type { Knex } from "knex";
 import dotenv from "dotenv";
 

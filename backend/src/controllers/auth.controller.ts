@@ -1,3 +1,4 @@
+// backend\src\controllers\auth.controller.ts
 import { Request, Response } from "express";
 import { AuthService } from "@/services/auth.service";
 import { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from "@/dtos/auth.dto";

@@ -1,6 +1,7 @@
+// backend\src\controllers\score.controller.ts
 import { Request, Response } from "express";
 import { ScoreService } from "@/services/score.service";
-import { PlayerScore, SubmitScoreDTO } from "@/dtos/score.dto";
+import { SubmitScoreDTO } from "@/dtos/score.dto";
 
 const scoreService = new ScoreService();
 
