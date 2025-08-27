@@ -47,12 +47,19 @@ const editorOptions = {
 const editorRef = ref<any>(null)
 onMounted(() => {
     if (!editorRef.value) return
-    const editorEl = editorRef.value.$el.querySelector('textarea')
-    if (!editorEl) return
+    const container = editorRef.value.$el as HTMLElement
 
-    editorEl.addEventListener('paste', (e: ClipboardEvent) => {
-        e.preventDefault() // blocks the paste
-    })
+    container.addEventListener(
+        'paste',
+        (e: ClipboardEvent) => {
+            if (!DEV) {
+                e.preventDefault()
+                e.stopPropagation()
+                console.log('Paste prevented!')
+            }
+        },
+        { capture: true }
+    )
 })
 </script>
 
