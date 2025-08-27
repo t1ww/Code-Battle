@@ -1,6 +1,7 @@
 // socket-server/src/services/matchmaking.service.ts
-import { PlayerSession, Team, MatchMode } from "@/types";
+import { PlayerSession, Team } from "@/types";
 
+const MAX_QUEUE_TIME_MS = 60_000; // 60 seconds
 // ✅ SRS-086: The system shall pair players or teams based on matchmaking criteria including player connection quality and wait time.
 // Helper to measure connection quality (simple heuristic)
 function measureConnectionQuality(player: PlayerSession): number {
@@ -48,7 +49,7 @@ export class MatchmakingService {
 
 
     // ✅ UTC-21: queuePlayer for 1v1
-    queuePlayer(player: PlayerSession): { message?: string; error_message?: string } {
+    queuePlayer(player: PlayerSession, onExpire: (player: PlayerSession) => void): { message?: string; error_message?: string } {
         // ✅ UTC-21 ID 3: Invalid player object
         if (!this.isPlayerSession(player)) {
             return { error_message: "Invalid player object" };
@@ -70,13 +71,23 @@ export class MatchmakingService {
         player.connectionQuality = measureConnectionQuality(player); // custom fn or heuristic
         player.joinedQueueAt = Date.now();
 
+        // ✅ SRS-091: If no suitable match is found within a timeout period, the system shall cancel matchmaking and notify the player accordingly.
+        const timeoutId = setTimeout(() => {
+            if (this.queue1v1.has(player.player_id)) {
+                this.queue1v1.delete(player.player_id);
+                console.log(`Player ${player.player_id} removed from 1v1 queue due to timeout`); // log expiration
+                onExpire(player);
+            }
+        }, MAX_QUEUE_TIME_MS);
+        player.queueTimeoutId = timeoutId;
+
         // ✅ UTC-21 ID 1: Valid player added
         queue.set(player.player_id, player);
         return { message: "Player added to 1v1 queue successfully" };
     }
 
     // ✅ UTC-21: queueTeam for 3v3
-    queueTeam(team: Team): { message?: string; error_message?: string } {
+    queueTeam(team: Team, onExpire: (team: Team) => void): { message?: string; error_message?: string } {
         // ✅ UTC-21 ID 3: Invalid team object
         if (!this.isTeam(team)) {
             return { error_message: "Team must consist of exactly 3 valid player sessions" };
@@ -97,6 +108,15 @@ export class MatchmakingService {
                 }
             }
         }
+
+        const timeoutId = setTimeout(() => {
+            if (queue.has(team.team_id)) {
+                queue.delete(team.team_id);
+                console.log(`Team ${team.team_id} removed from 3v3 queue due to timeout`);
+                onExpire(team);
+            }
+        }, MAX_QUEUE_TIME_MS);
+        team.queueTimeoutId = timeoutId;
 
         // ✅ UTC-21 ID 1: Valid team added
         queue.set(team.team_id, team);
@@ -201,19 +221,23 @@ export class MatchmakingService {
     }
 
     // Cancel queue methods
-    cancelTeamQueue(teamId: string): { message?: string; error_message?: string } {
-        if (this.queue3v3.has(teamId)) {
-            this.queue3v3.delete(teamId);
-            return { message: `Team ${teamId} removed from matchmaking queue` };
-        }
-        return { error_message: `Team ${teamId} was not in matchmaking queue` };
-    }
-
-    cancelPlayerQueue(playerId: string): { message?: string; error_message?: string } {
-        if (this.queue1v1.has(playerId)) {
+    cancelPlayerQueue(playerId: string) {
+        const player = this.queue1v1.get(playerId);
+        if (player) {
+            if (player.queueTimeoutId) clearTimeout(player.queueTimeoutId);
             this.queue1v1.delete(playerId);
             return { message: `Player ${playerId} removed from matchmaking queue` };
         }
         return { error_message: `Player ${playerId} was not in matchmaking queue` };
+    }
+
+    cancelTeamQueue(teamId: string): { message?: string; error_message?: string } {
+        const team = this.queue3v3.get(teamId);
+        if (team) {
+            if ((team as any).queueTimeoutId) clearTimeout((team as any).queueTimeoutId);
+            this.queue3v3.delete(teamId);
+            return { message: `Team ${teamId} removed from matchmaking queue` };
+        }
+        return { error_message: `Team ${teamId} was not in matchmaking queue` };
     }
 }

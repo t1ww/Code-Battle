@@ -268,7 +268,9 @@ io.on("connection", (socket) => {
                     socket,
                 };
 
-                const result = matchmakingService.queuePlayer(player);
+                const result = matchmakingService.queuePlayer(player, (player) => {
+                    player.socket.emit("queueTimeout", { message: "No suitable match found, please try again later." });
+                });
                 if (result.error_message) {
                     socket.emit("queueResponse", `Matchmaking error with following message: ${result.error_message}`);
                     return;
@@ -305,7 +307,9 @@ io.on("connection", (socket) => {
                 return;
             }
 
-            const result = matchmakingService.queueTeam(team);
+            const result = matchmakingService.queueTeam(team, (team) => {
+                io.to(team.team_id).emit("queueTimeout", { message: "No suitable match found, please try again later." });
+            });
             if (result.error_message) {
                 socket.emit("queueResponse", `Matchmaking error with following message: ${result.error_message}`);
                 return;
