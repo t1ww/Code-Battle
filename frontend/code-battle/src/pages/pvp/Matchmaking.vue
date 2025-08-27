@@ -8,6 +8,7 @@ import type { PlayerData } from '@/types/types'
 import SearchIcon from '@/components/pvp/SearchIcon.vue'
 import MatchFoundIcon from '@/components/pvp/MatchFoundIcon.vue'
 import TeamList from '@/components/pvp/TeamList.vue'
+import MessagePopup from '@/components/popups/MessagePopup.vue'
 
 import { socket } from '@/clients/socket.api'
 
@@ -27,6 +28,7 @@ const mode = computed(() => route.query.mode)
 const timeLimit = computed(() => route.query.timeLimit === 'true')
 
 const errorMessage = ref('')
+const errorPopup = ref<{ title: string; message: string; buttonOnClick: () => void } | null>(null)
 
 const state = ref<MatchState>('searching')
 const match = ref<{
@@ -164,6 +166,18 @@ onMounted(() => {
         triggerNotification(data.message, 4000);
         router.replace({ name: "PvpTypeSelect" });
     });
+
+    // Handle matchmaking errors
+    socket.on("matchmakingError", (data: { message: string }) => {
+        errorPopup.value = {
+            title: "Matchmaking Error",
+            message: data.message,
+            buttonOnClick: () => {
+                errorPopup.value = null
+                router.replace({ name: "PvpTypeSelect" }) // optional redirect
+            }
+        }
+    })
 })
 
 onBeforeUnmount(() => {
@@ -178,6 +192,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+    <MessagePopup v-if="errorPopup" :title="errorPopup.title" :message="errorPopup.message"
+        :buttonOnClick="errorPopup.buttonOnClick" />
+
     <div class="matchmaking-container">
         <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 

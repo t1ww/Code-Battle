@@ -1,5 +1,6 @@
 // socket-server/src/services/matchmaking.service.ts
 import { PlayerSession, Team } from "@/types";
+import { Server } from "socket.io";
 
 const MAX_QUEUE_TIME_MS = 30_000; // 60 seconds
 // ✅ SRS-086: The system shall pair players or teams based on matchmaking criteria including player connection quality and wait time.
@@ -22,6 +23,8 @@ function teamScore(team: Team) {
 
 // Matchmaking Service class
 export class MatchmakingService {
+    constructor(private io: Server) { }
+
     private queue1v1: Map<string, PlayerSession> = new Map();
     private queue3v3: Map<string, Team> = new Map();
 
@@ -50,77 +53,95 @@ export class MatchmakingService {
 
     // ✅ UTC-21: queuePlayer for 1v1
     queuePlayer(player: PlayerSession, onExpire: (player: PlayerSession) => void): { message?: string; error_message?: string } {
-        // ✅ UTC-21 ID 3: Invalid player object
-        if (!this.isPlayerSession(player)) {
-            return { error_message: "Invalid player object" };
-        }
-
-        // ✅ UTC-21 ID 4: Empty player
-        if (!player.player_id || !player.socket) {
-            return { error_message: "Player is required" };
-        }
-
-        const queue = this.queue1v1;
-
-        // ✅ UTC-21 ID 2: Duplicate player
-        if (queue.has(player.player_id)) {
-            return { error_message: "Player already in queue" };
-        }
-
-        // ✅ SRS-086: The system shall pair players or teams based on matchmaking criteria including player connection quality and wait time.
-        player.connectionQuality = measureConnectionQuality(player); // custom fn or heuristic
-        player.joinedQueueAt = Date.now();
-
-        // ✅ SRS-091: If no suitable match is found within a timeout period, the system shall cancel matchmaking and notify the player accordingly.
-        const timeoutId = setTimeout(() => {
-            if (this.queue1v1.has(player.player_id)) {
-                this.queue1v1.delete(player.player_id);
-                console.log(`Player ${player.player_id} removed from 1v1 queue due to timeout`); // log expiration
-                onExpire(player);
+        try {
+            // ✅ UTC-21 ID 3: Invalid player object
+            if (!this.isPlayerSession(player)) {
+                return { error_message: "Invalid player object" };
             }
-        }, MAX_QUEUE_TIME_MS);
-        player.queueTimeoutId = timeoutId;
 
-        // ✅ UTC-21 ID 1: Valid player added
-        queue.set(player.player_id, player);
-        return { message: "Player added to 1v1 queue successfully" };
+            // ✅ UTC-21 ID 4: Empty player
+            if (!player.player_id || !player.socket) {
+                return { error_message: "Player is required" };
+            }
+
+            const queue = this.queue1v1;
+
+            // ✅ UTC-21 ID 2: Duplicate player
+            if (queue.has(player.player_id)) {
+                return { error_message: "Player already in queue" };
+            }
+
+            // ✅ SRS-086: The system shall pair players or teams based on matchmaking criteria including player connection quality and wait time.
+            player.connectionQuality = measureConnectionQuality(player); // custom fn or heuristic
+            player.joinedQueueAt = Date.now();
+
+            // ✅ SRS-091: If no suitable match is found within a timeout period, the system shall cancel matchmaking and notify the player accordingly.
+            const timeoutId = setTimeout(() => {
+                if (this.queue1v1.has(player.player_id)) {
+                    this.queue1v1.delete(player.player_id);
+                    console.log(`Player ${player.player_id} removed from 1v1 queue due to timeout`); // log expiration
+                    onExpire(player);
+                }
+            }, MAX_QUEUE_TIME_MS);
+            player.queueTimeoutId = timeoutId;
+
+            // ✅ UTC-21 ID 1: Valid player added
+            queue.set(player.player_id, player);
+            return { message: "Player added to 1v1 queue successfully" };
+        } catch (err) {
+            // ✅ SRS-092: If a server error occurs during matchmaking, the frontend shall display: "Matchmaking service is currently unavailable. Please try again later." [UI-04-06]
+            console.error("Matchmaking error:", err);
+            player.socket.emit("matchmakingError", {
+                message: "Matchmaking service is currently unavailable. Please try again later."
+            });
+            return { error_message: "Matchmaking service error" };
+        }
     }
 
     // ✅ UTC-21: queueTeam for 3v3
     queueTeam(team: Team, onExpire: (team: Team) => void): { message?: string; error_message?: string } {
-        // ✅ UTC-21 ID 3: Invalid team object
-        if (!this.isTeam(team)) {
-            return { error_message: "Team must consist of exactly 3 valid player sessions" };
-        }
+        try {
+            // ✅ UTC-21 ID 3: Invalid team object
+            if (!this.isTeam(team)) {
+                return { error_message: "Team must consist of exactly 3 valid player sessions" };
+            }
 
-        const queue = this.queue3v3;
+            const queue = this.queue3v3;
 
-        // ✅ UTC-21 ID 2: Duplicate team
-        if (queue.has(team.team_id)) {
-            return { error_message: "Team already in queue" };
-        }
+            // ✅ UTC-21 ID 2: Duplicate team
+            if (queue.has(team.team_id)) {
+                return { error_message: "Team already in queue" };
+            }
 
-        // ✅ Optional: Prevent player duplication across teams
-        for (const existingTeam of queue.values()) {
-            for (const player of existingTeam.players) {
-                if (team.players.some(p => p.player_id === player.player_id)) {
-                    return { error_message: `Player ${player.player_id} already in another team queue` };
+            // ✅ Optional: Prevent player duplication across teams
+            for (const existingTeam of queue.values()) {
+                for (const player of existingTeam.players) {
+                    if (team.players.some(p => p.player_id === player.player_id)) {
+                        return { error_message: `Player ${player.player_id} already in another team queue` };
+                    }
                 }
             }
+
+            const timeoutId = setTimeout(() => {
+                if (queue.has(team.team_id)) {
+                    queue.delete(team.team_id);
+                    console.log(`Team ${team.team_id} removed from 3v3 queue due to timeout`);
+                    onExpire(team);
+                }
+            }, MAX_QUEUE_TIME_MS);
+            team.queueTimeoutId = timeoutId;
+
+            // ✅ UTC-21 ID 1: Valid team added
+            queue.set(team.team_id, team);
+            return { message: "Team added to 3v3 queue successfully" };
+        } catch (err) {
+            // ✅ SRS-092: If a server error occurs during matchmaking, the frontend shall display: "Matchmaking service is currently unavailable. Please try again later." [UI-04-06]
+            console.error("Matchmaking error:", err);
+            this.io.to(team.team_id).emit("matchmakingError", {
+                message: "Matchmaking service is currently unavailable. Please try again later."
+            });
+            return { error_message: "Matchmaking service error" };
         }
-
-        const timeoutId = setTimeout(() => {
-            if (queue.has(team.team_id)) {
-                queue.delete(team.team_id);
-                console.log(`Team ${team.team_id} removed from 3v3 queue due to timeout`);
-                onExpire(team);
-            }
-        }, MAX_QUEUE_TIME_MS);
-        team.queueTimeoutId = timeoutId;
-
-        // ✅ UTC-21 ID 1: Valid team added
-        queue.set(team.team_id, team);
-        return { message: "Team added to 3v3 queue successfully" };
     }
 
     // ✅ UTC-22: startMatch

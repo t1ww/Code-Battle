@@ -27,7 +27,7 @@ const io = new Server(server, {
 // Initialize services
 // NEW: Connection and matchmaking services
 const connectionService = new ConnectionService();
-const matchmakingService = new MatchmakingService();
+const matchmakingService = new MatchmakingService(io);
 // NEW: Team services
 const teamService = new TeamService();
 const teamInviteService = new TeamInviteService();
