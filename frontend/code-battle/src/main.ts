@@ -14,7 +14,7 @@ const app = createApp(App)
 // Provide functions
 app.provide('isAuthenticated', isAuthenticated)
 app.provide('getPlayerData', getPlayerData)
-app.provide('DEV', true)
+app.provide('DEV', false)
 
 app.use(createPinia())
     .use(router)
