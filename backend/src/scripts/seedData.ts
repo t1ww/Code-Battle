@@ -1,3 +1,4 @@
+// backend\src\scripts\seedData.ts
 import pool from "@/clients/database.client";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";

@@ -1,3 +1,4 @@
+// backend\src\clients\database.client.ts
 import mysql from "mysql2";
 import dotenv from "dotenv";
 

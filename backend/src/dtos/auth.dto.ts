@@ -1,3 +1,4 @@
+// backend\src\dtos\auth.dto.ts
 import { PlayerResponse } from "./player.dto";
 
 export interface RegisterRequest {

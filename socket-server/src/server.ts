@@ -11,7 +11,6 @@ import { PrivateRoomService } from "@/services/privateRoom.service";
 import { PrivateRoomInviteService } from "@/services/privateRoom.invite.service";
 
 import type {
-    MatchMode,
     PlayerSession,
     QueuePlayerData1v1,
     QueuePlayerData3v3,
@@ -28,7 +27,7 @@ const io = new Server(server, {
 // Initialize services
 // NEW: Connection and matchmaking services
 const connectionService = new ConnectionService();
-const matchmakingService = new MatchmakingService();
+const matchmakingService = new MatchmakingService(io);
 // NEW: Team services
 const teamService = new TeamService();
 const teamInviteService = new TeamInviteService();
@@ -114,10 +113,10 @@ let alternate = true;
 setInterval(() => {
     if (alternate) {
         console.log(`Attempt starting match for ${"1v1"}`);
-        matchmakingService.startMatch("1v1");
+        matchmakingService.startMatch1v1();
     } else {
         console.log(`Attempt starting match for ${"3v3"}`);
-        matchmakingService.startMatch("3v3");
+        matchmakingService.startMatch3v3();
     }
     alternate = !alternate;
 }, 6000);
@@ -147,6 +146,11 @@ io.on("connection", (socket) => {
         // Get the team the player belongs to
         const team = teamService.getTeamBySocket(socket) as (Team & { leaderId: string }) | undefined;
 
+        // Cancel team queue first
+        if (team) {
+            matchmakingService.cancelTeamQueue(team.team_id);
+            io.to(team.team_id).emit("teamQueueCanceled", { canceledBy: socket.data.player.name });
+        }
         // If the player is a leader, disband the team
         if (team && removedPlayer.player_id === team.leaderId) {
             disbandTeam(team);
@@ -164,10 +168,6 @@ io.on("connection", (socket) => {
                 }
             }
         }
-        if (team) {
-            matchmakingService.cancelTeamQueue(team.team_id);
-        }
-
 
         // Handle private room cleanup
         const removedRoom = privateRoomService.removePlayer(socket.id);
@@ -255,6 +255,8 @@ io.on("connection", (socket) => {
         }
     );
 
+    // MATCHMAKING & QUEUE EVENTS
+    const TIMEOUT_MESSAGE = "No suitable match found. You can re-queue if you wish. Or try bring some friends C:";
     // ==== 1v1 MATCHMAKING EVENTS ====
     // Queue a player or team for matchmaking
     socket.on("queuePlayer", (data: QueuePlayerData1v1) => {
@@ -268,7 +270,9 @@ io.on("connection", (socket) => {
                     socket,
                 };
 
-                const result = matchmakingService.queuePlayer(player);
+                const result = matchmakingService.queuePlayer(player, (player) => {
+                    player.socket.emit("queueTimeout", { message: TIMEOUT_MESSAGE });
+                });
                 if (result.error_message) {
                     socket.emit("queueResponse", `Matchmaking error with following message: ${result.error_message}`);
                     return;
@@ -305,7 +309,9 @@ io.on("connection", (socket) => {
                 return;
             }
 
-            const result = matchmakingService.queueTeam(team);
+            const result = matchmakingService.queueTeam(team, (team) => {
+                io.to(team.team_id).emit("queueTimeout", { message: TIMEOUT_MESSAGE });
+            });
             if (result.error_message) {
                 socket.emit("queueResponse", `Matchmaking error with following message: ${result.error_message}`);
                 return;
@@ -331,12 +337,6 @@ io.on("connection", (socket) => {
         io.to(team.team_id).emit("teamQueueCanceled", { canceledBy: socket.data.player.name });
     });
 
-    // Start match manually (fallback or test)
-    socket.on("startMatch", (data: { mode?: MatchMode }) => {
-        const mode = data?.mode || "1v1";
-        const result = matchmakingService.startMatch(mode);
-        socket.emit("matchResponse", result);
-    });
 
     // ==== PRIVATE ROOM EVENTS ====
     socket.on("createPrivateRoom", (player: PlayerSession) => {

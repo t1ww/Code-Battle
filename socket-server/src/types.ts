@@ -23,8 +23,12 @@ export type QueuePlayerDataAny = QueuePlayerData1v1 | QueuePlayerData3v3;
 
 export interface PlayerSession extends QueuePlayerData {
     socket: Socket;
+    connectionQuality?: number; // e.g. ping in ms or a score 0–100
+    joinedQueueAt?: number; // timestamp when queued
+    queueTimeoutId?: NodeJS.Timeout;
 }
 export interface Team {
     team_id: string;
     players: PlayerSession[]; // exactly 3 players for 3v3
+    queueTimeoutId?: NodeJS.Timeout;
 }

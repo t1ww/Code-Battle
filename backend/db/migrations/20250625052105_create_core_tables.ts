@@ -1,3 +1,4 @@
+// backend\db\migrations\20250625052105_create_core_tables.ts
 import { Knex } from "knex";
 
 export async function up(knex: Knex): Promise<void> {

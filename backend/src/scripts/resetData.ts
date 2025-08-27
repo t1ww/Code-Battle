@@ -1,3 +1,4 @@
+// backend\src\scripts\resetData.ts
 import pool from "@/clients/database.client"; // adjust the path if needed
 import dotenv from "dotenv";
 dotenv.config();
