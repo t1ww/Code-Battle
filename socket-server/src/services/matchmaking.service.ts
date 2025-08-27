@@ -1,7 +1,7 @@
 // socket-server/src/services/matchmaking.service.ts
 import { PlayerSession, Team } from "@/types";
 
-const MAX_QUEUE_TIME_MS = 60_000; // 60 seconds
+const MAX_QUEUE_TIME_MS = 30_000; // 60 seconds
 // ✅ SRS-086: The system shall pair players or teams based on matchmaking criteria including player connection quality and wait time.
 // Helper to measure connection quality (simple heuristic)
 function measureConnectionQuality(player: PlayerSession): number {

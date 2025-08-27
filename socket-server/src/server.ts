@@ -255,6 +255,8 @@ io.on("connection", (socket) => {
         }
     );
 
+    // MATCHMAKING & QUEUE EVENTS
+    const TIMEOUT_MESSAGE = "TIMEOUT: No suitable match found. You can re-queue if you wish. Or try bring some friends C:";
     // ==== 1v1 MATCHMAKING EVENTS ====
     // Queue a player or team for matchmaking
     socket.on("queuePlayer", (data: QueuePlayerData1v1) => {
@@ -269,7 +271,7 @@ io.on("connection", (socket) => {
                 };
 
                 const result = matchmakingService.queuePlayer(player, (player) => {
-                    player.socket.emit("queueTimeout", { message: "No suitable match found, please try again later." });
+                    player.socket.emit("queueTimeout", { message: TIMEOUT_MESSAGE });
                 });
                 if (result.error_message) {
                     socket.emit("queueResponse", `Matchmaking error with following message: ${result.error_message}`);
@@ -308,7 +310,7 @@ io.on("connection", (socket) => {
             }
 
             const result = matchmakingService.queueTeam(team, (team) => {
-                io.to(team.team_id).emit("queueTimeout", { message: "No suitable match found, please try again later." });
+                io.to(team.team_id).emit("queueTimeout", { message: TIMEOUT_MESSAGE });
             });
             if (result.error_message) {
                 socket.emit("queueResponse", `Matchmaking error with following message: ${result.error_message}`);

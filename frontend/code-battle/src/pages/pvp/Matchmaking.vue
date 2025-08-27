@@ -157,6 +157,13 @@ onMounted(() => {
         triggerNotification(`Team queue canceled by ${data.canceledBy}, redirecting…`);
         router.replace({ name: "PvpTypeSelect" });
     });
+
+    // Handle queue timeout
+    socket.on("queueTimeout", (data: { message: string }) => {
+        console.log("Queue timed out:", data.message);
+        triggerNotification(data.message, 4000);
+        router.replace({ name: "PvpTypeSelect" });
+    });
 })
 
 onBeforeUnmount(() => {

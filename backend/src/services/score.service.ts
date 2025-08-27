@@ -1,7 +1,6 @@
 // backend\src\services\score.service.ts
 import pool from "@/clients/database.client";
 import { SubmitScoreDTO, PlayerScore } from "@/dtos/score.dto";
-import e from "express";
 import { RowDataPacket } from "mysql2";
 
 export class ScoreService {
