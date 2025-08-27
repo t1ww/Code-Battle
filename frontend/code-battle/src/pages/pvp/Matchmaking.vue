@@ -162,9 +162,14 @@ onMounted(() => {
 
     // Handle queue timeout
     socket.on("queueTimeout", (data: { message: string }) => {
-        console.log("Queue timed out:", data.message);
-        triggerNotification(data.message, 4000);
-        router.replace({ name: "PvpTypeSelect" });
+        errorPopup.value = {
+            title: "Matchmaking Timeout",
+            message: data.message,
+            buttonOnClick: () => {
+                errorPopup.value = null
+                router.replace({ name: "PvpTypeSelect" })
+            }
+        }
     });
 
     // Handle matchmaking errors

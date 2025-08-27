@@ -256,7 +256,7 @@ io.on("connection", (socket) => {
     );
 
     // MATCHMAKING & QUEUE EVENTS
-    const TIMEOUT_MESSAGE = "TIMEOUT: No suitable match found. You can re-queue if you wish. Or try bring some friends C:";
+    const TIMEOUT_MESSAGE = "No suitable match found. You can re-queue if you wish. Or try bring some friends C:";
     // ==== 1v1 MATCHMAKING EVENTS ====
     // Queue a player or team for matchmaking
     socket.on("queuePlayer", (data: QueuePlayerData1v1) => {
