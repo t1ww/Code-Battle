@@ -1,7 +1,25 @@
 // socket-server/src/services/matchmaking.service.ts
 import { PlayerSession, Team, MatchMode } from "@/types";
-import { Socket } from "socket.io";
 
+// ✅ SRS-086: The system shall pair players or teams based on matchmaking criteria including player connection quality and wait time.
+// Helper to measure connection quality (simple heuristic)
+function measureConnectionQuality(player: PlayerSession): number {
+    // simple heuristic: 100 - latency (clamped 0–100)
+    const latency = (player.socket.conn as any)?.ping ?? 50; // fallback 50ms
+    return Math.max(0, Math.min(100, 100 - latency));
+}
+// Simple matchmaking score combining wait time and connection quality
+function matchmakingScore(player: PlayerSession) {
+    const waitTime = Date.now() - (player.joinedQueueAt ?? Date.now());
+    const connection = player.connectionQuality ?? 50;
+    // Give some weight to wait time vs connection quality
+    return waitTime * 0.7 + connection * 0.3;
+}
+function teamScore(team: Team) {
+    return team.players.reduce((sum, p) => sum + matchmakingScore(p), 0) / team.players.length;
+}
+
+// Matchmaking Service class
 export class MatchmakingService {
     private queue1v1: Map<string, PlayerSession> = new Map();
     private queue3v3: Map<string, Team> = new Map();
@@ -48,6 +66,10 @@ export class MatchmakingService {
             return { error_message: "Player already in queue" };
         }
 
+        // ✅ SRS-086: The system shall pair players or teams based on matchmaking criteria including player connection quality and wait time.
+        player.connectionQuality = measureConnectionQuality(player); // custom fn or heuristic
+        player.joinedQueueAt = Date.now();
+
         // ✅ UTC-21 ID 1: Valid player added
         queue.set(player.player_id, player);
         return { message: "Player added to 1v1 queue successfully" };
@@ -82,40 +104,43 @@ export class MatchmakingService {
     }
 
     // ✅ UTC-22: startMatch
-    startMatch(mode: MatchMode): { message?: string; error_message?: string } {
-        if (mode === "1v1") {
-            const queue = this.queue1v1;
-            const players = Array.from(queue.values());
+    startMatch1v1(): { message?: string; error_message?: string } {
+        const queue = this.queue1v1;
+        const players = Array.from(queue.values());
 
-            // ✅ UTC-22 ID 2: Not enough players
-            if (players.length < 2) {
-                return { error_message: "Not enough players to start a 1v1 match" };
-            }
-
-            // ✅ UTC-22 ID 1: Enough players queued
-            const matchPlayers = players.slice(0, 2);
-            const [p1, p2] = matchPlayers;
-
-            p1.socket.emit("matchInfo", {
-                you: { player_id: p1.player_id, name: p1.name, email: p1.email, token: null },
-                friends: [],
-                opponents: [{ player_id: p2.player_id, name: p2.name, email: p2.email, token: null }]
-            });
-
-            p2.socket.emit("matchInfo", {
-                you: { player_id: p2.player_id, name: p2.name, email: p2.email, token: null },
-                friends: [],
-                opponents: [{ player_id: p1.player_id, name: p1.name, email: p1.email, token: null }]
-            });
-
-            matchPlayers.forEach(p => {
-                p.socket.emit("matchStarted", { player_id: p.player_id });
-                queue.delete(p.player_id);
-            });
-            // ✅ Emit match started event
-            return { message: "1v1 match started successfully" };
+        // ✅ UTC-22 ID 2: Not enough players
+        if (players.length < 2) {
+            return { error_message: "Not enough players to start a 1v1 match" };
         }
 
+        // ✅ UTC-22 ID 1: Enough players queued
+        const matchPlayers = Array.from(queue.values())
+            .sort((a, b) => matchmakingScore(b) - matchmakingScore(a))
+            .slice(0, 2);
+
+        const [p1, p2] = matchPlayers;
+
+        p1.socket.emit("matchInfo", {
+            you: { player_id: p1.player_id, name: p1.name, email: p1.email, token: null },
+            friends: [],
+            opponents: [{ player_id: p2.player_id, name: p2.name, email: p2.email, token: null }]
+        });
+
+        p2.socket.emit("matchInfo", {
+            you: { player_id: p2.player_id, name: p2.name, email: p2.email, token: null },
+            friends: [],
+            opponents: [{ player_id: p1.player_id, name: p1.name, email: p1.email, token: null }]
+        });
+
+        matchPlayers.forEach(p => {
+            p.socket.emit("matchStarted", { player_id: p.player_id });
+            queue.delete(p.player_id);
+        });
+        // ✅ Emit match started event
+        return { message: "1v1 match started successfully" };
+    }
+
+    startMatch3v3(): { message?: string; error_message?: string } {
         const queue = this.queue3v3;
         const teams = Array.from(queue.values());
 
@@ -125,7 +150,10 @@ export class MatchmakingService {
         }
 
         // ✅ UTC-22 ID 1: Enough teams queued
-        const [teamA, teamB] = teams.slice(0, 2);
+        const matchTeams = Array.from(queue.values())
+            .sort((a, b) => teamScore(b) - teamScore(a))
+            .slice(0, 2);
+        const [teamA, teamB] = matchTeams;
 
         const teamAData = teamA.players.map(p => ({
             player_id: p.player_id,
@@ -172,6 +200,7 @@ export class MatchmakingService {
         return { message: "3v3 match started successfully" };
     }
 
+    // Cancel queue methods
     cancelTeamQueue(teamId: string): { message?: string; error_message?: string } {
         if (this.queue3v3.has(teamId)) {
             this.queue3v3.delete(teamId);

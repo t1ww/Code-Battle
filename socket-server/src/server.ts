@@ -11,7 +11,6 @@ import { PrivateRoomService } from "@/services/privateRoom.service";
 import { PrivateRoomInviteService } from "@/services/privateRoom.invite.service";
 
 import type {
-    MatchMode,
     PlayerSession,
     QueuePlayerData1v1,
     QueuePlayerData3v3,
@@ -114,10 +113,10 @@ let alternate = true;
 setInterval(() => {
     if (alternate) {
         console.log(`Attempt starting match for ${"1v1"}`);
-        matchmakingService.startMatch("1v1");
+        matchmakingService.startMatch1v1();
     } else {
         console.log(`Attempt starting match for ${"3v3"}`);
-        matchmakingService.startMatch("3v3");
+        matchmakingService.startMatch3v3();
     }
     alternate = !alternate;
 }, 6000);
@@ -332,12 +331,6 @@ io.on("connection", (socket) => {
         io.to(team.team_id).emit("teamQueueCanceled", { canceledBy: socket.data.player.name });
     });
 
-    // Start match manually (fallback or test)
-    socket.on("startMatch", (data: { mode?: MatchMode }) => {
-        const mode = data?.mode || "1v1";
-        const result = matchmakingService.startMatch(mode);
-        socket.emit("matchResponse", result);
-    });
 
     // ==== PRIVATE ROOM EVENTS ====
     socket.on("createPrivateRoom", (player: PlayerSession) => {

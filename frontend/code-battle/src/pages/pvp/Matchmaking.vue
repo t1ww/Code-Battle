@@ -110,9 +110,6 @@ onMounted(() => {
             return
         }
         console.log("Queued successfully:", response.message)
-
-        // Try to start match after player is queued
-        socket.emit("startMatch", { mode: mode.value || '1v1' })
     })
 
     socket.on("matchResponse", (response: { error_message: any; message: any }) => {
