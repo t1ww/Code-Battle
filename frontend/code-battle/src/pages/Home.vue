@@ -4,8 +4,6 @@
 
 <template>
   <div class="container">
-    <h1>Welcome to CODE BATTLE</h1>
-
     <div class="button-wrapper">
       <router-link :to="{ name: 'PveLevelSelect' }" id="pve-button" class="mode-button">
         PVE
@@ -27,10 +25,6 @@
   width: 100vw;
   height: 100vh;
   background-color: #bbb; /* matching the screenshot background */
-}
-
-h1 {
-  margin-bottom: 40px;
 }
 
 .button-wrapper {
