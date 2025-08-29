@@ -1,66 +1,4 @@
 <!-- frontend\code-battle\src\pages\PveGameplay.vue -->
-<template>
-    <div class="container">
-        <!-- In case question data is missing -->
-        <template v-if="!question_data">
-            <div class="error-message">
-                <p>Error: Question data is missing.</p>
-                <p>Redirecting to level selection...</p>
-            </div>
-        </template>
-
-        <!-- Top bar -->
-        <div class="top-bar">
-            <!-- Toggle Button when hidden -->
-            <div v-if="!showDescriptionPopup" class="popup-toggle fixed">
-                <button @click="showDescriptionPopup = true">▼</button>
-            </div>
-            <div class="timer">
-                Time Left:
-                <span>{{ formattedTime }}</span>
-            </div>
-        </div>
-
-        <!-- Code editor and run/submit buttons -->
-        <CodeEditor v-model="code" />
-
-        <div class="buttons">
-            <button @click="runCode" :disabled="isLoading">Run code</button>
-            <button @click="submitCode" :disabled="isLoading">
-                Submit
-            </button>
-        </div>
-        <div class="buttons">
-            <span v-if="isLoading" class="loading-spinner">Loading...</span>
-        </div>
-
-        <!-- Slide Panel Toggle -->
-        <DescriptionPopup :show="showDescriptionPopup" :question="question_data" :timeLimitEnabled="timeLimitEnabled"
-            :selectedModifier="selectedModifier" @close="showDescriptionPopup = false" />
-
-        <!-- Submission result -->
-        <ResultPopup :show="showResultPopup" :finalScore="finalScore"
-            :totalPossibleScore="question_data?.test_cases?.reduce((acc, t) => acc + (t.score ?? 0), 0) ?? 0"
-            :testResults="testResults?.results || []" @close="showResultPopup = false" />
-
-    </div>
-
-    <!-- Game ends -->
-    <!-- By timer -->
-    <TimeoutPopup v-if="showTimeoutPopup" @restart="restartGame" />
-
-    <!-- By clear -->
-    <ClearedPopup v-if="showClearedPopup" :timeLeft="formattedTime" :finalScore="finalScore"
-        :totalPossibleScore="totalPossibleScore" :clearedCount="clearedCount" :modifierName="selectedModifier"
-        :modifierBonus="modifierBonusApplied" @restart="restartGame" />
-
-
-    <!-- By confident lost -->
-    <ConfidentLostPopup v-if="showConfidentLostPopup" :finalScore="finalScore"
-        @close="showConfidentLostPopup = false" />
-
-</template>
-
 <script setup lang="ts">
 // =============================
 // 📦 Imports
@@ -85,6 +23,7 @@ import ConfidentLostPopup from '@/components/popups/ConfidentLostPopup.vue'
 import TimeoutPopup from '@/components/popups/TimeoutPopup.vue'
 import ClearedPopup from '@/components/popups/ClearedPopup.vue'
 import DescriptionPopup from '@/components/popups/DescriptionPopup.vue'
+import MessagePopup from '@/components/popups/MessagePopup.vue'
 
 // Stores
 import { useQuestionStore } from '@/stores/questionStore'
@@ -133,6 +72,17 @@ const showClearedPopup = ref(false)
 // Confident
 const showConfidentLostPopup = ref(false)
 
+// Message Popup
+const showMessagePopup = ref(false)
+const messagePopupTitle = ref('')
+const messagePopupMessage = ref('')
+
+function openMessagePopup(title: string, message: string) {
+    messagePopupTitle.value = title
+    messagePopupMessage.value = message
+    showMessagePopup.value = true
+}
+
 
 // =============================
 // 🧪 Code Actions
@@ -144,9 +94,10 @@ const runCode = async () => {
 const submitCode = async () => {
     if (!question_data.value) return
     isLoading.value = true
+
     try {
         console.log('Submitting code:', code.value)
-        const baseLimit = question_data.value.time_limit || 1 // fallback to 1 to avoid division by 0
+        const baseLimit = question_data.value.time_limit || 1
         let scorePct = 1
 
         if (timeLimitEnabled) {
@@ -155,15 +106,31 @@ const submitCode = async () => {
             const timeUsed = baseLimit - timeLeft.value
             scorePct = timeUsed / baseLimit
         }
+
         console.log('Timer pct:', scorePct)
+
         const res = await codeRunnerApi.post('/run', {
             code: code.value,
             test_cases: question_data.value.test_cases,
-            // Score percentage based on timer, if its enabled check from time left, if disabled find time taken which would've left from based timer limit.
             score_pct: scorePct,
         })
+
         const data = res.data as CodeRunResponse
 
+        // Check for compile/runtime errors first
+        const errorResult = data.results.find(r =>
+            r.output.startsWith('[Compilation Error]') || r.output.startsWith('[Runtime Error]')
+        )
+
+        if (errorResult) {
+            openMessagePopup(
+                errorResult.output.startsWith('[Compilation Error]') ? 'Compilation Error' : 'Runtime Error',
+                errorResult.output
+            )
+            return // stop further processing
+        }
+
+        // Normal test results
         testResults.value = {
             passed: data.total_score === question_data.value.test_cases.length,
             results: data.results.map((r, i) => ({
@@ -174,46 +141,47 @@ const submitCode = async () => {
             })),
             total_score: parseFloat(data.total_score as unknown as string) || 0,
         }
-        console.log(testResults.value)
-        if (selectedModifier === 'Sabotage' || selectedModifier === 'Confident') {
-            finalScore.value = +(testResults.value.total_score * MODIFIER_BONUS).toFixed(3);
-        } else {
-            finalScore.value = testResults.value.total_score;
-        }
+
+        finalScore.value = (selectedModifier === 'Sabotage' || selectedModifier === 'Confident')
+            ? +(testResults.value.total_score * MODIFIER_BONUS).toFixed(3)
+            : testResults.value.total_score
 
         if (data.passed) {
             if (!player) {
-                console.warn("Player is null; skipping score submission.");
-                return;
+                console.warn("Player is null; skipping score submission.")
+                return
             }
-            console.log(player)
 
             stopTimer()
             showClearedPopup.value = true
+
             const scorePayload: ScoreSubmitRequest = {
-                player_id: player.player_id!, // replace with actual player ID from state/store if dynamic
+                player_id: player.player_id!,
                 question_id: question_data.value.id.toString(),
                 score: finalScore.value,
-                language: "c++", // optionally make this reactive if you're tracking language
+                language: "c++",
                 modifier_state: selectedModifier as "None" | "Sabotage" | "Confident",
-            };
+            }
 
             try {
-                const response = await api.post("/scores/submit", scorePayload);
-                console.log("Score submitted:", scorePayload);
-                console.log("Res:", response);
+                const response = await api.post("/scores/submit", scorePayload)
+                console.log("Score submitted:", scorePayload)
+                console.log("Res:", response)
             } catch (submitError) {
-                console.error("Score submission failed:", submitError);
+                console.error("Score submission failed:", submitError)
             }
+
         } else {
             if (selectedModifier === 'Confident') {
-                showConfidentLostPopup.value = true;
+                showConfidentLostPopup.value = true
             } else {
                 showResultPopup.value = true
             }
         }
+
     } catch (error) {
-        console.error('Code run failed:', (error as any).customMessage || error)
+        console.error('Code run failed:', error)
+        openMessagePopup('Server Error', String((error as any).message || error))
     } finally {
         isLoading.value = false
     }
@@ -283,6 +251,72 @@ onUnmounted(() => {
     stopSabotage()
 })
 </script>
+
+<template>
+    <MessagePopup v-if="showMessagePopup" :title="messagePopupTitle" :message="messagePopupMessage"
+        :buttonOnClick="() => showMessagePopup = false" />
+
+    <div class="container">
+        <!-- In case question data is missing -->
+        <template v-if="!question_data">
+            <div class="error-message">
+                <p>Error: Question data is missing.</p>
+                <p>Redirecting to level selection...</p>
+            </div>
+        </template>
+
+        <!-- Top bar -->
+        <div class="top-bar">
+            <!-- Toggle Button when hidden -->
+            <div v-if="!showDescriptionPopup" class="popup-toggle fixed">
+                <button @click="showDescriptionPopup = true">▼</button>
+            </div>
+            <div class="timer">
+                Time Left:
+                <span>{{ formattedTime }}</span>
+            </div>
+        </div>
+
+        <!-- Code editor and run/submit buttons -->
+        <CodeEditor v-model="code" />
+
+        <div class="buttons">
+            <button @click="runCode" :disabled="isLoading">Run code</button>
+            <button @click="submitCode" :disabled="isLoading">
+                Submit
+            </button>
+        </div>
+        <div class="buttons">
+            <span v-if="isLoading" class="loading-spinner">Loading...</span>
+        </div>
+
+        <!-- Slide Panel Toggle -->
+        <DescriptionPopup :show="showDescriptionPopup" :question="question_data" :timeLimitEnabled="timeLimitEnabled"
+            :selectedModifier="selectedModifier" @close="showDescriptionPopup = false" />
+
+        <!-- Submission result -->
+        <ResultPopup :show="showResultPopup" :finalScore="finalScore"
+            :totalPossibleScore="question_data?.test_cases?.reduce((acc, t) => acc + (t.score ?? 0), 0) ?? 0"
+            :testResults="testResults?.results || []" @close="showResultPopup = false" />
+
+    </div>
+
+    <!-- Game ends -->
+    <!-- By timer -->
+    <TimeoutPopup v-if="showTimeoutPopup" @restart="restartGame" />
+
+    <!-- By clear -->
+    <ClearedPopup v-if="showClearedPopup" :timeLeft="formattedTime" :finalScore="finalScore"
+        :totalPossibleScore="totalPossibleScore" :clearedCount="clearedCount" :modifierName="selectedModifier"
+        :modifierBonus="modifierBonusApplied" @restart="restartGame" />
+
+
+    <!-- By confident lost -->
+    <ConfidentLostPopup v-if="showConfidentLostPopup" :finalScore="finalScore"
+        @close="showConfidentLostPopup = false" />
+
+</template>
+
 
 <style scoped>
 .container {
