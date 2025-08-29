@@ -125,7 +125,7 @@ const submitCode = async () => {
         if (errorResult) {
             openMessagePopup(
                 errorResult.output.startsWith('[Compilation Error]') ? 'Compilation Error' : 'Runtime Error',
-                errorResult.output
+                "---------- < Fix it before submitting! :D > ----------"
             )
             return // stop further processing
         }
