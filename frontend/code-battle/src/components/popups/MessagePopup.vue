@@ -33,6 +33,7 @@ defineProps<{
 
 .popup-content {
     background: white;
+    min-width: 20rem;
     padding: 2rem;
     border-radius: 12px;
     text-align: center;
