@@ -7,7 +7,7 @@ import { getPlayerData } from '@/stores/auth'
 import PrivateRoomTeamList from '@/components/pvp/private/PrivateRoomTeamList.vue'
 import MessagePopup from '@/components/popups/MessagePopup.vue'
 import { socket } from '@/clients/socket.api'
-import ChainCopyIcon from '@/components/pvp/private/ChainCopyIcon.vue'
+import ChainCopyIcon from '@/assets/icons.svg/ChainCopyIcon.vue'
 import CheckboxToggle from '@/components/etc/CheckboxToggle.vue'
 import { triggerNotification } from '@/composables/notificationService'
 

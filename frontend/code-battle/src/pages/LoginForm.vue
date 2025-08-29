@@ -1,42 +1,11 @@
 <!-- frontend\code-battle\src\pages\LoginForm.vue -->
-<template>
-  <div class="container">
-    <form @submit.prevent="handleLogin" class="form-box">
-      <h2 class="form-title">Login</h2>
-
-      <label>Email :</label>
-      <input type="email" v-model="email" placeholder="Type your Email" required />
-
-      <label>Password :</label>
-      <div class="password-container">
-        <input :type="showPassword ? 'text' : 'password'" v-model="password" placeholder="Type your Password"
-          required />
-        <button type="button" @click="showPassword = !showPassword">👁️</button>
-      </div>
-
-      <div class="forgot-text">
-        <a href="#">Forgot password?</a>
-      </div>
-
-      <p class="success-message" v-if="successMessage">{{ successMessage }}</p>
-      <p class="fail-message" v-if="failMessage">{{ failMessage }}</p>
-
-      <button type="submit" class="submit-btn" :disabled="loading">
-        {{ loading ? "Logging in..." : "Login" }}
-      </button>
-
-      <p class="small-text">
-        Not have an account?
-        <router-link to="/register">Register here</router-link>
-      </p>
-    </form>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref } from "vue";
 import router from "@/router";
 import api from "@/clients/crud.api";
+
+import EyeHide from "@/assets/icons.svg/EyeHide.vue";
+import EyeUnhide from "@/assets/icons.svg/EyeUnhide.vue";
 
 const email = ref("");
 const password = ref("");
@@ -91,10 +60,50 @@ async function handleLogin() {
     loading.value = false;
   }
 }
-
 </script>
 
+<template>
+  <div class="container">
+    <form @submit.prevent="handleLogin" class="form-box">
+      <h2 class="form-title">Login</h2>
+
+      <div class="inputs-wrapper">
+        <div class="inputs">
+          <label>Email :</label>
+          <input type="email" v-model="email" placeholder="Type your Email" required />
+        </div>
+
+        <div class="inputs">
+          <label>Password :</label>
+          <div class="password-container">
+            <input :type="showPassword ? 'text' : 'password'" v-model="password" placeholder="Type your Password"
+              required />
+            <button type="button" @click="showPassword = !showPassword">👁️</button>
+            
+          </div>
+        </div>
+      </div>
+
+      <p class="success-message" v-if="successMessage">{{ successMessage }}</p>
+      <p class="fail-message" v-if="failMessage">{{ failMessage }}</p>
+
+      <button type="submit" class="submit-btn" :disabled="loading">
+        {{ loading ? "Logging in..." : "Login" }}
+      </button>
+
+      <p class="small-text">
+        Not have an account?
+        <router-link to="/register">Register here</router-link>
+      </p>
+    </form>
+  </div>
+</template>
+
 <style scoped>
+label {
+  text-align: left;
+}
+
 .container {
   display: flex;
   justify-content: center;
@@ -105,14 +114,18 @@ async function handleLogin() {
 }
 
 .form-box {
-  background: #fff;
+  background: #171717;
+  color: white;
   padding: 32px;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   width: 320px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+
+  /* optional: main border */
+  border: .1rem solid #3fff1d;
+  border-radius: .5rem;
+  /* outward fade */
+  box-shadow: 0 0 .3rem .1rem #38F814;
 }
 
 .form-title {
@@ -130,10 +143,16 @@ input[type="email"],
 input[type="password"] {
   padding: 8px;
   border: none;
-  border-bottom: 2px solid #666;
+  border-bottom: 2px solid #7DD956;
   background: transparent;
   font-size: 14px;
   width: 100%;
+}
+
+.inputs {
+  text-align: left;
+  margin-top: 1rem;
+  margin-right: 1rem;
 }
 
 .password-container {
@@ -142,17 +161,18 @@ input[type="password"] {
 
 .password-container button {
   position: absolute;
-  right: 0;
+  right: -.8rem;
   top: 0;
   height: 100%;
+  width: 0rem;
   background: none;
   border: none;
+  outline: none;
   cursor: pointer;
 }
 
-.forgot-text {
-  text-align: right;
-  font-size: 13px;
+.password-container button:active {
+  cursor: default;
 }
 
 .success-message {
@@ -175,6 +195,9 @@ input[type="password"] {
   border: none;
   font-size: 16px;
   cursor: pointer;
+  margin-top: 4rem;
+  margin-bottom: 1rem;
+  margin-inline: 1.5rem;
 }
 
 .submit-btn:disabled {

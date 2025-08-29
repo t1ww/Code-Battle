@@ -6,7 +6,7 @@ import { useRoute, useRouter } from 'vue-router'
 import type { PlayerData } from '@/types/types'
 
 import SearchIcon from '@/components/pvp/SearchIcon.vue'
-import MatchFoundIcon from '@/components/pvp/MatchFoundIcon.vue'
+import MatchFoundIcon from '@/assets/icons.svg/MatchFoundIcon.vue'
 import TeamList from '@/components/pvp/TeamList.vue'
 import MessagePopup from '@/components/popups/MessagePopup.vue'
 
