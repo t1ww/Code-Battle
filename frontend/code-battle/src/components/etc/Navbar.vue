@@ -175,7 +175,7 @@ onBeforeUnmount(() => {
   left: 0;
   width: 100%;
   height: 8vh;
-  background: #b0f08e;
+  background: #5a5a5a;
   padding: 0.75rem 1.5rem;
   z-index: 1000;
   display: flex;
@@ -209,11 +209,12 @@ onBeforeUnmount(() => {
 
 .login-button {
   padding: 0.5rem 1rem;
-  background-color: #007bff;
+  background-color: #858585;
   border: none;
   color: white;
   font-weight: bold;
-  border-radius: 4px;
+  width: 8rem;
+  border-radius: .5rem;
   cursor: pointer;
 }
 
