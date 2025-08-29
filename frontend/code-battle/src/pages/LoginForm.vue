@@ -78,8 +78,10 @@ async function handleLogin() {
           <div class="password-container">
             <input :type="showPassword ? 'text' : 'password'" v-model="password" placeholder="Type your Password"
               required />
-            <button type="button" @click="showPassword = !showPassword">👁️</button>
-            
+            <button type="button" @click="showPassword = !showPassword">
+              <component :is="showPassword ? EyeHide : EyeUnhide" class="eye-icon" />
+            </button>
+
           </div>
         </div>
       </div>
@@ -92,8 +94,7 @@ async function handleLogin() {
       </button>
 
       <p class="small-text">
-        Not have an account?
-        <router-link to="/register">Register here</router-link>
+        <router-link to="/register">Register</router-link>
       </p>
     </form>
   </div>
@@ -141,6 +142,7 @@ input {
 input[type="text"],
 input[type="email"],
 input[type="password"] {
+  color: white;
   padding: 8px;
   border: none;
   border-bottom: 2px solid #7DD956;
@@ -161,19 +163,36 @@ input[type="password"] {
 
 .password-container button {
   position: absolute;
-  right: -.8rem;
-  top: 0;
-  height: 100%;
-  width: 0rem;
+  right: -1rem;
+  /* small offset from the input edge */
+  top: 50%;
+  transform: translateY(-50%);
+  /* vertically center */
+  height: 1.75rem;
+  /* match input height */
+  width: 2rem;
+  /* square button for the icon */
+  display: flex;
+  justify-content: center;
+  align-items: center;
   background: none;
   border: none;
   outline: none;
+  padding: 0;
   cursor: pointer;
 }
+
 
 .password-container button:active {
   cursor: default;
 }
+
+.eye-icon {
+  width: 1.25rem;
+  height: 1rem;
+  justify-content: center;
+}
+
 
 .success-message {
   color: green;
