@@ -62,7 +62,7 @@ const routes = [
     name: "Register",
     path: "/register",
     component: Register,
-    meta: { hideAuth: true, hidden: true, backTo: "/login" },
+    meta: { hideAuth: true, hidden: true },
   },
   {
     path: "/join/:inviteId",

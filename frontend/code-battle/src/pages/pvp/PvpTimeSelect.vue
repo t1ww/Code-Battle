@@ -10,12 +10,12 @@ const mode = route.query.mode as string
   <div class="container">
     <div class="button-wrapper">
       <router-link :to="{ name: 'Matchmaking', query: { mode, timeLimit: 'true' } }" id="time-limit-button"
-        class="mode-button">
+        class="menu-button">
         Time Limit Mode
       </router-link>
 
       <router-link :to="{ name: 'Matchmaking', query: { mode, timeLimit: 'false' } }" id="endurance-button"
-        class="mode-button">
+        class="menu-button">
         Endurance Mode
       </router-link>
     </div>
@@ -23,6 +23,7 @@ const mode = route.query.mode as string
 </template>
 
 
+<style scoped src="@/styles/menuButtons.css"></style>
 <style scoped>
 .container {
   display: flex;
@@ -51,29 +52,8 @@ h1 {
   margin-left: 12rem;
 }
 
-.mode-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  color: inherit;
-  border-radius: .5em;
-  outline: none;
+.menu-button {
   width: 12rem;
   height: 2.5rem;
-  background-color: #ddd;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  transition: transform 0.2s ease, background-color 0.2s ease;
-}
-
-.mode-button:hover {
-  transform: scale(1.05) translateX(5px);
-  background-color: #eee;
-}
-
-.mode-button:active {
-  background-color: #bbb;
 }
 </style>

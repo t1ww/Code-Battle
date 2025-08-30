@@ -294,7 +294,7 @@ button {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   /* middle column for divider */
-  background: #353535e0;
+  background: #000000e0;
   border: 1px solid limegreen;
   border-radius: .5rem;
 }

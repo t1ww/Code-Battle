@@ -219,8 +219,14 @@ onBeforeUnmount(() => {
 }
 
 .login-button:hover {
-  background-color: #0056b3;
+  background-color: var(--theme-darker-color);
 }
+
+.login-button:active {
+  background-color: #858585;
+  cursor: default;
+}
+
 
 /* Logout */
 .avatar-container {

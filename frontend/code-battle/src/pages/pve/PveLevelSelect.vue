@@ -27,15 +27,15 @@ const hideDescription = () => {
 <template>
   <div class="container">
     <div class="button-wrapper">
-      <router-link :to="{ name: 'PveLevelView', query: { mode: 'Easy' } }" id="easy-button" class="mode-button"
+      <router-link :to="{ name: 'PveLevelView', query: { mode: 'Easy' } }" id="easy-button" class="menu-button"
         @mouseenter="showDescription('Easy')" @mouseleave="hideDescription">
         Easy
       </router-link>
-      <router-link :to="{ name: 'PveLevelView', query: { mode: 'Medium' } }" id="medium-button" class="mode-button"
+      <router-link :to="{ name: 'PveLevelView', query: { mode: 'Medium' } }" id="medium-button" class="menu-button"
         @mouseenter="showDescription('Medium')" @mouseleave="hideDescription">
         Medium
       </router-link>
-      <router-link :to="{ name: 'PveLevelView', query: { mode: 'Hard' } }" id="hard-button" class="mode-button"
+      <router-link :to="{ name: 'PveLevelView', query: { mode: 'Hard' } }" id="hard-button" class="menu-button"
         @mouseenter="showDescription('Hard')" @mouseleave="hideDescription">
         Hard
       </router-link>
@@ -49,6 +49,7 @@ const hideDescription = () => {
   </div>
 </template>
 
+<style scoped src="@/styles/menuButtons.css"></style>
 <style scoped>
 .container {
   display: flex;
@@ -64,12 +65,6 @@ h1 {
   margin-bottom: 40px;
 }
 
-.button-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
 #easy-button {
   margin-right: 6rem;
 }
@@ -80,32 +75,6 @@ h1 {
 
 #hard-button {
   margin-left: 12rem;
-}
-
-.mode-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  color: inherit;
-  border-radius: .5em;
-  outline: none;
-  width: 150px;
-  height: 40px;
-  background-color: #ddd;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  transition: transform 0.2s ease, background-color 0.2s ease;
-}
-
-.mode-button:hover {
-  transform: scale(1.05) translateX(5px);
-  background-color: #eee;
-}
-
-.mode-button:active {
-  background-color: #bbb;
 }
 
 /* Description box */
