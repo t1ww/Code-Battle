@@ -2,6 +2,7 @@
 import { onMounted, onBeforeUnmount, ref } from "vue";
 
 const canvas = ref<HTMLCanvasElement | null>(null);
+let glowCanvas: HTMLCanvasElement | null = null;
 let ctx: CanvasRenderingContext2D;
 let animationId: number;
 let frameCount = 0;
@@ -13,10 +14,21 @@ const columnGap = 10; // px extra gap between columns
 
 const sideMargin = 80; // px empty space on both sides
 
-const dropSpeed = 14; // smaller = faster
+const dropInterval = 8; // smaller = faster
+const fadeSpeed = 8; // higher = slower fade, lower = faster fade
+
 let columns: number;
 let rows: number;
 
+interface FadeChar {
+    x: number;
+    y: number;
+    char: string;
+    framesLeft: number;
+    shadowBlur: number;
+}
+
+let fadingChars: FadeChar[] = [];
 
 interface Drop {
     word: string[];
@@ -45,60 +57,91 @@ function initCanvas() {
             trail: word.length,   // show entire word
         };
     });
+
+    // ✅ call createGlow here
+    createGlow();
+}
+
+function createGlow() {
+    if (!canvas.value) return;
+    glowCanvas = document.createElement("canvas");
+    glowCanvas.width = canvas.value.width;
+    glowCanvas.height = canvas.value.height;
+    const gCtx = glowCanvas.getContext("2d")!;
+
+    const glowHeight = gCtx.canvas.height * 0.15;
+
+    // linear gradient
+    const linearGradient = gCtx.createLinearGradient(0, gCtx.canvas.height - glowHeight, 0, gCtx.canvas.height);
+    linearGradient.addColorStop(0, "rgba(0,50,0,0)");
+    linearGradient.addColorStop(1, "rgba(0,255,0,0.15)");
+    gCtx.fillStyle = linearGradient;
+    gCtx.fillRect(0, gCtx.canvas.height - glowHeight, gCtx.canvas.width, glowHeight);
 }
 
 function draw() {
     if (!ctx || !canvas.value) return;
     const c = canvas.value;
 
-    // fade previous frame instead of clearing
-    ctx.fillStyle = "rgba(0,0,0,1)"; // hard alpha 1 for so no burns
+    // hard black background (so no lingering streaks)
+    ctx.fillStyle = "black";
     ctx.fillRect(0, 0, c.width, c.height);
 
-    // green bottom glow (bottom 15% of screen)
-    const glowHeight = c.height * 0.15; // 15% of screen
-    const gradient = ctx.createLinearGradient(0, c.height - glowHeight, 0, c.height);
-    gradient.addColorStop(0, "rgba(0,50,0,0)");
-    gradient.addColorStop(1, "rgba(0,255,0,0.15)"); // subtle glow
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, c.height - glowHeight, c.width, glowHeight);
+    // draw pre-rendered glow
+    if (glowCanvas) ctx.drawImage(glowCanvas, 0, 0);
 
+    // texts
     ctx.font = `${cellSize * fontScale}px monospace`;
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
 
+    // draw drops and add to fadingChars
     for (let i = 0; i < columns; i++) {
         const drop = drops[i];
         const x = sideMargin + i * (cellSize + columnGap) + cellSize / 2;
 
         for (let row = 0; row < rows; row++) {
             const y = row * (cellSize + rowGap);
-
             let t = drop.pos - row;
             if (t < 0) t += rows;
 
             if (t >= 0 && t < drop.trail) {
                 const char = drop.word[t % drop.word.length];
+                const shadow = t === 0 ? 10 : 5;
 
-                // glow
-                ctx.shadowBlur = t === 0 ? 10 : 5;
-                ctx.shadowColor = "#38F814";
+                // add to fading array
+                fadingChars.push({ x, y, char, framesLeft: fadeSpeed, shadowBlur: shadow });
 
-                ctx.fillStyle =
-                    t === 0
-                        ? "#38F814"
-                        : `rgba(0,255,0,${0.4 + 0.5 * (1 - t / drop.trail)})`;
-
-                ctx.fillText(char, x, y);
+                // draw leading char bright immediately
+                if (t === 0) {
+                    ctx.shadowBlur = shadow;
+                    ctx.shadowColor = "#38F814";
+                    ctx.fillStyle = "#38F814";
+                    ctx.fillText(char, x, y);
+                }
             }
         }
     }
 
+    // draw fading characters
+    for (let i = fadingChars.length - 1; i >= 0; i--) {
+        const fc = fadingChars[i];
+        fc.framesLeft--;
+        if (fc.framesLeft <= 0) {
+            fadingChars.splice(i, 1);
+            continue;
+        }
+        const alpha = (fc.framesLeft / fadeSpeed) * 0.5;
+
+        ctx.shadowBlur = fc.shadowBlur;
+        ctx.shadowColor = "#38F814";
+        ctx.fillStyle = `rgba(0,255,0,${alpha})`;
+        ctx.fillText(fc.char, fc.x, fc.y);
+    }
+
     // move drops
-    if (frameCount % dropSpeed === 0) {
-        drops.forEach((drop) => {
-            drop.pos = (drop.pos + 1) % rows;
-        });
+    if (frameCount % dropInterval === 0) {
+        drops.forEach(drop => drop.pos = (drop.pos + 1) % rows);
     }
 
     frameCount++;
