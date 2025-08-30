@@ -21,7 +21,7 @@ function initGrid() {
 
     grid.value = Array.from({ length: rows.value }, () => Array(cols.value).fill(""));
     blinkGrid.value = Array.from({ length: rows.value }, () =>
-        Array.from({ length: cols.value }, () => Math.random() * 0.6 + 0.4)
+        Array.from({ length: cols.value }, () => 0)
     );
 }
 
@@ -32,25 +32,25 @@ function animateColumn(col: number) {
     const interval = setInterval(() => {
         // clear column
         for (let r = 0; r < rows.value; r++) grid.value[r][col] = "";
-
-        // display word downwards
+        // display word with fading trail
         for (let k = 0; k < word.length; k++) {
             const row = (i - k + rows.value) % rows.value;
             grid.value[row][col] = word[k];
+            blinkGrid.value[row][col] = 1 - k / word.length; // tail fades
         }
-
         i = (i + 1) % rows.value;
     }, delay + Math.random() * 200);
 
     columnIntervals.push(interval);
 }
 
-// random blinking
+// slow random flicker for extra effect
 function updateBlink() {
     for (let r = 0; r < rows.value; r++) {
         for (let c = 0; c < cols.value; c++) {
             if (grid.value[r][c]) {
-                blinkGrid.value[r][c] = Math.random() * 0.6 + 0.4;
+                // subtle flicker on top of trail
+                blinkGrid.value[r][c] = blinkGrid.value[r][c] * 0.8 + Math.random() * 0.2;
             }
         }
     }
@@ -76,14 +76,18 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div class="code-rain">
-        <div v-for="(row, rIndex) in grid" :key="rIndex" class="row">
-            <span v-for="(cell, cIndex) in row" :key="cIndex" class="cell"
-                :style="{ opacity: cell ? blinkGrid[rIndex][cIndex] : 0 }">
-                {{ cell }}
-            </span>
-        </div>
+  <div class="code-rain">
+    <div v-for="(row, rIndex) in grid" :key="rIndex" class="row">
+      <span
+        v-for="(cell, cIndex) in row"
+        :key="cIndex"
+        class="cell"
+        :style="{ opacity: cell ? blinkGrid[rIndex][cIndex] : 0 }"
+      >
+        {{ cell }}
+      </span>
     </div>
+  </div>
 </template>
 
 <style scoped>
