@@ -187,7 +187,7 @@ onBeforeUnmount(() => {
   left: 0;
   width: 100%;
   height: 8vh;
-  background: #272c2cdc;
+  background: #3b4141b2;
   padding: 0.75rem 1.5rem;
   z-index: 9999;
   display: flex;
