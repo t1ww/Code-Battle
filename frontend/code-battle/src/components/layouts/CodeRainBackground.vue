@@ -1,120 +1,111 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { onMounted, onBeforeUnmount, ref } from "vue";
 
-const cellSize = 24; // px
-const delay = 500;   // base step delay
+const canvas = ref<HTMLCanvasElement | null>(null);
+let ctx: CanvasRenderingContext2D;
+let animationId: number;
+let frameCount = 0;
 
-const words = [
-    "function".split(""),
-    "if (true) { } else { }".split(""),
-];
+const cellSize = 24;
+const dropSpeed = 12; // smaller = faster
+let columns: number;
+let rows: number;
 
-const grid = ref<string[][]>([]);
-const blinkGrid = ref<number[][]>([]);
-const rows = ref(0);
-const cols = ref(0);
-let columnIntervals: number[] = [];
-
-function initGrid() {
-    rows.value = Math.ceil((window.innerHeight / cellSize) * 1.5);
-    cols.value = Math.ceil(window.innerWidth / cellSize);
-
-    grid.value = Array.from({ length: rows.value }, () => Array(cols.value).fill(""));
-    blinkGrid.value = Array.from({ length: rows.value }, () =>
-        Array.from({ length: cols.value }, () => 0)
-    );
+interface Drop {
+    word: string[];
+    pos: number;
+    trail: number;
 }
 
-function animateColumn(col: number) {
-    let word = words[Math.floor(Math.random() * words.length)].slice().reverse();
-    let i = Math.floor(Math.random() * rows.value);
+let drops: Drop[] = [];
+const words = ["function", "if (true) { } else { }"];
 
-    const interval = setInterval(() => {
-        // clear column
-        for (let r = 0; r < rows.value; r++) grid.value[r][col] = "";
-        // display word with fading trail
-        for (let k = 0; k < word.length; k++) {
-            const row = (i - k + rows.value) % rows.value;
-            grid.value[row][col] = word[k];
-            blinkGrid.value[row][col] = 1 - k / word.length; // tail fades
-        }
-        i = (i + 1) % rows.value;
-    }, delay + Math.random() * 200);
+function initCanvas() {
+    if (!canvas.value) return;
+    const c = canvas.value;
+    ctx = c.getContext("2d")!;
+    c.width = window.innerWidth;
+    c.height = window.innerHeight;
 
-    columnIntervals.push(interval);
+    columns = Math.floor(c.width / cellSize);
+    rows = Math.floor(c.height / cellSize);
+
+    drops = Array.from({ length: columns }, () => {
+        const word = words[Math.floor(Math.random() * words.length)].split("").reverse();
+        return {
+            word,
+            pos: Math.floor(Math.random() * rows),
+            trail: 3 + Math.floor(Math.random() * 3)
+        };
+    });
 }
 
-// slow random flicker for extra effect
-function updateBlink() {
-    for (let r = 0; r < rows.value; r++) {
-        for (let c = 0; c < cols.value; c++) {
-            if (grid.value[r][c]) {
-                // subtle flicker on top of trail
-                blinkGrid.value[r][c] = blinkGrid.value[r][c] * 0.8 + Math.random() * 0.2;
-            }
+function draw() {
+    if (!ctx || !canvas.value) return;
+    const c = canvas.value;
+
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, c.width, c.height);
+
+    ctx.font = `${cellSize}px monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+
+    for (let i = 0; i < columns; i++) {
+        const drop = drops[i];
+        const x = i * cellSize + cellSize / 2;
+
+        // leading character
+        const char = drop.word[0];
+        const y = drop.pos * cellSize;
+        ctx.fillStyle = "#38F814";
+        ctx.fillText(char, x, y);
+
+        // trail
+        for (let t = 1; t < drop.trail; t++) {
+            const row = (drop.pos - t + rows) % rows;
+            const charY = row * cellSize;
+            const trailChar = drop.word[t % drop.word.length];
+            const alpha = 0.2 + 0.6 * (1 - t / drop.trail);
+            const green = t === drop.trail - 1 ? 1 : 0;
+            ctx.fillStyle = `rgba(0,${Math.floor(255 * (1 - green)) + Math.floor(255 * green)},0,${alpha})`;
+            ctx.fillText(trailChar, x, charY);
         }
     }
+
+    // move drops only every dropSpeed frames
+    if (frameCount % dropSpeed === 0) {
+        drops.forEach(drop => {
+            drop.pos = (drop.pos + 1) % rows;
+        });
+    }
+
+    frameCount++;
+    animationId = requestAnimationFrame(draw);
 }
 
-let blinkInterval: number;
+function resizeCanvas() {
+    initCanvas();
+}
 
 onMounted(() => {
-    initGrid();
-    window.addEventListener("resize", initGrid);
-
-    for (let c = 0; c < cols.value; c++) {
-        animateColumn(c);
-    }
-
-    blinkInterval = window.setInterval(updateBlink, 800 + Math.random() * 700);
+    initCanvas();
+    window.addEventListener("resize", resizeCanvas);
+    draw();
 });
 
 onBeforeUnmount(() => {
-    columnIntervals.forEach(clearInterval);
-    clearInterval(blinkInterval);
+    window.removeEventListener("resize", resizeCanvas);
+    cancelAnimationFrame(animationId);
 });
 </script>
 
 <template>
-  <div class="code-rain">
-    <div v-for="(row, rIndex) in grid" :key="rIndex" class="row">
-      <span
-        v-for="(cell, cIndex) in row"
-        :key="cIndex"
-        class="cell"
-        :style="{ opacity: cell ? blinkGrid[rIndex][cIndex] : 0 }"
-      >
-        {{ cell }}
-      </span>
-    </div>
-  </div>
+    <canvas ref="canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></canvas>
 </template>
 
 <style scoped>
-.code-rain {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    font-family: monospace;
-    color: #0f0;
-    pointer-events: none;
-    overflow: hidden;
-}
-
-.row {
-    display: flex;
-    justify-content: center;
-}
-
-.cell {
-    width: 1em;
-    height: 1.2em;
-    text-align: center;
-    margin-right: .5rem;
-    transition: opacity 0.2s linear;
+canvas {
+    display: block;
 }
 </style>
