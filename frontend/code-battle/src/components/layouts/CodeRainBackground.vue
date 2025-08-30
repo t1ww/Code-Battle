@@ -2,7 +2,7 @@
 import { ref, onMounted, onBeforeUnmount } from "vue";
 
 const cellSize = 24; // px
-const delay = 200;   // base step delay
+const delay = 500;   // base step delay
 
 const words = [
     "function".split(""),
