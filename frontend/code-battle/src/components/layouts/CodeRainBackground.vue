@@ -27,7 +27,32 @@ interface Drop {
 }
 
 let drops: Drop[] = [];
-const words = ["function", "if (true) { } else { }"];
+const words = [
+    "function",
+    "if (true) { } else { }",
+    "for (int i=0; i<n; i++) { }",
+    "while(x < 10) { x++; }",
+    "return 0;",
+    "int a = 5;",
+    "float b = 3.14;",
+    "double c = 2.718;",
+    "char ch = 'A';",
+    "bool flag = true;",
+    "System.out.println(x);",
+    "std::cout << x << std::endl;",
+    "try { } catch(...) { }",
+    "new Object();",
+    "delete ptr;",
+    "a += 1;",
+    "x == y ? a : b;",
+    "switch(n) { case 1: break; default: break; }",
+    "const int max = 100;",
+    "virtual void foo() { }",
+    "template<typename T> T add(T a, T b) { return a+b; }",
+    "std::vector<int> v;",
+    "this->value = 10;",
+    "super();"
+];
 
 function initCanvas() {
     if (!canvas.value) return;
@@ -59,7 +84,7 @@ function createGlow() {
     glowCanvas.height = canvas.value.height;
     const gCtx = glowCanvas.getContext("2d")!;
 
-    const glowHeight = gCtx.canvas.height * 0.15;
+    const glowHeight = gCtx.canvas.height * 0.12;
 
     // linear gradient
     const linearGradient = gCtx.createLinearGradient(0, gCtx.canvas.height - glowHeight, 0, gCtx.canvas.height);

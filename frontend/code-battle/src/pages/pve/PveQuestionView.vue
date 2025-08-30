@@ -212,6 +212,28 @@ onMounted(async () => {
 * {
   box-sizing: border-box;
 }
+/* Headings */
+h3 {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  border-bottom: 2px solid #2e7d32;
+  padding-bottom: 0.3rem;
+}
+
+h4 {
+  margin: 0;
+  border-bottom: 1.5px solid #57a05a;
+  padding-bottom: 0.3rem;
+  font-weight: 700;
+  color: #85eb8a;
+}
+
+hr {
+  border: none;          /* remove default border */
+  height: 2px;           /* thickness */
+  background-color: #85eb8a; /* your desired color */
+  margin: 1rem 0;        /* optional spacing */
+}
 
 .level-container {
   display: flex;
@@ -220,20 +242,20 @@ onMounted(async () => {
   padding: 5rem 2rem 2rem 2rem;
   width: 100vw;
   height: 100vh;
-  background-color: #9bd67a;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #000;
+  color: #ffffff;
   gap: 2rem;
 }
 
 /* Panels */
 .panel {
-  background-color: #b0f08e;
+  background-color: #1b1f1be7;
+  border: var(--theme-color) .2rem solid;
   border-radius: 0.7rem;
   padding: 1rem 1.5rem;
   height: 100%;
   overflow-y: auto;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 .5rem var(--theme-color);
 }
 
 /* Leaderboard width */
@@ -252,22 +274,6 @@ onMounted(async () => {
   gap: 1rem;
 }
 
-/* Headings */
-h3 {
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  border-bottom: 2px solid #2e7d32;
-  padding-bottom: 0.3rem;
-}
-
-h4 {
-  margin: 0;
-  border-bottom: 1.5px solid #57a05a;
-  padding-bottom: 0.3rem;
-  font-weight: 700;
-  color: #2e7d32;
-}
-
 /* Table styling */
 .leaderboard-table {
   width: 100%;
@@ -277,7 +283,7 @@ h4 {
   font-size: 0.85rem;
   margin-top: 0.3rem;
   table-layout: fixed;
-  color: #000000;
+  color: var(--theme-lighter-color);
 }
 
 .leaderboard-table th,
@@ -296,12 +302,12 @@ h4 {
 
 .leaderboard-table th {
   font-weight: 600;
-  background-color: #a7d08c;
+  background-color: #0e0e0e;
 }
 
 /* Highlight self row */
 .self-row {
-  background-color: #72c653;
+  background-color: #1f3b2e;
   font-weight: 700;
 }
 
@@ -324,12 +330,12 @@ h4 {
   gap: 1rem;
   font-family: monospace;
   font-size: 0.85rem;
-  color: #2a5d1e;
+  color: var(--theme-color);
 }
 
 .test-cases>div {
-  background: #daf1be;
-  border: 1px solid #6eaa4f;
+  background: #2d31290e;
+  border: 1px solid var(--theme-color);
   border-radius: 0.4rem;
   padding: 0.5rem;
   flex: 1;
@@ -397,8 +403,8 @@ h4 {
 .start-button {
   padding: 0.4rem 1rem;
   width: 7rem;
-  background-color: #559f55;
-  color: white;
+  background-color: #2a2e2a62;
+  color: var(--theme-lighter-color);
   font-weight: 700;
   text-align: center;
   border-radius: 0.5rem;
@@ -408,12 +414,11 @@ h4 {
 }
 
 .start-button:hover {
-  background-color: #3e783e;
-  transform: scale(1.05);
+  background-color: #5ad15a7a;
 }
 
 .start-button:active {
-  transform: scale(0.95);
+  background-color: #3e783e;
 }
 
 /* Scrollbar styling for panels */

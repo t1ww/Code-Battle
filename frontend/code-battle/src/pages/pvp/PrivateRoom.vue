@@ -314,11 +314,11 @@ button {
   color: white;
 }
 
-.start-btn {
+.start-btn, .swap-btn {
   background: rgb(0, 0, 0);
   border: none;
   padding: 0.5rem 1rem;
-  color: white;
+  color: white; 
   border: solid 1px;
   border-color: var(--theme-color);
   cursor: pointer;
@@ -326,12 +326,12 @@ button {
   border-radius: 5px;
 }
 
-.start-btn:hover {
+.start-btn:hover, .swap-btn:hover {
   background: #141414;
   color: white;
 }
 
-.start-btn:active {
+.start-btn:active, .swap-btn:active {
   background: var(--theme-darker-color);
   color: white;
 }
@@ -379,13 +379,6 @@ button {
 }
 
 /* Swap */
-.swap-btn.accept {
-  background: rgb(0, 0, 0);
-  border: solid 1px limegreen;
-  color: white;
-  margin-left: 0.5rem;
-}
-
 .swap-btn.decline {
   background: rgb(0, 0, 0);
   border: solid 1px red;

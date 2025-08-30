@@ -245,6 +245,7 @@ onBeforeUnmount(() => {
     place-items: center;
     width: 100vw;
     height: 100vh;
+    color: var(--theme-color);
 }
 
 .teams-view {

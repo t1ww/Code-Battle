@@ -99,13 +99,15 @@ h1 {
 
 .mode-text {
   font-size: 14px;
-  color: #222;
+  color: var(--theme-lighter-color);
   white-space: nowrap;
-  /* force single line */
-  overflow: hidden;
-  /* optional: hides overflow if too long */
   text-overflow: ellipsis;
-  /* optional: adds "..." if too long */
+
+  /* glow effect */
+  text-shadow:
+    0 0 4px var(--text-glow-color),
+    0 0 8px var(--text-glow-color),
+    0 0 12px var(--text-glow-color);
 }
 
 .menu-button {

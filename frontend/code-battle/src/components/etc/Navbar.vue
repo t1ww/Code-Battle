@@ -23,6 +23,8 @@ const online = computed(() => route.meta.online === true)
 const canAddPlayer = computed(() => route.meta.canFormTeam === true && !teamStore.isFull)
 const avatarContainer = ref<HTMLElement | null>(null)
 
+const disable = computed(() => route.meta.disableNavbar as boolean | undefined)
+
 // Team formation
 const selfAvatar = computed(() => {
   if (!self.value) return null
@@ -151,7 +153,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <nav class="navbar">
+  <nav v-if="!disable" class="navbar">
     <div class="team-wrapper" v-if="isLoggedIn">
       <div class="avatar-container" v-if="selfAvatar" ref="avatarContainer">
         <div :title="self?.name" @click="toggleLogout">
