@@ -15,20 +15,10 @@ const columnGap = 10; // px extra gap between columns
 const sideMargin = 80; // px empty space on both sides
 
 const dropInterval = 8; // smaller = faster
-const fadeSpeed = 8; // higher = slower fade, lower = faster fade
 
 let columns: number;
 let rows: number;
 
-interface FadeChar {
-    x: number;
-    y: number;
-    char: string;
-    framesLeft: number;
-    shadowBlur: number;
-}
-
-let fadingChars: FadeChar[] = [];
 
 interface Drop {
     word: string[];
@@ -100,43 +90,24 @@ function draw() {
         const drop = drops[i];
         const x = sideMargin + i * (cellSize + columnGap) + cellSize / 2;
 
-        for (let row = 0; row < rows; row++) {
+        for (let t = 0; t < drop.trail; t++) {
+            const row = (drop.pos - t + rows) % rows;
             const y = row * (cellSize + rowGap);
-            let t = drop.pos - row;
-            if (t < 0) t += rows;
+            const char = drop.word[t % drop.word.length];
 
-            if (t >= 0 && t < drop.trail) {
-                const char = drop.word[t % drop.word.length];
-                const shadow = t === 0 ? 10 : 5;
-
-                // add to fading array
-                fadingChars.push({ x, y, char, framesLeft: fadeSpeed, shadowBlur: shadow });
-
-                // draw leading char bright immediately
-                if (t === 0) {
-                    ctx.shadowBlur = shadow;
-                    ctx.shadowColor = "#38F814";
-                    ctx.fillStyle = "#38F814";
-                    ctx.fillText(char, x, y);
-                }
+            if (t === 0) {
+                // leading char bright
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = "#38F814";
+                ctx.fillStyle = "#38F814";
+            } else {
+                // trail fading
+                const alpha = ((drop.trail - t) / drop.trail) * 0.7;
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = `rgba(0,255,0,${alpha})`;
             }
+            ctx.fillText(char, x, y);
         }
-    }
-
-    // draw fading characters
-    for (let i = fadingChars.length - 1; i >= 0; i--) {
-        const fc = fadingChars[i];
-        fc.framesLeft--;
-        if (fc.framesLeft <= 0) {
-            fadingChars.splice(i, 1);
-            continue;
-        }
-        const alpha = (fc.framesLeft / fadeSpeed) * 0.5;
-
-        ctx.shadowBlur = fc.shadowBlur;
-        ctx.shadowColor = "#38F814";
-        ctx.fillStyle = `rgba(0,255,0,${alpha})`;
-        ctx.fillText(fc.char, fc.x, fc.y);
     }
 
     // move drops
