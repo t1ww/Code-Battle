@@ -87,12 +87,12 @@ onMounted(() => {
     width: 1em;
     height: 1.2em;
     text-align: center;
-    opacity: 0;               /* start invisible */
+    /* start invisible */
+    opacity: 0;
     margin-right: 1em;
-    transition: opacity 0.5s ease-in-out; /* smooth fade */
 }
 
 .cell.visible {
-    opacity: 1;               /* fade in */
+    opacity: 1;
 }
 </style>

@@ -42,6 +42,7 @@ function handleBack() {
 }
 
 .back-button:active {
+    color: #e6ffe0;
     text-shadow: 0 0 10px #42b983, 0 0 20px #ffffff, 0 0 30px #42b983;
 }
 </style>
