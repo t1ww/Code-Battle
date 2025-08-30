@@ -16,6 +16,8 @@ const failMessage = ref("");
 const loading = ref(false);
 
 import { loginPlayer } from "@/stores/auth";
+import KeyIcon from "@/assets/icons.svg/KeyIcon.vue";
+import EnvelopeIcon from "@/assets/icons.svg/EnvelopeIcon.vue";
 
 async function handleLogin() {
   if (!email.value || !password.value) {
@@ -68,22 +70,27 @@ async function handleLogin() {
       <h2 class="form-title">Login</h2>
 
       <div class="inputs-wrapper">
+
         <div class="inputs">
           <label>Email :</label>
-          <input type="email" v-model="email" placeholder="Type your Email" required />
+          <div class="input-with-icon">
+            <EnvelopeIcon class="input-icon" />
+            <input type="email" v-model="email" placeholder="Type your Email" required />
+          </div>
         </div>
 
         <div class="inputs">
           <label>Password :</label>
-          <div class="password-container">
+          <div class="input-with-icon">
+            <KeyIcon class="input-icon" />
             <input :type="showPassword ? 'text' : 'password'" v-model="password" placeholder="Type your Password"
               required />
-            <button type="button" @click="showPassword = !showPassword">
+            <button type="button" @click="showPassword = !showPassword" class="eye-toggle">
               <component :is="showPassword ? EyeHide : EyeUnhide" class="eye-icon" />
             </button>
-
           </div>
         </div>
+
       </div>
 
       <p class="success-message" v-if="successMessage">{{ successMessage }}</p>
@@ -94,145 +101,18 @@ async function handleLogin() {
       </button>
 
       <p class="small-text">
-        <router-link to="/register">Register</router-link>
+        Don't have an account?
+        <router-link to="/register">Register here</router-link>
       </p>
     </form>
   </div>
 </template>
 
+<style scoped src="@/styles/forms.css"></style>
+
+<!-- Overwrite css block -->
 <style scoped>
-label {
-  text-align: left;
-}
-
-.container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100vw;
-  height: 100vh;
-  background: #ccc;
-}
-
-.form-box {
-  background: #171717;
-  color: white;
-  padding: 32px;
-  width: 320px;
-  display: flex;
-  flex-direction: column;
-
-  /* optional: main border */
-  border: .1rem solid #3fff1d;
-  border-radius: .5rem;
-  /* outward fade */
-  box-shadow: 0 0 .3rem .1rem #38F814;
-}
-
-.form-title {
-  text-align: center;
-  font-size: 24px;
-  margin-bottom: 8px;
-}
-
-input {
-  color: black;
-}
-
-input[type="text"],
-input[type="email"],
-input[type="password"] {
-  color: white;
-  padding: 8px;
-  border: none;
-  border-bottom: 2px solid #7DD956;
-  background: transparent;
-  font-size: 14px;
-  width: 100%;
-}
-
-.inputs {
-  text-align: left;
-  margin-top: 1rem;
-  margin-right: 1rem;
-}
-
-.password-container {
-  position: relative;
-}
-
-.password-container button {
-  position: absolute;
-  right: -1rem;
-  /* small offset from the input edge */
-  top: 50%;
-  transform: translateY(-50%);
-  /* vertically center */
-  height: 1.75rem;
-  /* match input height */
-  width: 2rem;
-  /* square button for the icon */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: none;
-  border: none;
-  outline: none;
-  padding: 0;
-  cursor: pointer;
-}
-
-
-.password-container button:active {
-  cursor: default;
-}
-
-.eye-icon {
-  width: 1.25rem;
-  height: 1rem;
-  justify-content: center;
-}
-
-
-.success-message {
-  color: green;
-  font-size: 13px;
-  text-align: center;
-}
-
-.fail-message {
-  color: rgb(128, 0, 0);
-  font-size: 11px;
-  text-align: center;
-  text-decoration: underline;
-}
-
 .submit-btn {
-  background: #666;
-  color: #fff;
-  padding: 10px;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
   margin-top: 4rem;
-  margin-bottom: 1rem;
-  margin-inline: 1.5rem;
-}
-
-.submit-btn:disabled {
-  color: #646464;
-  background: #272727;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.submit-btn:active:not(:disabled) {
-  background: #aaa;
-  transform: scale(0.98);
-}
-
-.small-text {
-  font-size: 13px;
-  text-align: center;
 }
 </style>

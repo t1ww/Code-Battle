@@ -1,0 +1,185 @@
+/* frontend\code-battle\src\styles\forms.css */
+a {
+    text-decoration: underline;
+    color: inherit;
+}
+
+label {
+    font-size: 14px;
+    text-align: left;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    background: #ccc;
+}
+
+/* form box style */
+.form-box {
+    background: #171717;
+    color: white;
+    padding: 32px;
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+
+    /* optional: main border */
+    border: .1rem solid #3fff1d;
+    border-radius: .5rem;
+    /* outward fade */
+    box-shadow: 0 0 .3rem .1rem #38F814;
+}
+
+.form-title {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+/* default input style */
+input {
+    color: black;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    color: white;
+    padding: 8px;
+    border: none;
+    border-bottom: 2px solid #7DD956;
+    background: transparent;
+    font-size: 14px;
+    width: 100%;
+}
+
+.inputs {
+    text-align: left;
+    margin-top: 1rem;
+    margin-right: 1rem;
+}
+
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-with-icon input {
+    padding-left: 2rem;
+    /* space for icon */
+}
+
+.input-icon {
+    position: absolute;
+    left: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    pointer-events: none;
+    color: #667064;
+    /* clicks go to input */
+}
+
+/* Password field with toggle button */
+.password-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-container button {
+    position: absolute;
+    right: -1rem;
+    /* small offset from the input edge */
+    top: 50%;
+    transform: translateY(-50%);
+    /* vertically center */
+    height: 1.75rem;
+    /* match input height */
+    width: 2rem;
+    /* square button for the icon */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: none;
+    border: none;
+    outline: none;
+    padding: 0;
+    cursor: pointer;
+    /* space for the icon */
+    padding-left: 2rem;
+}
+
+.password-container button:active {
+    cursor: default;
+}
+
+/* Eye icon style */
+.eye-icon {
+    width: 1.25rem;
+    height: 1rem;
+    justify-content: center;
+}
+
+.eye-toggle {
+    position: absolute;
+    right: 0rem;
+    /* Keep right */
+    background: none;
+    border: none;
+    outline: none;
+    padding: 0;
+    display: flex;
+    width: 2rem;
+    height: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* Message styles */
+.success-message {
+    color: green;
+    font-size: 13px;
+    text-align: center;
+}
+
+.fail-message {
+    color: rgb(128, 0, 0);
+    font-size: 11px;
+    text-align: center;
+    text-decoration: underline;
+}
+
+.submit-btn {
+    background: #666;
+    color: #fff;
+    padding: 10px;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    margin-inline: 1.5rem;
+}
+
+.submit-btn:disabled {
+    color: #646464;
+    background: #272727;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.submit-btn:active:not(:disabled) {
+    background: #aaa;
+    transform: scale(0.98);
+}
+
+.small-text {
+    font-size: 13px;
+    text-align: center;
+}
