@@ -1,45 +1,62 @@
-<!-- frontend\code-battle\src\components\layouts\CodeRainBackground.vue -->
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 
-const delay = 300;   // ms per step
+const cellSize = 24; // px
+const delay = 200;   // base step delay
+
 const words = [
     "function".split(""),
     "if (true) { } else { }".split(""),
 ];
-const cellSize = 24; // px, roughly matches your `.cell` width/height
 
-// dynamic grid and dimensions
 const grid = ref<string[][]>([]);
+const blinkGrid = ref<number[][]>([]);
 const rows = ref(0);
 const cols = ref(0);
+let columnIntervals: number[] = [];
 
 function initGrid() {
     rows.value = Math.ceil((window.innerHeight / cellSize) * 1.5);
     cols.value = Math.ceil(window.innerWidth / cellSize);
 
     grid.value = Array.from({ length: rows.value }, () => Array(cols.value).fill(""));
+    blinkGrid.value = Array.from({ length: rows.value }, () =>
+        Array.from({ length: cols.value }, () => Math.random() * 0.6 + 0.4)
+    );
 }
 
 function animateColumn(col: number) {
-    let word = words[Math.floor(Math.random() * words.length)].slice(); // copy array
-    word.reverse(); // reverse the word (to make it forward down)
-
+    let word = words[Math.floor(Math.random() * words.length)].slice().reverse();
     let i = Math.floor(Math.random() * rows.value);
 
-    setInterval(() => {
+    const interval = setInterval(() => {
         // clear column
         for (let r = 0; r < rows.value; r++) grid.value[r][col] = "";
 
-        // display reversed word
+        // display word downwards
         for (let k = 0; k < word.length; k++) {
             const row = (i - k + rows.value) % rows.value;
             grid.value[row][col] = word[k];
         }
 
         i = (i + 1) % rows.value;
-    }, delay + (Math.random() * 100));
+    }, delay + Math.random() * 200);
+
+    columnIntervals.push(interval);
 }
+
+// random blinking
+function updateBlink() {
+    for (let r = 0; r < rows.value; r++) {
+        for (let c = 0; c < cols.value; c++) {
+            if (grid.value[r][c]) {
+                blinkGrid.value[r][c] = Math.random() * 0.6 + 0.4;
+            }
+        }
+    }
+}
+
+let blinkInterval: number;
 
 onMounted(() => {
     initGrid();
@@ -48,14 +65,21 @@ onMounted(() => {
     for (let c = 0; c < cols.value; c++) {
         animateColumn(c);
     }
+
+    blinkInterval = window.setInterval(updateBlink, 800 + Math.random() * 700);
 });
 
+onBeforeUnmount(() => {
+    columnIntervals.forEach(clearInterval);
+    clearInterval(blinkInterval);
+});
 </script>
 
 <template>
     <div class="code-rain">
         <div v-for="(row, rIndex) in grid" :key="rIndex" class="row">
-            <span v-for="(cell, cIndex) in row" :key="cIndex" class="cell" :class="{ visible: cell !== '' }">
+            <span v-for="(cell, cIndex) in row" :key="cIndex" class="cell"
+                :style="{ opacity: cell ? blinkGrid[rIndex][cIndex] : 0 }">
                 {{ cell }}
             </span>
         </div>
@@ -73,7 +97,6 @@ onMounted(() => {
     flex-direction: column;
     font-family: monospace;
     color: #0f0;
-    /* so background is not interactive */
     pointer-events: none;
     overflow: hidden;
 }
@@ -87,12 +110,7 @@ onMounted(() => {
     width: 1em;
     height: 1.2em;
     text-align: center;
-    /* start invisible */
-    opacity: 0;
-    margin-right: 1em;
-}
-
-.cell.visible {
-    opacity: 1;
+    margin-right: .5rem;
+    transition: opacity 0.2s linear;
 }
 </style>
