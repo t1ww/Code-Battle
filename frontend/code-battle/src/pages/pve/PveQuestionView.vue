@@ -219,11 +219,10 @@ onMounted(async () => {
   align-items: stretch;
   padding: 5rem 2rem 2rem 2rem;
   width: 100vw;
-  height: calc(100vh - 2rem);
+  height: 100vh;
   background-color: #9bd67a;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #000;
-  overflow: hidden;
   gap: 2rem;
 }
 

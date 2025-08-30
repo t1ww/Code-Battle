@@ -21,10 +21,6 @@ function handleBack() {
 </template>
 
 <style scoped>
-.back-button-wrapper {
-    padding: 1rem;
-}
-
 .back-button {
     position: fixed;
     top: 6rem;

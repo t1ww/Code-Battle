@@ -322,9 +322,8 @@ onUnmounted(() => {
 .container {
     padding: 5rem 6rem 3.6rem;
     width: 100%;
-    max-width: 100vw;
+    height: 100vh;
     box-sizing: border-box;
-    overflow-x: hidden;
 }
 
 .top-bar {
