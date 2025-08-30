@@ -320,7 +320,6 @@ onUnmounted(() => {
 
 <style scoped>
 .container {
-    background-color: #d1d5db;
     padding: 5rem 6rem 3.6rem;
     width: 100%;
     max-width: 100vw;

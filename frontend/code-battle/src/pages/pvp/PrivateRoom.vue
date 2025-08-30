@@ -217,7 +217,7 @@ defineProps<{ inviteId?: string }>()
 </script>
 
 <template>
-  <div class="private-room">
+  <div class="container private-room">
     <div class="teams-grid">
       <PrivateRoomTeamList :team="privateRoom.state.team1 ?? { team_id: '', players: [] }" :teamName="'Team A'"
         :incomingSwapRequesterId="incomingSwapRequesterId" />
@@ -270,25 +270,31 @@ button {
   outline: none;
 }
 
-.private-room {
-  margin-top: 10vh;
-  /* navbar buffer */
+.container {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   color: white;
+  width: 100vw;
+  height: 100vh;
+}
+
+.private-room {
+  padding-inline: 10rem;
 }
 
 .teams-grid,
 .room-footer {
-  width: 100%;
+  width: 48.5rem;
+  height: auto;
 }
 
 .teams-grid {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   /* middle column for divider */
-  background: #35353546;
+  background: #353535e0;
   border: 1px solid limegreen;
   border-radius: .5rem;
 }

@@ -55,10 +55,9 @@ const hideDescription = () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
-  background-color: #bbb;
-  /* matching the screenshot background */
+  overflow-x: hidden;
 }
 
 h1 {

@@ -72,6 +72,9 @@ window.addEventListener("online", () => {
 
 <style scoped>
 /* Main style.css */
+.router-container {
+  background: #42b983;
+}
 #nprogress .bar {
   background: #42b983;
 }

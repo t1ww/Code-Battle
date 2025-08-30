@@ -31,8 +31,6 @@ const mode = route.query.mode as string
   justify-content: center;
   width: 100vw;
   height: 100vh;
-  background-color: #bbb;
-  /* matching the screenshot background */
 }
 
 h1 {
