@@ -61,11 +61,17 @@ function fade(to: number) {
 }
 
 function playTrack(index?: number) {
-    // cancel crossfade if in progress
+    // cancel any previous fade or crossfade
+    if (fadeTimeout) {
+        clearTimeout(fadeTimeout)
+        fadeTimeout = null
+    }
     if (crossfadeTimeout) {
         clearTimeout(crossfadeTimeout)
         crossfadeTimeout = null
     }
+
+    // if crossfade audio is still around, remove it
     if (crossfadeAudio) {
         crossfadeAudio.pause()
         crossfadeAudio = null
@@ -73,23 +79,24 @@ function playTrack(index?: number) {
     }
 
     setupAudio()
+    if (audioCtx?.state === "suspended") audioCtx.resume()
 
+    // if a new track index is specified and it's different from current, do crossfade
+    if (typeof index === "number" && index !== currentTrackIndex.value && isPlaying.value) {
+        crossfade(index)
+        return
+    }
+    // otherwise, play/resume current track
     if (typeof index === "number" && index !== currentTrackIndex.value) {
         currentTrackIndex.value = index
         if (audio) audio.src = tracks[index]
-    }
-
-    if (audioCtx?.state === "suspended") audioCtx.resume()
-
-    if (fadeTimeout) {
-        clearTimeout(fadeTimeout)
-        fadeTimeout = null
     }
 
     isPlaying.value = true
     audio?.play()
     fade(volume.value)
 }
+
 
 function pauseTrack() {
     if (!audio || !gainNode) return
@@ -171,7 +178,6 @@ onBeforeUnmount(() => {
 
 defineExpose({ playTrack, pauseTrack, toggleTrack, crossfade, currentTrackIndex, isPlaying })
 </script>
-
 
 <template>
     <div class="music-player">
