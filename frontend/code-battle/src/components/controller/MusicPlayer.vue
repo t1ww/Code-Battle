@@ -1,116 +1,101 @@
-<!-- frontend\code-battle\src\components\controller\MusicPlayer.vue -->
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, defineExpose, computed } from "vue"
 import radional from "@/assets/mp3/music/Radional - FilFar.mp3"
 import natroleum from "@/assets/mp3/music/Natroleum - FilFar.mp3"
 
 const tracks = [radional, natroleum]
-const trackNames = ["Radional - FilFar", "Natroleum - FilFar"]
+const musicPaths = ["Radional - FilFar.mp3", "Natroleum - FilFar.mp3"]
 
 let audioCtx: AudioContext | null = null
-const fadeDuration = 0.5
-const crossfadeDuration = 2
-
-interface TrackState {
-    audio: HTMLAudioElement
-    gain: GainNode | null
-    currentTime: number
-}
-
-const trackStates: TrackState[] = tracks.map(src => ({
-    audio: new Audio(src),
-    gain: null,
-    currentTime: 0
-}))
-
-trackStates.forEach(t => t.audio.loop = true)
+let gainNode: GainNode | null = null
+let audio: HTMLAudioElement | null = null
+let source: MediaElementAudioSourceNode | null = null
 
 const currentTrackIndex = ref(0)
 const isPlaying = ref(false)
 const volume = ref(0.5)
 
-const currentSongName = computed(() => trackNames[currentTrackIndex.value])
-const buttonLabel = computed(() => isPlaying.value ? "Pause" : "Play")
+const fadeDuration = 0.5
+let fadeTimeout: number | null = null
 
-function setupTrack(track: TrackState) {
+function getSongName(index: number) {
+    return musicPaths[index].replace(/\.[^/.]+$/, "")
+}
+
+const currentSongName = computed(() => getSongName(currentTrackIndex.value))
+const buttonLabel = computed(() => (isPlaying.value ? "Pause" : "Play"))
+
+function setupAudio() {
     if (!audioCtx) audioCtx = new AudioContext()
-    if (!track.gain) {
-        track.gain = audioCtx.createGain()
-        track.gain.gain.value = 0
-        const source = audioCtx.createMediaElementSource(track.audio)
-        source.connect(track.gain).connect(audioCtx.destination)
+
+    if (!audio) {
+        audio = new Audio(tracks[currentTrackIndex.value])
+        audio.loop = true
+        audio.crossOrigin = "anonymous"
+    }
+
+    if (!gainNode) {
+        gainNode = audioCtx.createGain()
+        gainNode.connect(audioCtx.destination)
+        gainNode.gain.value = 0
+    }
+
+    // create source only once
+    if (!source && audio) {
+        source = audioCtx.createMediaElementSource(audio)
+        source.connect(gainNode)
     }
 }
 
-function crossfade(toIndex: number) {
-    if (toIndex === currentTrackIndex.value && isPlaying.value) return
-
-    const fromTrack = trackStates[currentTrackIndex.value]
-    const toTrack = trackStates[toIndex]
-
-    setupTrack(toTrack)
-    if (audioCtx?.state === "suspended") audioCtx.resume()
-
-    // Start new track at saved time
-    toTrack.audio.currentTime = toTrack.currentTime
-    toTrack.audio.play()
-
-    const now = audioCtx!.currentTime
-
-    toTrack.gain!.gain.cancelScheduledValues(now)
-    toTrack.gain!.gain.setValueAtTime(0, now)
-    toTrack.gain!.gain.linearRampToValueAtTime(volume.value, now + crossfadeDuration)
-
-    // Only fade out fromTrack if it's currently playing
-    if (isPlaying.value) {
-        fromTrack.gain?.gain.cancelScheduledValues(now)
-        fromTrack.gain?.gain.setValueAtTime(fromTrack.gain.gain.value, now)
-        fromTrack.gain?.gain.linearRampToValueAtTime(0, now + crossfadeDuration)
-        setTimeout(() => {
-            fromTrack.audio.pause()
-            fromTrack.currentTime = fromTrack.audio.currentTime
-        }, crossfadeDuration * 1000)
-    }
-
-    currentTrackIndex.value = toIndex
-    isPlaying.value = true
+function fade(to: number) {
+    if (!gainNode || !audioCtx) return
+    gainNode.gain.cancelScheduledValues(audioCtx.currentTime)
+    gainNode.gain.setValueAtTime(gainNode.gain.value, audioCtx.currentTime)
+    gainNode.gain.linearRampToValueAtTime(to, audioCtx.currentTime + fadeDuration)
 }
 
 function playTrack(index?: number) {
-    const toIndex = index ?? currentTrackIndex.value
-    // If nothing is playing yet, just fade in without fading out fromTrack
-    if (!isPlaying.value) {
-        setupTrack(trackStates[toIndex])
-        if (audioCtx?.state === "suspended") audioCtx.resume()
-        const track = trackStates[toIndex]
-        track.audio.currentTime = track.currentTime
-        track.audio.play()
-        const now = audioCtx!.currentTime
-        track.gain!.gain.setValueAtTime(0, now)
-        track.gain!.gain.linearRampToValueAtTime(volume.value, now + fadeDuration)
-        currentTrackIndex.value = toIndex
-        isPlaying.value = true
-        return
+    setupAudio()
+
+    if (typeof index === "number" && index !== currentTrackIndex.value) {
+        currentTrackIndex.value = index
+        if (audio) audio.src = tracks[index]
     }
 
-    crossfade(toIndex)
+    if (audioCtx?.state === "suspended") audioCtx.resume()
+
+    // cancel previous fade timeout
+    if (fadeTimeout) {
+        clearTimeout(fadeTimeout)
+        fadeTimeout = null
+    }
+
+    // immediate button update
+    isPlaying.value = true
+
+    audio?.play()
+    fade(volume.value)
 }
 
 function pauseTrack() {
-    const track = trackStates[currentTrackIndex.value]
-    if (!track.audio || !track.gain) return
+    if (!audio || !gainNode) return
 
-    const now = audioCtx!.currentTime
-    track.gain.gain.cancelScheduledValues(now)
-    track.gain.gain.setValueAtTime(track.gain.gain.value, now)
-    track.gain.gain.linearRampToValueAtTime(0, now + fadeDuration)
+    // cancel previous fade timeout
+    if (fadeTimeout) {
+        clearTimeout(fadeTimeout)
+        fadeTimeout = null
+    }
 
-    setTimeout(() => {
-        track.audio.pause()
-        track.currentTime = track.audio.currentTime
-    }, fadeDuration * 1000)
-
+    // immediate button update
     isPlaying.value = false
+
+    // fade out
+    fade(0)
+
+    fadeTimeout = window.setTimeout(() => {
+        audio?.pause()
+        fadeTimeout = null
+    }, fadeDuration * 1000)
 }
 
 function toggleTrack() {
@@ -120,25 +105,23 @@ function toggleTrack() {
 
 function setVolume(v: number) {
     volume.value = v
-    const track = trackStates[currentTrackIndex.value]
-    if (track.gain && isPlaying.value) track.gain.gain.setValueAtTime(v, audioCtx!.currentTime)
+    if (gainNode && isPlaying.value) gainNode.gain.setValueAtTime(v, audioCtx!.currentTime)
 }
 
 onMounted(() => {
-    // first play must be triggered by user gesture
-    const resume = () => { playTrack(0); window.removeEventListener("click", resume) }
-    window.addEventListener("click", resume)
+    // resume audio on first user interaction if blocked
+    window.addEventListener("click", () => playTrack(0), { once: true })
 })
 
 onBeforeUnmount(() => {
-    trackStates.forEach(t => t.audio.pause())
-    trackStates.forEach(t => t.gain?.disconnect())
+    audio?.pause()
+    audio = null
+    gainNode?.disconnect()
     audioCtx?.close()
 })
 
 defineExpose({ playTrack, pauseTrack, toggleTrack, currentTrackIndex, isPlaying })
 </script>
-
 
 <template>
     <div class="music-player">
