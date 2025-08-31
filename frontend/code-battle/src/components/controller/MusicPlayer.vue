@@ -22,23 +22,9 @@ let fadeTimeout: number | null = null
 // --- track progress array ---
 const trackProgress: number[] = tracks.map(() => 0)
 
-function saveCurrentTrackProgress() {
-    if (audio) trackProgress[currentTrackIndex.value] = audio.currentTime
-}
-
-function loadTrackProgress(index: number) {
-    if (!audio) return
-    // ensure we can set currentTime after source is loaded
-    audio.onloadedmetadata = () => {
-        audio!.currentTime = trackProgress[index] || 0
-        audio!.onloadedmetadata = null
-    }
-}
-
 // crossfade temp elements
 let crossfadeAudio: HTMLAudioElement | null = null
 let crossfadeGain: GainNode | null = null
-let crossfadeTimeout: number | null = null
 const crossfadeDuration = 2
 
 function getSongName(index: number) {
@@ -50,19 +36,16 @@ const buttonLabel = computed(() => (isPlaying.value ? "Pause" : "Play"))
 
 function setupAudio() {
     if (!audioCtx) audioCtx = new AudioContext()
-
     if (!audio) {
         audio = new Audio(tracks[currentTrackIndex.value])
         audio.loop = true
         audio.crossOrigin = "anonymous"
     }
-
     if (!gainNode) {
         gainNode = audioCtx.createGain()
         gainNode.connect(audioCtx.destination)
         gainNode.gain.value = 0
     }
-
     if (!source && audio) {
         source = audioCtx.createMediaElementSource(audio)
         source.connect(gainNode)
@@ -78,28 +61,26 @@ function fade(to: number) {
 
 function playTrack(index?: number) {
     if (fadeTimeout) { clearTimeout(fadeTimeout); fadeTimeout = null }
-    if (crossfadeTimeout) { clearTimeout(crossfadeTimeout); crossfadeTimeout = null }
-
     if (crossfadeAudio) { crossfadeAudio.pause(); crossfadeAudio = null; crossfadeGain = null }
 
     setupAudio()
     if (audioCtx?.state === "suspended") audioCtx.resume()
 
-    // track change with new index
     if (typeof index === "number" && index !== currentTrackIndex.value) {
         if (isPlaying.value) {
-            saveCurrentTrackProgress()
             crossfade(index)
             return
         }
-        // save progress of current track
-        saveCurrentTrackProgress()
-
+        // paused: just switch and load saved position
         currentTrackIndex.value = index
-        if (audio) audio.src = tracks[index]
-        loadTrackProgress(index)
+        if (audio) {
+            audio.src = tracks[index]
+            audio.onloadedmetadata = () => {
+                audio!.currentTime = trackProgress[index] || 0
+                audio!.onloadedmetadata = null
+            }
+        }
     }
-
 
     isPlaying.value = true
     audio?.play()
@@ -108,15 +89,9 @@ function playTrack(index?: number) {
 
 function pauseTrack() {
     if (!audio || !gainNode) return
-
-    if (fadeTimeout) {
-        clearTimeout(fadeTimeout)
-        fadeTimeout = null
-    }
-
+    if (fadeTimeout) { clearTimeout(fadeTimeout); fadeTimeout = null }
     isPlaying.value = false
     fade(0)
-
     fadeTimeout = window.setTimeout(() => {
         audio?.pause()
         fadeTimeout = null
@@ -137,9 +112,12 @@ function setVolume(v: number) {
 function crossfade(toIndex: number) {
     if (toIndex === currentTrackIndex.value) return
     setupAudio()
-
     if (audioCtx?.state === "suspended") audioCtx.resume()
 
+    // save old track progress
+    if (audio) trackProgress[currentTrackIndex.value] = audio.currentTime
+
+    // create new track
     const newTrack = new Audio(tracks[toIndex])
     newTrack.loop = true
     newTrack.crossOrigin = "anonymous"
@@ -149,6 +127,14 @@ function crossfade(toIndex: number) {
 
     const sourceNode = audioCtx!.createMediaElementSource(newTrack)
     sourceNode.connect(crossfadeGain).connect(audioCtx!.destination)
+
+    // load saved progress for new track
+    const applyProgress = () => {
+        newTrack.currentTime = trackProgress[toIndex] || 0
+        newTrack.onloadedmetadata = null
+    }
+    if (newTrack.readyState >= 1) applyProgress()
+    else newTrack.onloadedmetadata = applyProgress
 
     newTrack.play()
 
@@ -161,7 +147,6 @@ function crossfade(toIndex: number) {
     fade(0)
     if (fadeTimeout) clearTimeout(fadeTimeout)
     fadeTimeout = window.setTimeout(() => {
-        if (audio) trackProgress[currentTrackIndex.value] = audio.currentTime
         audio?.pause()
         audio = crossfadeAudio
         gainNode = crossfadeGain
