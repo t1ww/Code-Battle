@@ -2,12 +2,15 @@
 import Navbar from "@/components/etc/Navbar.vue";
 import NotificationPopup from "@/components/popups/NotificationPopup.vue";
 import BackgroundWrapper from "@/components/layouts/BackgroundWrapper.vue";
-import { onMounted, onBeforeUnmount } from "vue";
+import { onMounted, onBeforeUnmount, ref } from "vue";
 import { socket } from "@/clients/socket.api";
 import { showNotification, notificationMessage, triggerNotification } from "@/composables/notificationService";
 import router from "@/router";
 import { useTeamStore } from "@/stores/team";
 import { getPlayerData } from "@/stores/auth";
+import MusicPlayer from "./components/controller/MusicPlayer.vue";
+
+const music = ref<any>(null) // get access to MusicPlayer methods
 
 onMounted(() => {
   const teamStore = useTeamStore();
@@ -59,13 +62,10 @@ window.addEventListener("online", () => {
 </script>
 
 <template>
-  <NotificationPopup
-    :show="showNotification"
-    :message="notificationMessage"
-    @close="showNotification = false"
-  />
+  <NotificationPopup :show="showNotification" :message="notificationMessage" @close="showNotification = false" />
   <Navbar @notify="triggerNotification" />
   <BackgroundWrapper />
+  <MusicPlayer ref="music" />
 </template>
 
 <style scoped>
