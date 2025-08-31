@@ -30,6 +30,7 @@ import { isAuthenticated } from "@/stores/auth";
  * - backTo:         Optional path the back button should navigate to from this route.
  * - online:         Paths that will requires socket connections.
  * - canFormTeam:    Whether the user can form a team in this route.
+ * - musicTrack:     Set music as we like, default (leave undefined) to 0
  */
 
 let connected = false
@@ -51,7 +52,7 @@ const routes = [
     name: "PrivateRoom",
     path: "/privateRoom/:inviteId?",  // "?" makes it optional
     component: PrivateRoom,
-    meta: { requiresAuth: true, online: true, backTo: "/pvpSelect" },
+    meta: { requiresAuth: true, online: true, backTo: "/pvpSelect", musicTrack: 1 },
     props: true  // so route.params.inviteId is passed as a prop
   },
 

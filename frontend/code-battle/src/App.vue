@@ -2,15 +2,17 @@
 import Navbar from "@/components/etc/Navbar.vue";
 import NotificationPopup from "@/components/popups/NotificationPopup.vue";
 import BackgroundWrapper from "@/components/layouts/BackgroundWrapper.vue";
-import { onMounted, onBeforeUnmount, ref } from "vue";
+import { onMounted, onBeforeUnmount, ref, watch } from "vue";
 import { socket } from "@/clients/socket.api";
 import { showNotification, notificationMessage, triggerNotification } from "@/composables/notificationService";
 import router from "@/router";
 import { useTeamStore } from "@/stores/team";
 import { getPlayerData } from "@/stores/auth";
 import MusicPlayer from "./components/controller/MusicPlayer.vue";
+import { useRoute } from "vue-router";
 
 const music = ref<any>(null) // get access to MusicPlayer methods
+const route = useRoute();
 
 onMounted(() => {
   const teamStore = useTeamStore();
@@ -59,6 +61,16 @@ window.addEventListener("offline", () => {
 window.addEventListener("online", () => {
   console.log("Back online");
 });
+
+watch(
+  () => route.fullPath,
+  () => {
+    // use route.meta.track if defined, otherwise default to 0
+    const trackIndex = (route.meta.musicTrack as number | undefined) ?? 0;
+    music.value?.playTrack(trackIndex);
+  },
+  { immediate: true }
+);
 </script>
 
 <template>
