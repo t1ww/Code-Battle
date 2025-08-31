@@ -187,7 +187,7 @@ defineExpose({ playTrack, pauseTrack, toggleTrack, crossfade, currentTrackIndex,
 <style scoped>
 .music-player {
     position: fixed;
-    bottom: -2rem;
+    bottom: -2.5rem;
     left: 0;
     width: 18rem;
     color: white;
