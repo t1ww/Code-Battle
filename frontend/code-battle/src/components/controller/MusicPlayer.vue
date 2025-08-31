@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\components\controller\MusicPlayer.vue -->
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, defineExpose, computed } from "vue"
 import radional from "@/assets/mp3/music/Radional - FilFar.mp3"
@@ -17,6 +18,12 @@ const volume = ref(0.5)
 
 const fadeDuration = 0.5
 let fadeTimeout: number | null = null
+
+// crossfade temp elements
+let crossfadeAudio: HTMLAudioElement | null = null
+let crossfadeGain: GainNode | null = null
+let crossfadeTimeout: number | null = null
+const crossfadeDuration = 2
 
 function getSongName(index: number) {
     return musicPaths[index].replace(/\.[^/.]+$/, "")
@@ -40,7 +47,6 @@ function setupAudio() {
         gainNode.gain.value = 0
     }
 
-    // create source only once
     if (!source && audio) {
         source = audioCtx.createMediaElementSource(audio)
         source.connect(gainNode)
@@ -55,6 +61,17 @@ function fade(to: number) {
 }
 
 function playTrack(index?: number) {
+    // cancel crossfade if in progress
+    if (crossfadeTimeout) {
+        clearTimeout(crossfadeTimeout)
+        crossfadeTimeout = null
+    }
+    if (crossfadeAudio) {
+        crossfadeAudio.pause()
+        crossfadeAudio = null
+        crossfadeGain = null
+    }
+
     setupAudio()
 
     if (typeof index === "number" && index !== currentTrackIndex.value) {
@@ -64,15 +81,12 @@ function playTrack(index?: number) {
 
     if (audioCtx?.state === "suspended") audioCtx.resume()
 
-    // cancel previous fade timeout
     if (fadeTimeout) {
         clearTimeout(fadeTimeout)
         fadeTimeout = null
     }
 
-    // immediate button update
     isPlaying.value = true
-
     audio?.play()
     fade(volume.value)
 }
@@ -80,16 +94,12 @@ function playTrack(index?: number) {
 function pauseTrack() {
     if (!audio || !gainNode) return
 
-    // cancel previous fade timeout
     if (fadeTimeout) {
         clearTimeout(fadeTimeout)
         fadeTimeout = null
     }
 
-    // immediate button update
     isPlaying.value = false
-
-    // fade out
     fade(0)
 
     fadeTimeout = window.setTimeout(() => {
@@ -108,8 +118,47 @@ function setVolume(v: number) {
     if (gainNode && isPlaying.value) gainNode.gain.setValueAtTime(v, audioCtx!.currentTime)
 }
 
+// --- CROSSFADE FUNCTION ---
+function crossfade(toIndex: number) {
+    if (toIndex === currentTrackIndex.value) return
+    setupAudio()
+
+    if (audioCtx?.state === "suspended") audioCtx.resume()
+
+    const newTrack = new Audio(tracks[toIndex])
+    newTrack.loop = true
+    newTrack.crossOrigin = "anonymous"
+    crossfadeAudio = newTrack
+    crossfadeGain = audioCtx!.createGain()
+    crossfadeGain.gain.value = 0
+
+    const sourceNode = audioCtx!.createMediaElementSource(newTrack)
+    sourceNode.connect(crossfadeGain).connect(audioCtx!.destination)
+
+    newTrack.play()
+
+    const now = audioCtx!.currentTime
+    crossfadeGain.gain.cancelScheduledValues(now)
+    crossfadeGain.gain.setValueAtTime(0, now)
+    crossfadeGain.gain.linearRampToValueAtTime(volume.value, now + crossfadeDuration)
+
+    // fade out old track
+    fade(0)
+    if (fadeTimeout) clearTimeout(fadeTimeout)
+    fadeTimeout = window.setTimeout(() => {
+        audio?.pause()
+        audio = crossfadeAudio
+        gainNode = crossfadeGain
+        currentTrackIndex.value = toIndex
+        crossfadeAudio = null
+        crossfadeGain = null
+        fadeTimeout = null
+    }, crossfadeDuration * 1000)
+
+    isPlaying.value = true
+}
+
 onMounted(() => {
-    // resume audio on first user interaction if blocked
     window.addEventListener("click", () => playTrack(0), { once: true })
 })
 
@@ -120,8 +169,9 @@ onBeforeUnmount(() => {
     audioCtx?.close()
 })
 
-defineExpose({ playTrack, pauseTrack, toggleTrack, currentTrackIndex, isPlaying })
+defineExpose({ playTrack, pauseTrack, toggleTrack, crossfade, currentTrackIndex, isPlaying })
 </script>
+
 
 <template>
     <div class="music-player">
