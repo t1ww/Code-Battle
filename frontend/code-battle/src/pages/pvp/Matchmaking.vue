@@ -227,13 +227,25 @@ onBeforeUnmount(() => {
             <h1>MATCH START!</h1>
         </div>
 
-        <button v-if="state !== 'started'" class="cancel-btn" @click="cancelMatchmaking">
+        <button v-if="state !== 'started'" class="menu-button" @click="cancelMatchmaking">
             Cancel Matchmaking
         </button>
     </div>
 </template>
 
+<style scoped src="@/styles/menuButtons.css"></style>
 <style scoped>
+/* Overwrite */
+.menu-button {
+    width: 16rem;
+}
+
+.menu-button:hover {
+    transform: scale(1.05);
+    background-color: #2b3828;
+}
+
+/* Normal styles */
 .error-message {
     color: red;
     margin: 0.5rem 0;
