@@ -1,7 +1,7 @@
 // socket-server/src/services/privateroom.service.ts
 import { v4 as uuidv4 } from "uuid";
 import type { PlayerSession, Team } from "@/types";
-import { Socket } from "socket.io";
+import { Server, Socket } from "socket.io";
 
 // PlayerSession includes a Socket, but service should only handle player data.
 // Consider using a type like PlayerData without the socket.
@@ -20,6 +20,7 @@ interface PrivateRoom {
 }
 
 export class PrivateRoomService {
+    constructor(private io: Server) { }
     private rooms: Map<string, PrivateRoom> = new Map();
 
     /** Create a private room with team1 already set */
@@ -79,7 +80,6 @@ export class PrivateRoomService {
         room_id: string,
         player_id: string,
         requesterSocket: Socket,
-        onExpire: (room: PrivateRoom, by: string) => void
     ) {
         const room = this.rooms.get(room_id);
         if (!room?.team1 || !room.team2) throw new Error("Room must have two teams to swap");
@@ -109,7 +109,9 @@ export class PrivateRoomService {
         const timeoutId = setTimeout(() => {
             if (room.pendingSwap?.requesterId === player_id) {
                 this.cancelPendingSwap(room.room_id, player_id);
-                onExpire(room, player_id);
+                // Process to run when expire
+                this.io.to(room.room_id).emit("swapCancelled", { cancelledBy: player_id });
+                this.io.to(room.room_id).emit("swapClear");
             }
         }, 15000);
 
@@ -125,7 +127,7 @@ export class PrivateRoomService {
     }
 
     /** Confirm swap */
-    confirmSwap(room_id: string, player_id: string, confirmerSocket: Socket) {
+    confirmSwap(room_id: string, player_id: string) {
         const room = this.rooms.get(room_id);
         if (!room?.team1 || !room.team2) throw new Error("Room not found or incomplete");
         if (!room.pendingSwap) throw new Error("No pending swap request");
@@ -160,7 +162,7 @@ export class PrivateRoomService {
     }
 
     /** Reject swap */
-    rejectSwap(room_id: string, player_id: string, onAllRejected: (room: PrivateRoom) => void): boolean {
+    rejectSwap(room_id: string, player_id: string): boolean {
         const room = this.rooms.get(room_id);
         if (!room?.pendingSwap) return false;
 
@@ -180,11 +182,14 @@ export class PrivateRoomService {
             if (room.pendingSwap.timeoutId) clearTimeout(room.pendingSwap.timeoutId);
             room.pendingSwap = undefined;
             console.log("All players in target team rejected the swap");
-            onAllRejected(room);
+            // Process the rejection
+            this.io.to(room.room_id).emit("swapCancelled", { cancelledBy: "allRejected" });
+            this.io.to(room.room_id).emit("swapClear");
             return true;
         }
 
-        return false;
+        // Case of reject with no problem but hasn't reached 3.
+        return true;
     }
 
     cancelPendingSwap(room_id: string, player_id: string): boolean {

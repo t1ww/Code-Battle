@@ -32,7 +32,7 @@ const matchmakingService = new MatchmakingService(io);
 const teamService = new TeamService();
 const teamInviteService = new TeamInviteService();
 // NEW: Private room services
-const privateRoomService = new PrivateRoomService();
+const privateRoomService = new PrivateRoomService(io);
 const privateRoomInviteService = new PrivateRoomInviteService();
 
 // Helper: Remove socket from players before emitting to clients
@@ -397,11 +397,7 @@ io.on("connection", (socket) => {
             const result = privateRoomService.requestSwap(
                 room_id,
                 player_id,
-                socket,
-                (room, by) => {
-                    io.to(room.room_id).emit("swapCancelled", { cancelledBy: by });
-                    io.to(room.room_id).emit("swapClear");
-                }
+                socket
             );
 
             if (result.swapped) {
@@ -438,7 +434,7 @@ io.on("connection", (socket) => {
     socket.on("confirmSwap", ({ room_id, player_id, requester_id }: { room_id: string; player_id: string; requester_id: string }) => {
         try {
             const requesterSocket = privateRoomService.getRoom(room_id)?.pendingSwap?.requesterSocket;
-            const result = privateRoomService.confirmSwap(room_id, player_id, socket);
+            const result = privateRoomService.confirmSwap(room_id, player_id);
 
             if (result.swapped) {
                 const newTeam = privateRoomService.getPlayerTeam(room_id, player_id); // new team
@@ -467,13 +463,10 @@ io.on("connection", (socket) => {
     });
 
     socket.on("rejectSwap", ({ room_id, player_id }) => {
-        const result = privateRoomService.rejectSwap(room_id, player_id, (room) => {
-            io.to(room.room_id).emit("swapCancelled", { cancelledBy: "allRejected" });
-            io.to(room.room_id).emit("swapClear");
-        });
+        const result = privateRoomService.rejectSwap(room_id, player_id);
 
         if (!result) {
-            socket.emit("error", { error_message: "Reject failed" });
+            socket.emit("rejectSwapFailed", { reason: "No pending swap or team not full yet" });
         }
     });
 
