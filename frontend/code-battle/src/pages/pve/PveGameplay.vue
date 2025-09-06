@@ -8,7 +8,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { getPlayerData } from '@/stores/auth'
 import codeRunnerApi from '@/clients/coderunner.api'
-import CodeEditor from '@/components/pve/CodeEditor.vue'
+import CodeEditor from '@/components/gameplay/CodeEditor.vue'
 import router from '@/router'
 import api from '@/clients/crud.api'
 

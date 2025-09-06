@@ -2,6 +2,7 @@
 <script setup lang="ts">
 import { inject, onMounted, ref } from 'vue'
 import MonacoEditor from 'monaco-editor-vue3'
+import { triggerNotification } from '@/composables/notificationService'
 
 // ----------------------------
 // Monaco Worker Setup
@@ -48,6 +49,10 @@ const editorRef = ref<any>(null)
 onMounted(() => {
     if (!editorRef.value) return
     const container = editorRef.value.$el as HTMLElement
+    
+    // disable Monaco’s right-click menu (so no paste option)
+    const editor = editorRef.value.editor
+    editor.updateOptions({ contextmenu: false })
 
     container.addEventListener(
         'paste',
@@ -56,6 +61,7 @@ onMounted(() => {
                 e.preventDefault()
                 e.stopPropagation()
                 console.log('Paste prevented!')
+                triggerNotification('Paste prevented!', 1000);
             }
         },
         { capture: true }
