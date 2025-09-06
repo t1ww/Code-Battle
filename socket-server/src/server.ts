@@ -394,11 +394,11 @@ io.on("connection", (socket) => {
 
     socket.on("swapTeam", ({ room_id, player_id }: { room_id: string; player_id: string }) => {
         try {
-            const result = privateRoomService.requestSwap(
-                room_id,
-                player_id,
-                socket
-            );
+            const result = privateRoomService.requestSwap(room_id, player_id, socket);
+
+            if (!result.swapped && result.pending === "alreadyPending") {
+                console.log(`Swap request by ${player_id} in room ${room_id} failed: swap already pending`);
+            }
 
             if (result.swapped) {
                 // Determine old and new team
