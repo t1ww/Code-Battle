@@ -1,69 +1,54 @@
-// backend\src\services\score.service.ts
-import pool from "@/clients/database.client";
+// backend/src/services/score.service.ts
+import knex from "@/clients/knex.client";
 import { SubmitScoreDTO, PlayerScore } from "@/dtos/score.dto";
-import { RowDataPacket } from "mysql2";
 
 export class ScoreService {
     async submitScore(data: SubmitScoreDTO): Promise<{ message?: string; error_message?: string }> {
-        // ✅ UTC-18 ID 2: Empty fields
         if (!data.player_id || !data.question_id || data.score == null) {
             return { error_message: "All fields are required" };
         }
 
-        const [existing] = await pool.query<RowDataPacket[]>(
-            `SELECT * FROM scores WHERE player_id = ? AND question_id = ?`,
-            [data.player_id, data.question_id]
-        );
+        const existing = await knex("scores")
+            .where({ player_id: data.player_id, question_id: data.question_id })
+            .first();
 
-        // If existing score, update if new score is higher
-        if (existing.length > 0) {
-            const prevScore = existing[0].score;
-            if (data.score > prevScore) {
-                await pool.query(
-                    `UPDATE scores SET score = ?, language = ?, modifier_state = ? WHERE player_id = ? AND question_id = ?`,
-                    [data.score, data.language, data.modifier_state, data.player_id, data.question_id]
-                );
+        if (existing) {
+            if (data.score > existing.score) {
+                await knex("scores")
+                    .where({ player_id: data.player_id, question_id: data.question_id })
+                    .update({
+                        score: data.score,
+                        language: data.language,
+                        modifier_state: data.modifier_state,
+                    });
                 return { message: "Score successfully updated, new highscore." };
             } else {
                 return { message: "Score successfully not updated, previous score is higher or equal." };
             }
         } else {
-            // Insert new score record
-            await pool.query(
-                `INSERT INTO scores (player_id, question_id, score, language, modifier_state) VALUES (?, ?, ?, ?, ?)`,
-                [data.player_id, data.question_id, data.score, data.language, data.modifier_state]
-            );
-            // ✅ UTC-18 ID 1: Valid score submission
+            await knex("scores").insert({
+                player_id: data.player_id,
+                question_id: data.question_id,
+                score: data.score,
+                language: data.language,
+                modifier_state: data.modifier_state,
+            });
             return { message: "Score successfully submitted." };
         }
     }
 
     async getTopScore(player_id: string, question_id: string): Promise<PlayerScore | { error_message: string }> {
-        // ✅ UTC-19 ID 4: Empty fields
-        if (!player_id || !question_id) {
-            return { error_message: "All fields are required." };
-        }
+        if (!player_id || !question_id) return { error_message: "All fields are required." };
 
-        // Check if player exists
-        const [playerRows] = await pool.query<RowDataPacket[]>(
-            "SELECT id FROM players WHERE id = ?",
-            [player_id]
-        );
-        if (playerRows.length === 0) {
-            return { error_message: "Player not found." };
-        }
+        const player = await knex("players").where({ player_id }).first();
+        if (!player) return { error_message: "Player not found." };
 
-        // Get score record
-        const [scoreRows] = await pool.query<RowDataPacket[]>(
-            "SELECT player_id, question_id, language, score, modifier_state FROM scores WHERE player_id = ? AND question_id = ?",
-            [player_id, question_id]
-        );
-        if (scoreRows.length === 0) {
-            return { error_message: "Score not found." };
-        }
+        const score = await knex("scores")
+            .where({ player_id, question_id })
+            .first();
 
-        const score = scoreRows[0];
-        // ✅ UTC-19 ID 1: Valid player and question query
+        if (!score) return { error_message: "Score not found." };
+
         return {
             player_id: score.player_id,
             question_id: score.question_id,
@@ -74,39 +59,25 @@ export class ScoreService {
     }
 
     async getLeaderboard(question_id: string): Promise<PlayerScore[] | { error_message: string }> {
-        // ✅ UTC-20 ID 3: Empty question ID
-        if (!question_id) {
-            return { error_message: "Question ID is required." };
-        }
+        if (!question_id) return { error_message: "Question ID is required." };
 
-        // Check if question exists
-        const [questionRows] = await pool.query<RowDataPacket[]>(
-            "SELECT question_id FROM questions WHERE question_id = ?",
-            [question_id]
-        );
-        if (questionRows.length === 0) {
-            // ✅ UTC-20 ID 2: Unknown question ID
-            return { error_message: "Question not found." };
-        }
+        const question = await knex("questions").where({ question_id }).first();
+        if (!question) return { error_message: "Question not found." };
 
-        // ✅ UTC-20 ID 1: Valid leaderboard
-        const [rows] = await pool.query<RowDataPacket[]>(
-            `SELECT 
-            s.player_id,
-            p.player_name,
-            s.question_id,
-            s.score,
-            s.language,
-            s.modifier_state
-        FROM scores s
-        JOIN players p ON s.player_id = p.player_id
-        WHERE s.question_id = ?
-        ORDER BY s.score DESC
-        LIMIT 100`,
-            [question_id]
-        );
+        const rows = await knex("scores as s")
+            .join("players as p", "s.player_id", "p.player_id")
+            .select(
+                "s.player_id",
+                "p.player_name",
+                "s.question_id",
+                "s.score",
+                "s.language",
+                "s.modifier_state"
+            )
+            .where("s.question_id", question_id)
+            .orderBy("s.score", "desc")
+            .limit(100);
 
         return rows as PlayerScore[];
     }
-
 }
