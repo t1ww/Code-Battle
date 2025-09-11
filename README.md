@@ -1,4 +1,4 @@
-# Code Battle
+# THIS IS A STABLE VERSION, DO NOT UPDATE THIS BRANCH
 
 **Senior Project – CAMT SE65**  
 A real-time code battle web app with live multiplayer functionality, built as a full-stack monorepo.
