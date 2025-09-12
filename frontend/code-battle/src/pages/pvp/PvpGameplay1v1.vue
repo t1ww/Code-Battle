@@ -21,6 +21,9 @@ import { useTimer } from '@/composables/useTimer'
 import ResultPopup from '@/components/popups/ResultPopup.vue'
 import DescriptionPopup from '@/components/popups/DescriptionPopup.vue'
 import MessagePopup from '@/components/popups/MessagePopup.vue'
+// pvp
+import OpponentPanel from '@/components/gameplay/OpponentPanel.vue'
+import VotePanel from '@/components/gameplay/VotePanel.vue'
 
 // Stores
 import { useQuestionStore } from '@/stores/questionStore'
@@ -40,9 +43,42 @@ const timeLimitEnabled = route.query.timeLimitEnabled === 'true'
 // 🔁 Reactive State
 // =============================
 const code = ref('// Write code here')
-const showDescriptionPopup = ref(false)
-const isLoading = ref(false)
 const player = getPlayerData();
+const isLoading = ref(false)
+const showDescriptionPopup = ref(false)
+const showOpponentPanel = ref(false)
+const showVoteDrawPanel = ref(false)
+const lockDrawVoteButton = ref(false)
+
+// Toggle functions
+function toggleOpponentPanel() {
+    showOpponentPanel.value = !showOpponentPanel.value
+}
+
+function triggerDrawVote() {
+    lockDrawVoteButton.value = true
+}
+
+// toggle
+function toggleVoteDrawPanel() {
+    showVoteDrawPanel.value = !showVoteDrawPanel.value
+}
+
+// update handleVoteDraw to close the vote panel after voting
+function handleVoteDraw() {
+    triggerDrawVote() // sets showDrawVoteButton true
+
+    try {
+        socket.emit('voteDraw', { player_id: player?.player_id })
+    } catch (e) {
+        console.warn('voteDraw socket emit failed', e)
+    }
+
+    triggerNotification('Voted for a draw', 1500)
+
+    // close the small vote panel UI
+    showVoteDrawPanel.value = false
+}
 
 // Composables setup
 const { sabotageOnce } = useSabotage(code, triggerNotification)
@@ -153,6 +189,20 @@ const clearedCount = computed(() => {
 // =============================
 onMounted(async () => {
     if (!question_data.value) {
+        // Inject dummy question for dev
+        question_data.value = {
+            id: 1,
+            question_name: "Dummy Question",
+            description: "Add two numbers together.",
+            time_limit: 10,
+            level: "Easy",
+            test_cases: [
+                { input: "1 2", expected_output: "3", score: 1 },
+                { input: "5 7", expected_output: "12", score: 1 },
+            ]
+        }
+    }
+    if (!question_data.value) {
         setTimeout(() => {
             router.push({ name: 'PveLevelSelect' })
         }, 2000)
@@ -222,6 +272,30 @@ onUnmounted(() => {
             :totalPossibleScore="question_data?.test_cases?.reduce((acc, t) => acc + (t.score ?? 0), 0) ?? 0"
             :testResults="testResults?.results || []" @close="showResultPopup = false" />
 
+        <!-- Opponent panel with sliding toggle -->
+        <transition name="slide">
+            <div class="opponent-panel-wrapper" v-if="showOpponentPanel">
+                <OpponentPanel :onClose="toggleOpponentPanel" />
+            </div>
+        </transition>
+
+        <!-- Vote panel component slides in/out; transition attaches classes to its root .vote-panel-wrapper -->
+        <transition name="slide">
+            <div class="vote-panel-wrapper" v-if="showVoteDrawPanel">
+                <VotePanel :disabled="lockDrawVoteButton" @vote="handleVoteDraw" @close="toggleVoteDrawPanel" />
+            </div>
+        </transition>
+
+        <!-- Open buttons (always rendered, just toggle visibility) -->
+        <div class="side-buttons">
+            <!-- open opponent panel -->
+            <button class="side-button" @click="toggleOpponentPanel"
+                :style="{ visibility: showOpponentPanel ? 'hidden' : 'visible' }">◀</button>
+
+            <!-- toggle vote panel (small icon button) -->
+            <button class="side-button" @click="toggleVoteDrawPanel"
+                :style="{ visibility: showVoteDrawPanel || showOpponentPanel ? 'hidden' : 'visible' }">⚖</button>
+        </div>
     </div>
 
     <!-- Game ends -->
@@ -229,78 +303,5 @@ onUnmounted(() => {
         :buttonOnClick="() => { router.replace({ name: 'PveLevelSelect' }) }"></MessagePopup>
 </template>
 
-
-<style scoped>
-.container {
-    padding: 5rem 6rem 3.6rem;
-    width: 100%;
-    height: 100vh;
-    box-sizing: border-box;
-}
-
-.top-bar {
-    position: relative;
-    margin-bottom: 2rem;
-    height: 40px;
-}
-
-.top-bar button {
-    margin-top: 0;
-    background-color: #9ca3af;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 20px;
-}
-
-.popup-toggle.fixed {
-    display: flex;
-    justify-content: center;
-    padding: 0.5rem;
-    z-index: 999;
-}
-
-.timer {
-    position: absolute;
-    right: 0;
-    transform: translateY(-50%);
-    font-weight: 600;
-    font-size: 14px;
-    color: black;
-}
-
-.buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-}
-
-.buttons button {
-    background-color: #9ca3af;
-    border: none;
-    width: 6rem;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 14px;
-    outline: none;
-}
-
-.buttons button:hover {
-    background-color: #6b7280;
-}
-
-.buttons button:active {
-    background-color: #9fb2a4;
-}
-
-.loading-spinner {
-    justify-self: flex-end;
-    margin-left: 8px;
-    font-size: 12px;
-    font-style: italic;
-    color: #555;
-}
-</style>
+<style lang="css" src="@/styles/gameplay.css"></style>
+<style scoped></style>
