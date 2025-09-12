@@ -1,4 +1,4 @@
-<!-- frontend\code-battle\src\pages\PvpTimeSelect.vue -->
+<!-- frontend\code-battle\src\pages\pvp\PvpTimeSelect.vue -->
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 

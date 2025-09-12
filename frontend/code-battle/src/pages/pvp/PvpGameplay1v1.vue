@@ -1,16 +1,16 @@
-<!-- frontend\code-battle\src\pages\pve\PveGameplay.vue -->
+<!-- frontend\code-battle\src\pages\pvp\PvpGameplay1v1.vue -->
 <script setup lang="ts">
 // =============================
 // 📦 Imports
 // =============================
-import type { CodeRunResponse, ScoreSubmitRequest } from '@/types/types'
+import type { CodeRunResponse } from '@/types/types'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { getPlayerData } from '@/stores/auth'
 import codeRunnerApi from '@/clients/coderunner.api'
 import CodeEditor from '@/components/gameplay/CodeEditor.vue'
 import router from '@/router'
-import api from '@/clients/crud.api'
+import { socket } from '@/clients/socket.api'
 
 // Composables
 import { triggerNotification } from '@/composables/notificationService'
@@ -19,15 +19,15 @@ import { useTimer } from '@/composables/useTimer'
 
 // Popup components
 import ResultPopup from '@/components/popups/ResultPopup.vue'
-import ConfidentLostPopup from '@/components/popups/ConfidentLostPopup.vue'
-import TimeoutPopup from '@/components/popups/TimeoutPopup.vue'
-import ClearedPopup from '@/components/popups/ClearedPopup.vue'
 import DescriptionPopup from '@/components/popups/DescriptionPopup.vue'
 import MessagePopup from '@/components/popups/MessagePopup.vue'
 
 // Stores
 import { useQuestionStore } from '@/stores/questionStore'
 const { question_data } = useQuestionStore()
+
+// Constant
+const PVP_TIME_LIMIT = 5400
 
 // =============================
 // 📍 Route & Query Params
@@ -36,21 +36,17 @@ const route = useRoute()
 const selectedModifier = route.query.modifier as string || 'None'
 const timeLimitEnabled = route.query.timeLimitEnabled === 'true'
 
-
 // =============================
 // 🔁 Reactive State
 // =============================
-// Base
 const code = ref('// Write code here')
 const showDescriptionPopup = ref(false)
 const isLoading = ref(false)
-const MODIFIER_BONUS = 1.25
-// get player ID from auth
 const player = getPlayerData();
 
 // Composables setup
-const { startSabotage, stopSabotage } = useSabotage(code, triggerNotification)
-const { timeLeft, formattedTime, startTimer, stopTimer } = useTimer(timeLimitEnabled, question_data.value?.time_limit ?? 0, () => {
+const { sabotageOnce } = useSabotage(code, triggerNotification)
+const { timeLeft, formattedTime, startTimer, stopTimer } = useTimer(true, 5400, () => {
     showTimeoutPopup.value = true
 })
 
@@ -64,13 +60,10 @@ const testResults = ref<{
     results: { passed: boolean; output: string; expected_output: string; input: string }[]
     total_score: number
 } | null>(null)
-const finalScore = ref(0);
+const finalScore = ref(0)
 
 // Clear
 const showClearedPopup = ref(false)
-
-// Confident
-const showConfidentLostPopup = ref(false)
 
 // Message Popup
 const showMessagePopup = ref(false)
@@ -82,7 +75,6 @@ function openMessagePopup(title: string, message: string) {
     messagePopupMessage.value = message
     showMessagePopup.value = true
 }
-
 
 // =============================
 // 🧪 Code Actions
@@ -96,23 +88,10 @@ const submitCode = async () => {
     isLoading.value = true
 
     try {
-        console.log('Submitting code:', code.value)
-        const baseLimit = question_data.value.time_limit || 1
-        let scorePct = 1
-
-        if (timeLimitEnabled) {
-            scorePct = timeLeft.value / baseLimit
-        } else {
-            const timeUsed = baseLimit - timeLeft.value
-            scorePct = timeUsed / baseLimit
-        }
-
-        console.log('Timer pct:', scorePct)
-
         const res = await codeRunnerApi.post('/run', {
             code: code.value,
             test_cases: question_data.value.test_cases,
-            score_pct: scorePct,
+            score_pct: 1, // PvP: ignore time bonus
         })
 
         const data = res.data as CodeRunResponse
@@ -127,7 +106,7 @@ const submitCode = async () => {
                 errorResult.output.startsWith('[Compilation Error]') ? 'Compilation Error' : 'Runtime Error',
                 "---------- < Fix it before submitting! :D > ----------"
             )
-            return // stop further processing
+            return
         }
 
         // Normal test results
@@ -142,41 +121,12 @@ const submitCode = async () => {
             total_score: parseFloat(data.total_score as unknown as string) || 0,
         }
 
-        finalScore.value = (selectedModifier === 'Sabotage' || selectedModifier === 'Confident')
-            ? +(testResults.value.total_score * MODIFIER_BONUS).toFixed(3)
-            : testResults.value.total_score
+        finalScore.value = testResults.value.total_score
 
         if (data.passed) {
-            if (!player) {
-                console.warn("Player is null; skipping score submission.")
-                return
-            }
-
-            stopTimer()
             showClearedPopup.value = true
-
-            const scorePayload: ScoreSubmitRequest = {
-                player_id: player.player_id!,
-                question_id: question_data.value.id.toString(),
-                score: finalScore.value,
-                language: "c++",
-                modifier_state: selectedModifier as "None" | "Sabotage" | "Confident",
-            }
-
-            try {
-                const response = await api.post("/scores/submit", scorePayload)
-                console.log("Score submitted:", scorePayload)
-                console.log("Res:", response)
-            } catch (submitError) {
-                console.error("Score submission failed:", submitError)
-            }
-
         } else {
-            if (selectedModifier === 'Confident') {
-                showConfidentLostPopup.value = true
-            } else {
-                showResultPopup.value = true
-            }
+            showResultPopup.value = true
         }
 
     } catch (error) {
@@ -187,24 +137,9 @@ const submitCode = async () => {
     }
 }
 
-const restartGame = () => {
-    code.value = '// Write code here';
-    isLoading.value = false;
-    showTimeoutPopup.value = false;
-    showResultPopup.value = false;
-    showClearedPopup.value = false;
-    showConfidentLostPopup.value = false;
-    testResults.value = null;
-    finalScore.value = 0;
-    timeLeft.value = question_data.value?.time_limit ?? 0;
-    startTimer();
-};
-
-
 // =============================
 // 🖥️ Computed
 // =============================
-
 const totalPossibleScore = computed(() =>
     question_data.value?.test_cases?.reduce((acc, t) => acc + (t.score ?? 0), 0) ?? 0
 )
@@ -212,43 +147,31 @@ const clearedCount = computed(() => {
     if (!testResults.value) return 0
     return testResults.value.results.filter(r => r.passed).length
 })
-const modifierBonusApplied = computed(() => {
-    return (selectedModifier === 'Sabotage' || selectedModifier === 'Confident') ? MODIFIER_BONUS : 1
-})
 
 // =============================
 // 🚀 Lifecycle Hooks
 // =============================
 onMounted(async () => {
-    // Don't need to Fetch question anymore
     if (!question_data.value) {
         setTimeout(() => {
             router.push({ name: 'PveLevelSelect' })
         }, 2000)
-        return;
+        return
     }
 
-    // Modifiers on notifications
-    if (selectedModifier === 'Confident') {
-        triggerNotification('Confident mode you can only submit once, use it wisely.')
-    }
+    // Listen for sabotage from opponent via socket
+    socket.on("sabotageReceived", () => {
+        sabotageOnce()
+    })
 
-    // Sabotage modifer handling
-    if (selectedModifier === 'Sabotage') {
-        startSabotage();
-    }
-
-    // Set timeLeft only after questionData is loaded
-    if (timeLimitEnabled) {
-        timeLeft.value = question_data.value.time_limit || 0
-    }
-    // Start the timer
-    startTimer();
+    // Start fixed timer: 1h30m
+    if (timeLimitEnabled) { timeLeft.value = PVP_TIME_LIMIT || 0 }
+    startTimer()
 })
 
 onUnmounted(() => {
     stopTimer()
-    stopSabotage()
+    socket.off("sabotageReceived")
 })
 </script>
 
@@ -302,19 +225,8 @@ onUnmounted(() => {
     </div>
 
     <!-- Game ends -->
-    <!-- By timer -->
-    <TimeoutPopup v-if="showTimeoutPopup" @restart="restartGame" />
-
-    <!-- By clear -->
-    <ClearedPopup v-if="showClearedPopup" :timeLeft="formattedTime" :finalScore="finalScore"
-        :totalPossibleScore="totalPossibleScore" :clearedCount="clearedCount" :modifierName="selectedModifier"
-        :modifierBonus="modifierBonusApplied" @restart="restartGame" />
-
-
-    <!-- By confident lost -->
-    <ConfidentLostPopup v-if="showConfidentLostPopup" :finalScore="finalScore"
-        @close="showConfidentLostPopup = false" />
-
+    <MessagePopup v-if="showClearedPopup" title="Game ended" message="You win or lost"
+        :buttonOnClick="() => { router.replace({ name: 'PveLevelSelect' }) }"></MessagePopup>
 </template>
 
 

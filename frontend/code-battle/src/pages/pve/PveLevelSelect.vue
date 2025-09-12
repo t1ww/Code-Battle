@@ -1,4 +1,4 @@
-<!-- frontend\code-battle\src\pages\PveLevelSelect.vue -->
+<!-- frontend\code-battle\src\pages\pve\PveLevelSelect.vue -->
 <script setup lang="ts">
 import { ref } from "vue";
 
