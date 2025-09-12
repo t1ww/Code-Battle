@@ -32,3 +32,20 @@ export interface Team {
     players: PlayerSession[]; // exactly 3 players for 3v3
     queueTimeoutId?: NodeJS.Timeout;
 }
+
+// Sharing services
+import { ConnectionService } from "@/services/connection.service";
+import { MatchmakingService } from "@/services/matchmaking.service";
+import { TeamService } from "@/services/team.service";
+import { TeamInviteService } from "@/services/team.invite.service";
+import { PrivateRoomService } from "@/services/privateRoom.service";
+import { PrivateRoomInviteService } from "@/services/privateRoom.invite.service";
+
+export interface Services {
+    connectionService: ConnectionService;
+    matchmakingService: MatchmakingService;
+    teamService: TeamService;
+    teamInviteService: TeamInviteService;
+    privateRoomService: PrivateRoomService;
+    privateRoomInviteService: PrivateRoomInviteService;
+}
