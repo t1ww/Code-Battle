@@ -15,30 +15,56 @@ Follow these steps to set up and run the entire Code Battle project from scratch
 
 Before you begin, make sure you have these tools installed:
 
-#### Node.js & npm
+## Node.js & npm
+  _Download and install from the [official website](https://nodejs.org/). This is required to run the project._
 
-Download and install from the [official website](https://nodejs.org/).
-
-Check installation:
+_You can check if Node.js and npm are installed by running:_
 
 ```bash
 node -v
 npm -v
 ```
 
-⚠️ After installing Node.js, close and re-open VS Code to ensure the terminal recognizes it.
+  **⚠️After installing Node.js, please close and re-open VS Code to ensure the terminal recognizes the new installation. ⚠️**
 
-#### g++ / GCC Compiler (for C++ code runner)
+## Docker Desktop  
+  _Download and install [from here](https://www.docker.com/products/docker-desktop/), to run the database and phpMyAdmin containers._
 
-* **Windows:** Install [MinGW-w64](https://sourceforge.net/projects/mingw) and add `C:\<path-to-gcc>\bin` to `PATH`. Verify with `g++ --version`.
-* **macOS:** Install Xcode Command Line Tools:
+_You can check if Docker is running by opening Docker Desktop or running:_
+
+```bash
+docker info
+```
+
+## g++ / GCC Compiler (required for C++ code runner)
+
+> _Note: After you're done you can see expected output below._
+
+### Windows
+
+1. Install [MinGW-w64](https://sourceforge.net/projects/mingw)
+   You can also follow this [YouTube Tutorial](https://www.youtube.com/watch?v=JsO58opI3SQ)
+2. Add `C:\<path-to-gcc>\bin` to your system `PATH`.
+3. Open a new terminal and verify installation:
+
+```bash
+g++ --version
+```
+
+---
+
+### macOS
+
+Install Xcode Command Line Tools:
 
 ```bash
 xcode-select --install
 g++ --version
 ```
 
-* **Linux (Ubuntu/Debian):**
+---
+
+### Linux (Ubuntu/Debian)
 
 ```bash
 sudo apt update
@@ -46,16 +72,21 @@ sudo apt install build-essential
 g++ --version
 ```
 
-Expected output example:
+---
+
+### Expected Output
+
+You should see something like:
 
 ```
 g++ (MinGW.org GCC-6.3.0-1) 6.3.0
 Copyright (C) 2016 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ```
+  **⚠️After installing MinGW, please close and re-open VS Code to ensure the terminal recognizes the new installation. ⚠️**
 
----
-
-### 2. Clone the Repository
+### 2. Clone the Repository (If you haven't)
 
 ```bash
 git clone https://github.com/t1ww/Code-Battle.git
@@ -64,21 +95,35 @@ cd Code-Battle
 
 ---
 
-### 3. Install Dependencies
+### 3. Install All Dependencies
 
-**Windows PowerShell users**: if scripts are disabled, run:
+**⚠️ Windows PowerShell Users: Fix "running scripts is disabled" Error**
+
+If you see an error like:
+
+```
+npm : File C:\Program Files\nodejs\npm.ps1 cannot be loaded because running scripts is disabled on this system.
+```
+
+You need to change your PowerShell execution policy **before running `npm install`**:
+
+Open PowerShell as Administrator and run:
 
 ```powershell
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ```
 
-Then:
+After running the command, restart your terminal or VS Code.
+
+---
+
+In your terminal, make sure you are in the **root folder** (`Code-Battle`), then run:
 
 ```bash
 npm install
 ```
 
-This installs dependencies for all workspaces (backend, frontend, code runner, socket server).
+This will install dependencies for all workspaces (backend, frontend, code runner, socket server).
 
 ---
 
