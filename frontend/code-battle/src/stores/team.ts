@@ -57,7 +57,7 @@ export const useTeamStore = defineStore('team', {
                 })
 
                 socket.once('error', ({ error_message }) => {
-                    reject(error_message)
+                    reject(new Error(error_message))
                 })
             })
         },
