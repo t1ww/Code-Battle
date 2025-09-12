@@ -2,6 +2,7 @@
 import { PlayerSession, Team } from "@/types";
 import { Server } from "socket.io";
 
+const TIMEOUT_MESSAGE = "No suitable match found. You can re-queue if you wish. Or try bring some friends C:";
 const MAX_QUEUE_TIME_MS = 30_000; // 60 seconds
 // ✅ SRS-086: The system shall pair players or teams based on matchmaking criteria including player connection quality and wait time.
 // Helper to measure connection quality (simple heuristic)
@@ -52,7 +53,7 @@ export class MatchmakingService {
 
 
     // ✅ UTC-21: queuePlayer for 1v1
-    queuePlayer(player: PlayerSession, onExpire: (player: PlayerSession) => void): { message?: string; error_message?: string } {
+    queuePlayer(player: PlayerSession): { message?: string; error_message?: string } {
         try {
             // ✅ UTC-21 ID 3: Invalid player object
             if (!this.isPlayerSession(player)) {
@@ -80,7 +81,7 @@ export class MatchmakingService {
                 if (this.queue1v1.has(player.player_id)) {
                     this.queue1v1.delete(player.player_id);
                     console.log(`Player ${player.player_id} removed from 1v1 queue due to timeout`); // log expiration
-                    onExpire(player);
+                    player.socket.emit("queueTimeout", { message: TIMEOUT_MESSAGE });
                 }
             }, MAX_QUEUE_TIME_MS);
             player.queueTimeoutId = timeoutId;
@@ -99,7 +100,7 @@ export class MatchmakingService {
     }
 
     // ✅ UTC-21: queueTeam for 3v3
-    queueTeam(team: Team, onExpire: (team: Team) => void): { message?: string; error_message?: string } {
+    queueTeam(team: Team): { message?: string; error_message?: string } {
         try {
             // ✅ UTC-21 ID 3: Invalid team object
             if (!this.isTeam(team)) {
@@ -126,7 +127,7 @@ export class MatchmakingService {
                 if (queue.has(team.team_id)) {
                     queue.delete(team.team_id);
                     console.log(`Team ${team.team_id} removed from 3v3 queue due to timeout`);
-                    onExpire(team);
+                    this.io.to(team.team_id).emit("queueTimeout", { message: TIMEOUT_MESSAGE });
                 }
             }, MAX_QUEUE_TIME_MS);
             team.queueTimeoutId = timeoutId;
