@@ -1,6 +1,31 @@
 /* frontend\code-battle\src\styles\gameplay.css */
+.buttons button {
+    outline: none;
+    border: none;
+    width: 6rem;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    outline: none;
+}
+
+button:hover {
+    background-color: #6b7280;
+    border: none;
+}
+
+button:active {
+    background-color: #9fb2a4;
+}
+
+button {
+    background-color: #2e2e2e;
+}
+
 .container {
-    padding: 5rem 6rem 3.6rem;
+    padding: 0rem 6rem;
     width: 100%;
     height: 100vh;
     box-sizing: border-box;
@@ -8,16 +33,15 @@
 
 .top-bar {
     position: relative;
-    margin-bottom: 2rem;
+    margin-bottom: 6rem;
     height: 40px;
 }
 
+
 .top-bar button {
     margin-top: 0;
-    background-color: #9ca3af;
     border: none;
     padding: 8px 12px;
-    border-radius: 6px;
     cursor: pointer;
     font-size: 20px;
 }
@@ -27,6 +51,16 @@
     justify-content: center;
     padding: 0.5rem;
     z-index: 999;
+}
+
+.popup-toggle.fixed button {
+    width: 4rem;
+    background-color: #2e2e2e;
+    border-radius: 0rem 0rem .5rem .5rem;
+}
+
+.popup-toggle.fixed button:hover {
+    background-color: #2a3a2c;
 }
 
 .timer {
@@ -44,26 +78,6 @@
     gap: 1rem;
 }
 
-.buttons button {
-    background-color: #9ca3af;
-    border: none;
-    width: 6rem;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 14px;
-    outline: none;
-}
-
-.buttons button:hover {
-    background-color: #6b7280;
-}
-
-.buttons button:active {
-    background-color: #9fb2a4;
-}
-
 .loading-spinner {
     justify-self: flex-end;
     margin-left: 8px;
@@ -73,7 +87,6 @@
 }
 
 .side-button {
-    background: #9ca3af;
     border: none;
     padding: 0.5rem 0.7rem;
     border-radius: 6px 0 0 6px;
@@ -88,21 +101,16 @@
     position: fixed;
     top: 50%;
     right: 0.25rem;
-    /* spacing from screen edge */
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    /* space between buttons */
     transform: translateY(-50%);
-    /* vertical center */
     z-index: 1300;
-    /* above vote/opponent panels */
 }
 
 .side-button:hover {
     outline: none;
     border: none;
-    background: #6b7280;
 }
 
 .opponent-panel-wrapper {
@@ -140,7 +148,6 @@
     align-self: flex-start;
     /* left-align button */
     margin-bottom: 0.5rem;
-    background: #2e2e2e;
     color: #fff;
     border: none;
     padding: 0.5rem 1rem;
@@ -148,6 +155,7 @@
     outline: none;
     border-radius: 4px;
 }
+
 .terminal-toggle:hover {
     border: none;
     background: #7e7e7e;
@@ -159,21 +167,25 @@
     transform: translateX(100%) translateY(-50%);
     opacity: 0;
 }
+
 .slide-right-enter-to {
     transform: translateX(0) translateY(-50%);
     opacity: 1;
 }
+
 .slide-right-leave-from {
     transform: translateX(0) translateY(-50%);
     opacity: 1;
 }
+
 .slide-right-leave-to {
     transform: translateX(100%) translateY(-50%);
     opacity: 0;
 }
+
 .slide-right-enter-active,
 .slide-right-leave-active {
-    transition: transform 0.28s cubic-bezier(.2,.9,.3,1), opacity 0.28s ease;
+    transition: transform 0.28s cubic-bezier(.2, .9, .3, 1), opacity 0.28s ease;
 }
 
 /* slide-down (PvE terminal) */
@@ -181,19 +193,23 @@
     transform: translateY(100%);
     opacity: 0;
 }
+
 .slide-down-enter-to {
     transform: translateY(0);
     opacity: 1;
 }
+
 .slide-down-leave-from {
     transform: translateY(0);
     opacity: 1;
 }
+
 .slide-down-leave-to {
     transform: translateY(100%);
     opacity: 0;
 }
+
 .slide-down-enter-active,
 .slide-down-leave-active {
-    transition: transform 0.28s cubic-bezier(.2,.9,.3,1), opacity 0.28s ease;
+    transition: transform 0.28s cubic-bezier(.2, .9, .3, 1), opacity 0.28s ease;
 }

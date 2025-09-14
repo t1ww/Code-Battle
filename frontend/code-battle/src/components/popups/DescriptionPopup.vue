@@ -84,12 +84,15 @@ defineEmits(['close'])
 }
 
 .description-popup-toggle button {
-    background-color: #9ca3af;
     border: none;
-    padding: 8px 12px;
-    border-radius: 6px;
     cursor: pointer;
-    font-size: 20px;
+    width: 4rem;
+    background-color: #2e2e2e;
+    border-radius: 0rem 0rem .5rem .5rem;
+}
+
+.description-popup-toggle button:hover {
+    background-color: #2a3a2c;
 }
 
 .section {

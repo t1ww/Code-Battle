@@ -1,6 +1,7 @@
 <!-- frontend\code-battle\src\components\gameplay\OpponentPanel.vue -->
 <script setup lang="ts">
 import PlayerAvatar from '@/components/pvp/PlayerAvatar.vue'
+import SandClock from '@/assets/icons.svg/SandClock.vue'
 
 // Add at the top in <script setup>
 const props = defineProps<{
@@ -68,7 +69,13 @@ const sabotagePoints = 2
                 <div v-for="c in q.cases" :key="c.id" class="test-case" :class="c.status">
                     Test Case {{ c.id }} :
                     <span :class="['status-badge', c.status]">
-                        {{ c.status === 'pass' ? '✔ Pass' : 'In progress' }}
+                        <template v-if="c.status === 'pass'">
+                            ✔ Pass
+                        </template>
+                        <template v-else>
+                            <SandClock class="sandclock-icon" />
+                            In progress
+                        </template>
                     </span>
                 </div>
             </div>
@@ -90,18 +97,19 @@ hr {
     /* Remove default border */
     height: .1rem;
     /* Thickness */
-    background-color: #888;
+    background-color: #4e4e4e;
     /* Visible gray color */
     margin: 0.5rem 0;
     /* Optional spacing */
 }
+
 .opponent-panel {
     /* changed from fixed to relative so wrapper transform moves it */
     position: relative;
     /* removed right/top/transform */
     width: 24rem;
     height: 34.5rem;
-    background: #d3d3d3;
+    background: #8a8a8a;
     color: black;
     padding: 1rem;
     box-sizing: border-box;
@@ -110,17 +118,20 @@ hr {
     flex-direction: column;
     justify-content: space-between;
     text-align: left;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
 }
 
 /* Close button attached to panel (keeps absolute inside panel) */
 .close-btn {
     position: absolute;
-    left: -35px; /* sticks outside panel */
+    left: -35px;
+    /* sticks outside panel */
     top: calc(50% - 2.45rem);
     transform: translateY(-50%);
     border-radius: 6px 0 0 6px;
-    z-index: 1200; /* above panel so visible */
+    z-index: 1200;
+    /* above panel so visible */
+    background: #525252;
 }
 
 .panel-header {
@@ -163,7 +174,7 @@ hr {
 }
 
 .test-case.pass {
-    color: #2ecc71;
+    color: #101d10;
     font-weight: bold;
 }
 
@@ -190,7 +201,7 @@ hr {
 .status-badge {
     display: inline-block;
     padding: 0.2rem 0.5rem;
-    border-radius: 12px;
+    border-radius: .4rem;
     /* fully rounded */
     font-size: 0.8rem;
     font-weight: bold;
@@ -199,12 +210,20 @@ hr {
 
 /* Different colors per status */
 .status-badge.pass {
-    background-color: #2ecc71;
     /* green */
+    background-color: #2ecc71;
 }
 
 .status-badge.in-progress {
-    background-color: #f39c12;
     /* orange */
+    background-color: #f39c12;
+}
+
+.sandclock-icon {
+    width: 12px;
+    height: 12px;
+    margin-right: 0.25rem; /* space before "In progress" */
+    position: relative;
+    top: 2px; /* nudges it down a little */
 }
 </style>
