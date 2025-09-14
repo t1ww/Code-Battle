@@ -46,8 +46,8 @@ const routes = [
 
   // pve
   { name: "PveLevelSelect", path: "/pveSelect", component: PveLevelSelect, meta: { requiresAuth: true, backTo: "/" } },
-  { name: "PveLevelView", path: "/pveView", component: PveQuestionView, meta: { requiresAuth: true, backTo: "/pveSelect" } },
-  { name: "PveGameplay", path: "/pveGameplay", component: PveGameplay, meta: { requiresAuth: true, disableNavbar: true } },
+  { name: "PveLevelView", path: "/pveView", component: PveQuestionView, meta: { requiresAuth: true, online: true, backTo: "/pveSelect" } },
+  { name: "PveGameplay", path: "/pveGameplay", component: PveGameplay, meta: { requiresAuth: true, online: true, disableNavbar: true } },
 
   // pvp
   { name: "PvpTypeSelect", path: "/pvpSelect", component: PvpTypeSelect, meta: { requiresAuth: true, online: true, canFormTeam: true, backTo: "/" } },

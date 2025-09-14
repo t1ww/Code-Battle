@@ -4,13 +4,14 @@ import fetch from "node-fetch";
 interface TerminalSession {
   sessionId: string;
   createdAt: Date;
+  socketId: string; // track which socket owns this session
 }
 
 export class TerminalService {
   private sessions = new Map<string, TerminalSession>();
   private tcrBase = "http://localhost:5000/terminal";
 
-  async createSession(sessionId: string, code: string): Promise<TerminalSession> {
+  async createSession(socketId: string, sessionId: string, code: string): Promise<TerminalSession> {
     const res = await fetch(`${this.tcrBase}/start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -18,13 +19,14 @@ export class TerminalService {
     });
     const data = await res.json();
 
-    const session: TerminalSession = { sessionId, createdAt: new Date() };
+    const session: TerminalSession = { sessionId, createdAt: new Date(), socketId };
     this.sessions.set(sessionId, session);
     return session;
   }
 
   async sendInput(sessionId: string, input: string): Promise<string> {
-    if (!this.sessions.has(sessionId)) throw new Error("Session not found");
+    const session = this.sessions.get(sessionId);
+    if (!session) throw new Error("Session not found");
 
     const res = await fetch(`${this.tcrBase}/input`, {
       method: "POST",
@@ -36,7 +38,8 @@ export class TerminalService {
   }
 
   async removeSession(sessionId: string) {
-    if (!this.sessions.has(sessionId)) return;
+    const session = this.sessions.get(sessionId);
+    if (!session) return;
 
     await fetch(`${this.tcrBase}/stop`, {
       method: "POST",
@@ -44,6 +47,17 @@ export class TerminalService {
       body: JSON.stringify({ sessionId }),
     });
     this.sessions.delete(sessionId);
+  }
+
+  // cleanup all sessions for a socket
+  async removeSessionsBySocket(socketId: string) {
+    const sessionsToRemove = Array.from(this.sessions.values())
+      .filter(s => s.socketId === socketId)
+      .map(s => s.sessionId);
+
+    for (const id of sessionsToRemove) {
+      await this.removeSession(id);
+    }
   }
 
   getSession(sessionId: string): TerminalSession | undefined {
