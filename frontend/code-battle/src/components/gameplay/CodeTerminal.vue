@@ -18,7 +18,9 @@
 
 <script setup lang="ts">
 import { nextTick, ref } from "vue";
-import { useInteractiveTerminal } from "@/composables/useInteractiveTerminal";
+import { useTerminal } from "@/composables/useTerminal";
+const { sendInput } = useTerminal();
+
 
 const lines = ref<string[]>([]);
 const currentInput = ref("");
@@ -33,20 +35,9 @@ function submitInput() {
     if (!currentInput.value.trim()) return;
 
     emitInput("input", currentInput.value);
-
-    // send to backend
-    fetch("/interactive/input", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId: currentSessionId, input: currentInput.value })
-    })
-        .then(res => res.json())
-        .then(data => pushOutput(data.output))
-        .catch(err => pushOutput(`[Error] ${err.message}`));
-
+    sendInput(currentInput.value); // <-- new socket call
     currentInput.value = "";
 }
-
 
 function pushOutput(msg: string) {
     lines.value.push(msg);

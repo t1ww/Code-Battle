@@ -17,8 +17,8 @@ import api from '@/clients/crud.api'
 import { triggerNotification } from '@/composables/notificationService'
 import { useSabotage } from '@/composables/useSabotage'
 import { useTimer } from '@/composables/useTimer'
-import { useInteractiveTerminal } from "@/composables/useInteractiveTerminal";
-const { codeTerminal, startSession, sendInput } = useInteractiveTerminal();
+import { useTerminal } from "@/composables/useTerminal";
+const { codeTerminal, startSession, sendInput, stopSession } = useTerminal();
 
 // Popup components
 import ResultPopup from '@/components/popups/ResultPopup.vue'
@@ -274,6 +274,8 @@ onMounted(async () => {
 onUnmounted(() => {
     stopTimer()
     stopSabotage()
+    stopSession()
+    codeTerminal.value?.pushOutput("> Session ended.");
 })
 </script>
 
