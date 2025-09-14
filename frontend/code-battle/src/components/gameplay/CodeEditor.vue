@@ -47,6 +47,9 @@ const editorOptions = {
 // ----------------------------
 const editorRef = ref<any>(null)
 onMounted(() => {
+    if (DEV) {
+        triggerNotification("DEV mode is on, you can paste from clipboard, don't forgot to disable it in production.");
+    }
     if (!editorRef.value) return
     const container = editorRef.value.$el as HTMLElement
     

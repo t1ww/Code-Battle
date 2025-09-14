@@ -273,14 +273,14 @@ onUnmounted(() => {
             :testResults="testResults?.results || []" @close="showResultPopup = false" />
 
         <!-- Opponent panel with sliding toggle -->
-        <transition name="slide">
+        <transition name="slide-right">
             <div class="opponent-panel-wrapper" v-if="showOpponentPanel">
                 <OpponentPanel :onClose="toggleOpponentPanel" />
             </div>
         </transition>
 
         <!-- Vote panel component slides in/out; transition attaches classes to its root .vote-panel-wrapper -->
-        <transition name="slide">
+        <transition name="slide-right">
             <div class="vote-panel-wrapper" v-if="showVoteDrawPanel">
                 <VotePanel :disabled="lockDrawVoteButton" @vote="handleVoteDraw" @close="toggleVoteDrawPanel" />
             </div>

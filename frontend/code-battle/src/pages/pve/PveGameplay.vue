@@ -9,6 +9,7 @@ import { useRoute } from 'vue-router'
 import { getPlayerData } from '@/stores/auth'
 import codeRunnerApi from '@/clients/coderunner.api'
 import CodeEditor from '@/components/gameplay/CodeEditor.vue'
+import CodeTerminal from '@/components/gameplay/CodeTerminal.vue'
 import router from '@/router'
 import api from '@/clients/crud.api'
 
@@ -16,6 +17,8 @@ import api from '@/clients/crud.api'
 import { triggerNotification } from '@/composables/notificationService'
 import { useSabotage } from '@/composables/useSabotage'
 import { useTimer } from '@/composables/useTimer'
+import { useInteractiveTerminal } from "@/composables/useInteractiveTerminal";
+const { codeTerminal, startSession, sendInput } = useInteractiveTerminal();
 
 // Popup components
 import ResultPopup from '@/components/popups/ResultPopup.vue'
@@ -41,7 +44,18 @@ const timeLimitEnabled = route.query.timeLimitEnabled === 'true'
 // 🔁 Reactive State
 // =============================
 // Base
-const code = ref('// Write code here')
+const code = ref(`// Write code here
+#include <iostream>
+#include <string>
+
+int main() {
+    std::string input;
+    std::cout << "Enter something: ";
+    std::getline(std::cin, input);
+    std::cout << "You typed: " << input << std::endl;
+    return 0;
+}`);
+
 const showDescriptionPopup = ref(false)
 const isLoading = ref(false)
 const MODIFIER_BONUS = 1.25
@@ -83,13 +97,21 @@ function openMessagePopup(title: string, message: string) {
     showMessagePopup.value = true
 }
 
+// Terminal
+const terminalOpen = ref(false) // default close
+
 
 // =============================
 // 🧪 Code Actions
 // =============================
-const runCode = async () => {
-    console.log('Running code:', code.value)
-}
+// Replace Run Code button to just focus the terminal or echo input
+const runCodeInteractive = () => {
+    if (!code.value.trim()) return;
+    // Open the terminal
+    terminalOpen.value = true;
+    // optionally push initial message or leave empty
+    codeTerminal.value?.pushOutput("> Use this terminal to interact with code");
+};
 
 const submitCode = async () => {
     if (!question_data.value) return
@@ -244,6 +266,9 @@ onMounted(async () => {
     }
     // Start the timer
     startTimer();
+
+    // Start the session with terminal
+    await startSession(code.value);
 })
 
 onUnmounted(() => {
@@ -281,11 +306,24 @@ onUnmounted(() => {
         <CodeEditor v-model="code" />
 
         <div class="buttons">
-            <button @click="runCode" :disabled="isLoading">Run code</button>
+            <button @click="runCodeInteractive" :disabled="isLoading">Run code</button>
             <button @click="submitCode" :disabled="isLoading">
                 Submit
             </button>
         </div>
+
+        <!-- Terminal under the editor -->
+        <button class="terminal-toggle" @click="terminalOpen = true"
+            :style="{ visibility: terminalOpen ? 'hidden' : 'visible' }">
+            Show Terminal ▲
+        </button>
+
+        <transition name="slide-down">
+            <div class="terminal-wrapper" v-show="terminalOpen">
+                <CodeTerminal ref="codeTerminal" @close="terminalOpen = false" @input="sendInput" />
+            </div>
+        </transition>
+
         <div class="buttons">
             <span v-if="isLoading" class="loading-spinner">Loading...</span>
         </div>

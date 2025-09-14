@@ -110,9 +110,7 @@
     top: 50%;
     right: 0;
     transform: translateY(-50%);
-    /* KEEP vertical centering after transition ends */
     z-index: 1100;
-    /* ensure above other UI */
 }
 
 .vote-panel-wrapper {
@@ -123,29 +121,79 @@
     z-index: 1150;
 }
 
-/* Slide transition - include the same translateY in each state */
-.slide-enter-from {
-    transform: translateY(-50%) translateX(100%);
+.terminal-wrapper {
+    position: fixed;
+    left: 18%;
+    bottom: 0%;
+    transform: translateX(0%);
+    z-index: 1200;
+}
+
+.terminal-input {
+    display: flex;
+    padding: 1rem 2rem;
+    /* more padding bottom and left/right */
+    border-top: 1px solid #444;
+}
+
+.terminal-toggle {
+    align-self: flex-start;
+    /* left-align button */
+    margin-bottom: 0.5rem;
+    background: #2e2e2e;
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    outline: none;
+    border-radius: 4px;
+}
+.terminal-toggle:hover {
+    border: none;
+    background: #7e7e7e;
+}
+
+/* Slide transitions */
+/* slide-right (PvP panels) */
+.slide-right-enter-from {
+    transform: translateX(100%) translateY(-50%);
     opacity: 0;
 }
-
-.slide-enter-to {
-    transform: translateY(-50%) translateX(0);
+.slide-right-enter-to {
+    transform: translateX(0) translateY(-50%);
     opacity: 1;
 }
-
-.slide-leave-from {
-    transform: translateY(-50%) translateX(0);
+.slide-right-leave-from {
+    transform: translateX(0) translateY(-50%);
     opacity: 1;
 }
-
-.slide-leave-to {
-    transform: translateY(-50%) translateX(100%);
+.slide-right-leave-to {
+    transform: translateX(100%) translateY(-50%);
     opacity: 0;
 }
+.slide-right-enter-active,
+.slide-right-leave-active {
+    transition: transform 0.28s cubic-bezier(.2,.9,.3,1), opacity 0.28s ease;
+}
 
-.slide-enter-active,
-.slide-leave-active {
-    transition: transform 0.28s cubic-bezier(.2, .9, .3, 1), opacity 0.28s ease;
-    will-change: transform, opacity;
+/* slide-down (PvE terminal) */
+.slide-down-enter-from {
+    transform: translateY(100%);
+    opacity: 0;
+}
+.slide-down-enter-to {
+    transform: translateY(0);
+    opacity: 1;
+}
+.slide-down-leave-from {
+    transform: translateY(0);
+    opacity: 1;
+}
+.slide-down-leave-to {
+    transform: translateY(100%);
+    opacity: 0;
+}
+.slide-down-enter-active,
+.slide-down-leave-active {
+    transition: transform 0.28s cubic-bezier(.2,.9,.3,1), opacity 0.28s ease;
 }
