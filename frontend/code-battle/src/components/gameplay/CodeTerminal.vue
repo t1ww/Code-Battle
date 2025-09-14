@@ -1,4 +1,36 @@
 <!-- frontend\code-battle\src\components\gameplay\CodeTerminal.vue -->
+ <script setup lang="ts">
+import { nextTick, ref } from "vue";
+
+const props = defineProps<{
+  sendInput: (input: string) => void; // <- receive from parent
+}>();
+
+const emitInput = defineEmits<{
+  (e: "input", value: string): void;
+  (e: "close"): void;
+}>();
+
+const lines = ref<string[]>([]);
+const currentInput = ref("");
+const outputContainer = ref<HTMLDivElement>();
+
+function submitInput() {
+  if (!currentInput.value.trim()) return;
+
+  emitInput("input", currentInput.value);
+  props.sendInput(currentInput.value); // <- use parent's sendInput
+  currentInput.value = "";
+}
+
+function pushOutput(msg: string) {
+  lines.value.push(msg);
+  nextTick(() => outputContainer.value?.scrollTo(0, outputContainer.value.scrollHeight));
+}
+
+defineExpose({ pushOutput });
+</script>
+
 <template>
     <div class="code-terminal">
         <!-- Close button -->
@@ -15,37 +47,6 @@
         </div>
     </div>
 </template>
-
-<script setup lang="ts">
-import { nextTick, ref } from "vue";
-import { useTerminal } from "@/composables/useTerminal";
-const { sendInput } = useTerminal();
-
-
-const lines = ref<string[]>([]);
-const currentInput = ref("");
-const outputContainer = ref<HTMLDivElement>();
-
-const emitInput = defineEmits<{
-    (e: "input", value: string): void;
-    (e: "close"): void; // add close event
-}>();
-
-function submitInput() {
-    if (!currentInput.value.trim()) return;
-
-    emitInput("input", currentInput.value);
-    sendInput(currentInput.value); // <-- new socket call
-    currentInput.value = "";
-}
-
-function pushOutput(msg: string) {
-    lines.value.push(msg);
-    nextTick(() => outputContainer.value?.scrollTo(0, outputContainer.value.scrollHeight));
-}
-
-defineExpose({ pushOutput });
-</script>
 
 <style scoped>
 .code-terminal {

@@ -1,61 +1,56 @@
-// frontend\code-battle\src\composables\useTerminal.ts
+// frontend/code-battle/src/composables/useTerminal.ts
 import { ref } from "vue";
 import type CodeTerminal from "@/components/gameplay/CodeTerminal.vue";
-import { io, Socket } from "socket.io-client";
+import { socket } from "@/clients/socket.api";
 
 export function useTerminal() {
   const codeTerminal = ref<InstanceType<typeof CodeTerminal>>();
   const sessionId = ref<string | null>(null);
-  const socket = ref<Socket | null>(io("http://localhost:3001")); // socket-server
 
   const pushOutput = (msg: string) => {
     codeTerminal.value?.pushOutput(msg);
   };
 
-  // Start a session
+  // Ensure the socket is connected
+  const connectSocket = () => {
+    if (!socket.connected) socket.connect();
+
+    // Continuous listening for outputs/errors
+    socket.off("terminal:output");
+    socket.on("terminal:output", (data: { sessionId: string; output: string }) => {
+      if (data.sessionId === sessionId.value && data.output) pushOutput(data.output);
+    });
+
+    socket.off("terminal:error");
+    socket.on("terminal:error", (err: { message: string }) => {
+      pushOutput(`[Error] ${err.message}`);
+    });
+  };
+
   const startSession = (code: string) => {
-    if (!socket.value || !code.trim()) return;
+    if (!code.trim()) return;
+    connectSocket();
 
     pushOutput("Starting session...");
     sessionId.value = `sess_${Date.now()}`;
 
-    socket.value.emit("terminal:start", { code, sessionId: sessionId.value });
-
-    socket.value.once("terminal:started", (data: { sessionId: string }) => {
+    socket.emit("terminal:start", { code, sessionId: sessionId.value });
+    socket.once("terminal:started", (data: { sessionId: string }) => {
       pushOutput(`Session started: ${data.sessionId}`);
     });
-
-    socket.value.once("terminal:error", (err: { message: string }) => {
-      pushOutput(`[Error] ${err.message}`);
-    });
   };
 
-  // Send input
   const sendInput = (input: string) => {
-    if (!socket.value || !sessionId.value) return;
+    if (!sessionId.value) return;
     pushOutput(`> ${input}`);
-
-    socket.value.emit("terminal:input", { sessionId: sessionId.value, input });
-
-    socket.value.once("terminal:output", (data: { sessionId: string; output: string }) => {
-      if (data.output) pushOutput(data.output);
-    });
-
-    socket.value.once("terminal:error", (err: { message: string }) => {
-      pushOutput(`[Error] ${err.message}`);
-    });
+    socket.emit("terminal:input", { sessionId: sessionId.value, input });
   };
 
-  // Stop session
   const stopSession = () => {
-    if (!socket.value || !sessionId.value) return;
-
-    socket.value.emit("terminal:stop", { sessionId: sessionId.value });
-
-    socket.value.once("terminal:stopped", (data: { sessionId: string }) => {
-      pushOutput(`Session stopped: ${data.sessionId}`);
-      sessionId.value = null;
-    });
+    if (!sessionId.value) return;
+    socket.emit("terminal:stop", { sessionId: sessionId.value });
+    pushOutput("> Session stopped.");
+    sessionId.value = null;
   };
 
   return { codeTerminal, pushOutput, startSession, sendInput, stopSession };

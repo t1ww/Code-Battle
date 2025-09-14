@@ -107,11 +107,18 @@ const terminalOpen = ref(false) // default close
 // Replace Run Code button to just focus the terminal or echo input
 const runCodeInteractive = () => {
     if (!code.value.trim()) return;
+
+    // Stop previous session
+    stopSession();
+
     // Open the terminal
     terminalOpen.value = true;
-    // optionally push initial message or leave empty
-    codeTerminal.value?.pushOutput("> Use this terminal to interact with code");
+    codeTerminal.value?.pushOutput("> New session started");
+
+    // Start a new session
+    startSession(code.value)
 };
+
 
 const submitCode = async () => {
     if (!question_data.value) return
@@ -266,9 +273,6 @@ onMounted(async () => {
     }
     // Start the timer
     startTimer();
-
-    // Start the session with terminal
-    await startSession(code.value);
 })
 
 onUnmounted(() => {
@@ -322,7 +326,7 @@ onUnmounted(() => {
 
         <transition name="slide-down">
             <div class="terminal-wrapper" v-show="terminalOpen">
-                <CodeTerminal ref="codeTerminal" @close="terminalOpen = false" @input="sendInput" />
+                <CodeTerminal ref="codeTerminal" @close="terminalOpen = false" :sendInput="sendInput" />
             </div>
         </transition>
 
