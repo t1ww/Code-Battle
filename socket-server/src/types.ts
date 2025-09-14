@@ -40,6 +40,7 @@ import { TeamService } from "@/services/team.service";
 import { TeamInviteService } from "@/services/team.invite.service";
 import { PrivateRoomService } from "@/services/privateRoom.service";
 import { PrivateRoomInviteService } from "@/services/privateRoom.invite.service";
+import { TerminalService } from "@/services/terminal.service";
 
 export interface Services {
     connectionService: ConnectionService;
@@ -48,4 +49,5 @@ export interface Services {
     teamInviteService: TeamInviteService;
     privateRoomService: PrivateRoomService;
     privateRoomInviteService: PrivateRoomInviteService;
+    terminalService: TerminalService;
 }
