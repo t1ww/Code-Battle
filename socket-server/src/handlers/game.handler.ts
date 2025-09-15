@@ -25,6 +25,7 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
     });
 
     // Allow client to fetch current game state (for resync, reconnects, etc.)
+
     socket.on("getGameState", ({ gameId }) => {
         const game = gameService.getGame(gameId);
         if (!game) {
@@ -32,10 +33,8 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
             return;
         }
 
-        // Use socket reference instead of player_id
-        const playerTeam = gameService.getPlayerTeamBySocket(gameId, socket);
-        console.log(`Player ${socket.id} is on team:`, playerTeam);
-
+        const playerId = socket.data.player.player_id;
+        const playerTeam = gameService.getPlayerTeam(gameId, playerId);
         socket.emit("gameState", {
             gameId,
             questions: game.questions,

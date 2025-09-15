@@ -26,6 +26,7 @@ onMounted(() => {
       console.error("Player data not found, cannot send player info to server.");
       return;
     }
+    console.log("Sending player info to server:", playerData);
     socket.emit("sendsPlayerInfo", {
       player_id: playerData.player_id,
       name: playerData.name,

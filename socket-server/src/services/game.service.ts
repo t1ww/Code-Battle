@@ -1,5 +1,5 @@
 // socket-server/src/services/game.service.ts
-import { Server, Socket } from "socket.io";
+import { Server } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 import type { Team } from "@/types";
 import api from "@/clients/crud.api";
@@ -92,36 +92,12 @@ export class GameService {
     /** Determine which team a player belongs to */
     getPlayerTeam(gameId: string, playerId: string): "team1" | "team2" | null {
         const game = this.games.get(gameId);
-        console.log(`[getPlayerTeam] gameId: ${gameId}, playerId: ${playerId}`, game);
-
-        if (!game) {
-            console.log(`[getPlayerTeam] game not found`);
-            return null;
-        }
-
-        if (game.team1.players.find(p => p.player_id === playerId)) {
-            console.log(`[getPlayerTeam] player is in team1`);
-            return "team1";
-        }
-        if (game.team2.players.find(p => p.player_id === playerId)) {
-            console.log(`[getPlayerTeam] player is in team2`);
-            return "team2";
-        }
-
-        console.log(`[getPlayerTeam] player not found in any team`);
-        return null;
-    }
-
-    /** Determine which team a player belongs to by socket reference */
-    getPlayerTeamBySocket(gameId: string, socket: Socket): "team1" | "team2" | null {
-        const game = this.games.get(gameId);
         if (!game) return null;
 
-        if (game.team1.players.find(p => p.socket === socket)) return "team1";
-        if (game.team2.players.find(p => p.socket === socket)) return "team2";
+        if (game.team1.players.find(p => p.player_id === playerId)) return "team1";
+        if (game.team2.players.find(p => p.player_id === playerId)) return "team2";
         return null;
     }
-
 
     /** Handle sabotage event: relay to opponent team */
     handleSabotage(gameId: string, targetTeam: "team1" | "team2") {
