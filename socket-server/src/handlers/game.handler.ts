@@ -1,6 +1,7 @@
 // socket-server/src/handlers/game.handler.ts
 import type { Server, Socket } from "socket.io";
 import { GameService } from "@/services/game.service";
+import { sanitizeTeam } from "@/utils/sanitize";
 
 export function registerGameHandlers(io: Server, socket: Socket, gameService: GameService) {
     // Sabotage: one team sends an effect to the other
@@ -31,14 +32,17 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
             return;
         }
 
-        // Determine which team the requesting player belongs to
-        const playerTeam = gameService.getPlayerTeam(gameId, socket.data.player_id);
+        // Use socket reference instead of player_id
+        const playerTeam = gameService.getPlayerTeamBySocket(gameId, socket);
+        console.log(`Player ${socket.id} is on team:`, playerTeam);
 
         socket.emit("gameState", {
             gameId,
             questions: game.questions,
             progress: game.progress,
             finished: game.finished,
+            team1: game.team1 ? sanitizeTeam(game.team1) : undefined,
+            team2: game.team2 ? sanitizeTeam(game.team2) : undefined,
             playerTeam,
         });
     });

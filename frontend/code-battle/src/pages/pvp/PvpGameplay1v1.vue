@@ -167,7 +167,10 @@ function sendSabotage() {
     triggerNotification("No sabotage points left!", 1200);
     return;
   }
-  if (!gameStore.playerTeam || !gameStore.gameId) return;
+  if (!gameStore.playerTeam || !gameStore.gameId) {
+    triggerNotification("Game not ready yet!", 1200); // <--- add this
+    return;
+  }
 
   socket.emit("sabotage", {
     gameId: gameStore.gameId,
@@ -214,6 +217,18 @@ onMounted(async () => {
     gameStore.team2 = game.team2
     gameStore.finished = game.finished
     gameStore.playerTeam = game.playerTeam
+
+    // 🔹 Log the full game state
+    console.log("Game state received:", {
+      gameId: gameStore.gameId,
+      playerTeam: gameStore.playerTeam,
+      opponentTeam: gameStore.opponentTeam,
+      team1: gameStore.team1,
+      team2: gameStore.team2,
+      questions: gameStore.questions,
+      progress: gameStore.progress,
+      finished: gameStore.finished
+    })
   })
 
   // Handle error messages from server

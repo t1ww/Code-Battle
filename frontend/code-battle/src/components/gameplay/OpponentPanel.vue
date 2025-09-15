@@ -201,6 +201,10 @@ hr {
     background: #444;
 }
 
+.sabotage-btn:active {
+    background: #6d4c4c;
+}
+
 .status-badge {
     display: inline-block;
     padding: 0.2rem 0.5rem;
