@@ -4,9 +4,9 @@ import { GameService } from "@/services/game.service";
 
 export function registerGameHandlers(io: Server, socket: Socket, gameService: GameService) {
     // Sabotage: one team sends an effect to the other
-    socket.on("sabotage", ({ gameId, team, payload }) => {
+    socket.on("sabotage", ({ gameId, targetTeam }) => {
         try {
-            gameService.handleSabotage(gameId, team, payload);
+            gameService.handleSabotage(gameId, targetTeam);
         } catch (err) {
             console.error("Error handling sabotage:", err);
             socket.emit("errorMessage", { message: "Failed to sabotage" });
@@ -26,15 +26,50 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
     // Allow client to fetch current game state (for resync, reconnects, etc.)
     socket.on("getGameState", ({ gameId }) => {
         const game = gameService.getGame(gameId);
-        if (game) {
-            socket.emit("gameState", {
-                gameId,
-                questions: game.questions,
-                progress: game.progress,
-                finished: game.finished,
-            });
-        } else {
+        if (!game) {
             socket.emit("errorMessage", { message: "Game not found" });
+            return;
+        }
+
+        // Determine which team the requesting player belongs to
+        const playerTeam = gameService.getPlayerTeam(gameId, socket.data.player_id);
+
+        socket.emit("gameState", {
+            gameId,
+            questions: game.questions,
+            progress: game.progress,
+            finished: game.finished,
+            playerTeam,
+        });
+    });
+
+    socket.on("voteDraw", ({ gameId, player_id }) => {
+        try {
+            const game = gameService.getGame(gameId);
+            if (!game) {
+                socket.emit("errorMessage", { message: "Game not found" });
+                return;
+            }
+
+            game.drawVotes?.add(player_id);
+
+            const totalPlayers = game.team1.players.length + game.team2.players.length;
+            io.to(`game-${gameId}`).emit("voteDrawResult", {
+                votes: game.drawVotes?.size ?? 0,
+                totalPlayers
+            });
+
+            if ((game.drawVotes?.size ?? 0) >= totalPlayers) {
+                game.finished = true;
+                io.to(`game-${gameId}`).emit("gameEnd", {
+                    winner: "draw",
+                    progress: game.progress
+                });
+            }
+
+        } catch (err) {
+            console.error("Failed to handle voteDraw:", err);
+            socket.emit("errorMessage", { message: "Failed to vote draw" });
         }
     });
 

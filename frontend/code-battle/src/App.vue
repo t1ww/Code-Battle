@@ -10,9 +10,11 @@ import { useTeamStore } from "@/stores/team";
 import { getPlayerData } from "@/stores/auth";
 import MusicPlayer from "./components/controller/MusicPlayer.vue";
 import { useRoute } from "vue-router";
+import { usePvpGameStore } from "@/stores/usePvpGameStore";
 
 const music = ref<any>(null) // get access to MusicPlayer methods
 const route = useRoute();
+const gameStore = usePvpGameStore();
 
 onMounted(() => {
   const teamStore = useTeamStore();
@@ -46,6 +48,11 @@ onMounted(() => {
     console.log("Team leader started matchmaking, joining with team members");
     router.push({ name: "Matchmaking", query: { mode: "3v3", timeLimit: data.timeLimit } });
   });
+
+  socket.on("gameStart", (game) => {
+    gameStore.gameId = game.gameId
+    // populate teams, etc.
+  })
 });
 
 onBeforeUnmount(() => {

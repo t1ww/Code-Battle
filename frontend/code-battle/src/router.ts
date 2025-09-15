@@ -60,7 +60,7 @@ const routes = [
     meta: { requiresAuth: true, online: true, backTo: "/pvpSelect", musicTrack: 1 },
     props: true  // so route.params.inviteId is passed as a prop
   },
-  { name: "PvpGameplay1v1", path: "/pvpGameplay1v1", component: PvpGameplay1v1, meta: { requiresAuth: true, disableNavbar: true } },
+  { name: "PvpGameplay1v1", path: "/pvpGameplay1v1", component: PvpGameplay1v1, meta: { requiresAuth: true, disableNavbar: true, online: true } },
 
 
   // Account

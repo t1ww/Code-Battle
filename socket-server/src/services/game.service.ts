@@ -1,18 +1,8 @@
 // socket-server/src/services/game.service.ts
 import { Server } from "socket.io";
-import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import type { Team } from "@/types";
-import codeRunnerApi from "@/clients/coderunner.api";
-
-interface GameRoom {
-    gameId: string;
-    team1: Team;
-    team2: Team;
-    questions: any[]; // replace with Question type if you have one
-    progress: Record<"team1" | "team2", number>;
-    finished: boolean;
-}
+import api from "@/clients/crud.api";
 
 interface TestCase {
     input: string;
@@ -26,6 +16,16 @@ interface Question {
     time_limit: number;
     level: string;
     test_cases: TestCase[];
+}
+
+export interface GameRoom {
+    gameId: string;
+    team1: Team;
+    team2: Team;
+    questions: Question[];
+    progress: Record<"team1" | "team2", number>;
+    finished: boolean;
+    drawVotes?: Set<string>;
 }
 
 export class GameService {
@@ -52,6 +52,7 @@ export class GameService {
             questions,
             progress: { team1: 0, team2: 0 },
             finished: false,
+            drawVotes: new Set<string>(),
         };
 
         this.games.set(gameId, game);
@@ -88,17 +89,21 @@ export class GameService {
         return game;
     }
 
+    /** Determine which team a player belongs to */
+    getPlayerTeam(gameId: string, playerId: string): "team1" | "team2" | null {
+        const game = this.games.get(gameId);
+        if (!game) return null;
+
+        if (game.team1.players.find(p => p.player_id === playerId)) return "team1";
+        if (game.team2.players.find(p => p.player_id === playerId)) return "team2";
+        return null;
+    }
+
     /** Handle sabotage event: relay to opponent team */
-    handleSabotage(gameId: string, fromTeam: "team1" | "team2", payload: any) {
+    handleSabotage(gameId: string, targetTeam: "team1" | "team2") {
         const game = this.games.get(gameId);
         if (!game || game.finished) return;
-
-        const targetTeam = fromTeam === "team1" ? "team2" : "team1";
-        this.io.to(`game-${gameId}`).emit("sabotage", {
-            from: fromTeam,
-            to: targetTeam,
-            payload,
-        });
+        this.io.to(`game-${gameId}-${targetTeam}`).emit("sabotageReceived");
     }
 
     /** Handle when a team finishes a question */
@@ -160,7 +165,7 @@ export class GameService {
         try {
             const levels = ["Easy", "Medium", "Hard"];
             const level = levels[Math.floor(Math.random() * levels.length)]; // random level
-            const res = await axios.get("http://localhost:5000/api/questions", { params: { level } }); // backend endpoint
+            const res = await api.get("/questions", { params: { level } }); // backend endpoint
             // If backend returns an array, pick a random question
             if (Array.isArray(res.data) && res.data.length > 0) {
                 const randomIndex = Math.floor(Math.random() * res.data.length);

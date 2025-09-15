@@ -6,6 +6,7 @@ import SandClock from '@/assets/icons.svg/SandClock.vue'
 // Add at the top in <script setup>
 const props = defineProps<{
     onClose: () => void
+    sendSabotage: () => void
 }>()
 
 // Dummy opponent for now
@@ -86,7 +87,9 @@ const sabotagePoints = 2
         <!-- Footer -->
         <div class="footer">
             <div>Your sabotage point = {{ sabotagePoints }}</div>
-            <button class="sabotage-btn">Send sabotage!!!!</button>
+            <button class="sabotage-btn" @click="props.sendSabotage()">
+                Send sabotage!!!!
+            </button>
         </div>
     </div>
 </template>
@@ -222,8 +225,10 @@ hr {
 .sandclock-icon {
     width: 12px;
     height: 12px;
-    margin-right: 0.25rem; /* space before "In progress" */
+    margin-right: 0.25rem;
+    /* space before "In progress" */
     position: relative;
-    top: 2px; /* nudges it down a little */
+    top: 2px;
+    /* nudges it down a little */
 }
 </style>
