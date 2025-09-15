@@ -1,7 +1,9 @@
 // socket-server/src/services/game.service.ts
 import { Server } from "socket.io";
 import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
 import type { Team } from "@/types";
+import codeRunnerApi from "@/clients/coderunner.api";
 
 interface GameRoom {
     gameId: string;
@@ -21,7 +23,8 @@ export class GameService {
     }
 
     /** Create a game room with two teams, fetch questions from API */
-    async createGame(gameId: string, team1: Team, team2: Team): Promise<GameRoom> {
+    async createGame(team1: Team, team2: Team): Promise<GameRoom> {
+        const gameId = uuidv4();
         const questions: any[] = [];
         for (let i = 0; i < 3; i++) {
             const q = await this.fetchQuestion();
@@ -130,7 +133,26 @@ export class GameService {
 
     /** Fetch question from backend API */
     private async fetchQuestion() {
-        const res = await axios.get("http://localhost:5000/api/question");
-        return res.data;
+        try {
+            const levels = ["Easy", "Medium", "Hard"];
+            const level = levels[Math.floor(Math.random() * levels.length)]; // random level
+            const res = await axios.get("http://localhost:5000/api/questions", { params: { level } }); // backend endpoint
+            // If backend returns an array, pick a random question
+            if (Array.isArray(res.data) && res.data.length > 0) {
+                const randomIndex = Math.floor(Math.random() * res.data.length);
+                return res.data[randomIndex];
+            }
+            // fallback if API returns a single object
+            return res.data;
+        } catch (err: any) {
+            console.error("Failed to fetch question:", err.message ?? err);
+            // Provide a fallback question to prevent server crash
+            return {
+                id: "fallback",
+                title: "Fallback Question",
+                description: "Could not load question from backend",
+                testCases: [],
+            };
+        }
     }
 }

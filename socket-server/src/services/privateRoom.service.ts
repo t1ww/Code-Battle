@@ -2,6 +2,7 @@
 import { v4 as uuidv4 } from "uuid";
 import type { PlayerSession, Team } from "@/types";
 import { Server, Socket } from "socket.io";
+import { GameService } from "@/services/game.service";
 
 // PlayerSession includes a Socket, but service should only handle player data.
 // Consider using a type like PlayerData without the socket.
@@ -20,7 +21,7 @@ interface PrivateRoom {
 }
 
 export class PrivateRoomService {
-    constructor(private io: Server) { }
+    constructor(private io: Server, private gameService: GameService) { }
     private rooms: Map<string, PrivateRoom> = new Map();
 
     /** Create a private room with team1 already set */

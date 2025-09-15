@@ -1,9 +1,12 @@
 // socket-server/src/services/matchmaking.service.ts
 import { PlayerSession, Team } from "@/types";
 import { Server } from "socket.io";
+import { GameService } from "@/services/game.service";
 
 const TIMEOUT_MESSAGE = "No suitable match found. You can re-queue if you wish. Or try bring some friends C:";
 const MAX_QUEUE_TIME_MS = 30_000; // 60 seconds
+
+// Helper functions
 // ✅ SRS-086: The system shall pair players or teams based on matchmaking criteria including player connection quality and wait time.
 // Helper to measure connection quality (simple heuristic)
 function measureConnectionQuality(player: PlayerSession): number {
@@ -21,10 +24,16 @@ function matchmakingScore(player: PlayerSession) {
 function teamScore(team: Team) {
     return team.players.reduce((sum, p) => sum + matchmakingScore(p), 0) / team.players.length;
 }
+function createSoloTeam(player: PlayerSession): Team {
+    return {
+        team_id: `solo-${player.player_id}`,
+        players: [player],
+    };
+}
 
 // Matchmaking Service class
 export class MatchmakingService {
-    constructor(private io: Server) { }
+    constructor(private io: Server, private gameService: GameService) { }
 
     private queue1v1: Map<string, PlayerSession> = new Map();
     private queue3v3: Map<string, Team> = new Map();
@@ -175,9 +184,15 @@ export class MatchmakingService {
         });
 
         matchPlayers.forEach(p => {
+            if (p.queueTimeoutId) clearTimeout(p.queueTimeoutId);
             p.socket.emit("matchStarted", { player_id: p.player_id });
             queue.delete(p.player_id);
         });
+        // Calls game service to create game instance
+        const team1 = createSoloTeam(p1);
+        const team2 = createSoloTeam(p2);
+        this.gameService.createGame(team1, team2);
+
         // ✅ Emit match started event
         return { message: "1v1 match started successfully" };
     }
@@ -236,6 +251,14 @@ export class MatchmakingService {
             });
         });
 
+        // Calls game service to create game instance
+        this.gameService.createGame(teamA, teamB);
+
+        // ✅ Clear timeouts before removing from queue
+        if (teamA.queueTimeoutId) clearTimeout(teamA.queueTimeoutId);
+        if (teamB.queueTimeoutId) clearTimeout(teamB.queueTimeoutId);
+        
+        // Remove teams from queue
         queue.delete(teamA.team_id);
         queue.delete(teamB.team_id);
 
