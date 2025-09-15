@@ -18,7 +18,7 @@ onMounted(() => {
   const teamStore = useTeamStore();
 
   socket.on("connect", () => {
-    triggerNotification("Connected to PVP server.", 2000);
+    triggerNotification("Connected to online server.", 2000);
     const playerData = getPlayerData();
     if (!playerData) {
       console.error("Player data not found, cannot send player info to server.");
@@ -31,12 +31,12 @@ onMounted(() => {
   });
 
   socket.on("connect_error", () => {
-    triggerNotification("Unable to connect to PVP server. Please try again later.");
+    triggerNotification("Unable to connect to online server. Please try again later.");
     router.push("/");
   });
 
   socket.on("disconnect", () => {
-    triggerNotification("Disconnected from PVP server.", 2000);
+    triggerNotification("Disconnected from online server.", 2000);
     teamStore.team_id = null;
     teamStore.members = [];
     teamStore.invite_link = "";

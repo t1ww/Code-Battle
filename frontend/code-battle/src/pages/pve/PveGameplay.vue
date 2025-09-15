@@ -45,14 +45,7 @@ const timeLimitEnabled = route.query.timeLimitEnabled === 'true'
 // =============================
 // Base
 const code = ref(`// Write code here
-#include <iostream>
-#include <string>
-
 int main() {
-    std::string input;
-    std::cout << "Enter something: ";
-    std::getline(std::cin, input);
-    std::cout << "You typed: " << input << std::endl;
     return 0;
 }`);
 
