@@ -14,6 +14,20 @@ interface GameRoom {
     finished: boolean;
 }
 
+interface TestCase {
+    input: string;
+    expected_output: string;
+    score: number;
+}
+interface Question {
+    id: number;
+    question_name: string;
+    description: string;
+    time_limit: number;
+    level: string;
+    test_cases: TestCase[];
+}
+
 export class GameService {
     private io: Server;
     private games: Map<string, GameRoom> = new Map();
@@ -52,6 +66,16 @@ export class GameService {
             player.socket.join(`game-${gameId}`);
             player.socket.join(`game-${gameId}-team2`);
         }
+
+        // --- LOGGING ---
+        console.log(`--- New Game Created ---`);
+        console.log(`[Game Created] Game ID: ${gameId}`);
+        console.log(`[Team 1] ${team1.players.map(p => p.name).join(", ")}`);
+        console.log(`[Team 2] ${team2.players.map(p => p.name).join(", ")}`);
+        console.log(`[Total Questions] ${questions.length}`);
+        console.log(`[Questions] ${questions.map(q => (q as Question).question_name).join(" | ")}`);
+        console.log(`--- End Game Created ---`);
+        // ---------------
 
         // Notify clients that game started with questions
         this.io.to(`game-${gameId}`).emit("gameStart", {
