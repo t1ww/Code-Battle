@@ -23,13 +23,15 @@ const currentIdx = computed({
 // Map questions with finished/testResults info
 const questionsWithStatus = computed(() =>
     props.questions.map((q, idx) => {
-        const teamKey = gameStore.playerTeam || 'team1'
-        const progress = gameStore.progress[teamKey]?.[idx]
-        const finished = progress?.every(Boolean) // all test cases passed
-        const testResults = progress?.map((passed: boolean) => ({ passed })) || []
-        return { ...q, finished, testResults }
+        const teamKey = gameStore.playerTeam || 'team1';
+        const perTest = gameStore.progress?.[teamKey]?.[idx] || []; // boolean[]
+        const fullPassFlags = gameStore.progressFullPass?.[teamKey] || []; // boolean[]
+        const finished = !!fullPassFlags[idx]; // true only if a single full-pass submission happened
+        // build testResults from perTest boolean flags
+        const testResults = perTest.map((passed: boolean) => ({ passed })) || [];
+        return { ...q, finished, testResults };
     })
-)
+);
 </script>
 
 <template>

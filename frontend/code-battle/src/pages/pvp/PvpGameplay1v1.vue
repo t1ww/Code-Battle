@@ -101,6 +101,13 @@ const submitCode = async () => {
     const currentQuestion = gameStore.questions[currentQuestionIndex.value];
     if (!currentQuestion) return;
 
+    // Prevent full-pass questions from being submitted again
+    const teamKey = gameStore.playerTeam
+    if (teamKey != null && gameStore.progressFullPass?.[teamKey]?.[currentQuestionIndex.value]) {
+      triggerNotification("Question already completed (full pass).", 1200);
+      return;
+    }
+
     const data = await runCodeOnApi(code.value, currentQuestion.test_cases);
 
     const resultsForCurrent = mapTestResults(data, currentQuestion);
@@ -255,10 +262,22 @@ onMounted(async () => {
     gameStore.gameId = game.gameId;
     gameStore.questions = game.questions;
     gameStore.progress = game.progress;
+    gameStore.progressFullPass = game.progressFullPass || { team1: [], team2: [] };
     gameStore.team1 = game.team1;
     gameStore.team2 = game.team2;
     gameStore.playerTeam = game.playerTeam;
     console.log("DEV game created:", game);
+    // 🔹 Log the full game state
+    console.log("Game state received:", {
+      gameId: gameStore.gameId,
+      playerTeam: gameStore.playerTeam,
+      opponentTeam: gameStore.opponentTeam,
+      team1: gameStore.team1,
+      team2: gameStore.team2,
+      questions: gameStore.questions,
+      progress: gameStore.progress,
+      finished: gameStore.finished
+    })
   });
 
   // Fetch game state from server
@@ -268,6 +287,7 @@ onMounted(async () => {
   socket.once("gameState", (game) => {
     gameStore.questions = game.questions
     gameStore.progress = game.progress
+    gameStore.progressFullPass = game.progressFullPass || { team1: [], team2: [] };
     gameStore.team1 = game.team1
     gameStore.team2 = game.team2
     gameStore.finished = game.finished
@@ -286,13 +306,21 @@ onMounted(async () => {
   })
 
   // Listen for question progress updates from server (per-team per-question per-test)
-  socket.on("questionProgress", (data: { team: string, progress: any, questionIndex?: number }) => {
-    // Update local store progress shape to match server (progress is boolean[][] for that team)
-    if (data && data.team) {
-      const key = data.team as "team1" | "team2";
+  socket.on("questionProgress", (data: { team: string, progress: any, progressFullPass?: any, questionIndex?: number }) => {
+    if (!data || !data.team) return;
+    const key = data.team as "team1" | "team2";
+    // Update per-test progress
+    if (data.progress) {
       gameStore.progress[key] = data.progress;
     }
+    // Update full-pass flags if provided
+    if (data.progressFullPass) {
+      // Ensure structure on store
+      if (!gameStore.progressFullPass) gameStore.progressFullPass = { team1: [], team2: [] };
+      gameStore.progressFullPass[key] = data.progressFullPass;
+    }
   });
+
 
   // Listen for awardSabotage events (server tells us how many points to add)
   socket.on("awardSabotage", (payload: { amount: number }) => {
@@ -327,9 +355,10 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  stopTimer()
-  socket.off("sabotageReceived")
-})
+  stopTimer();
+  socket.off("sabotageReceived");
+  socket.off("questionProgress");
+});
 </script>
 
 <template>

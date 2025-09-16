@@ -23,8 +23,8 @@ export interface GameRoom {
     team1: Team;
     team2: Team;
     questions: Question[];
-    // now per-question arrays of booleans (one boolean per test case)
     progress: Record<"team1" | "team2", boolean[][]>;
+    progressFullPass: Record<"team1" | "team2", boolean[]>;
     finished: boolean;
     drawVotes?: Set<string>;
 }
@@ -46,7 +46,7 @@ export class GameService {
             // ensure we have test_cases array shape
             questions.push({
                 id: q.id ?? `q-${i}`,
-                question_name: q.question_name ?? q.title ?? `Question ${i+1}`,
+                question_name: q.question_name ?? q.title ?? `Question ${i + 1}`,
                 description: q.description,
                 time_limit: q.time_limit ?? 10,
                 level: q.level ?? "Easy",
@@ -59,6 +59,10 @@ export class GameService {
             team1: questions.map(q => Array((q.test_cases ?? []).length).fill(false)),
             team2: questions.map(q => Array((q.test_cases ?? []).length).fill(false)),
         };
+        const progressFullPass = {
+            team1: questions.map(_ => false),
+            team2: questions.map(_ => false),
+        };
 
         const game: GameRoom = {
             gameId,
@@ -66,6 +70,7 @@ export class GameService {
             team2,
             questions,
             progress,
+            progressFullPass,
             finished: false,
             drawVotes: new Set<string>(),
         };
@@ -88,6 +93,8 @@ export class GameService {
             team1: team1.team_id,
             team2: team2.team_id,
             questions: game.questions,
+            progress: game.progress,
+            progressFullPass: game.progressFullPass,
         });
 
         return game;
@@ -100,6 +107,10 @@ export class GameService {
             team1: questions.map(q => Array((q.test_cases ?? []).length).fill(false)),
             team2: questions.map(q => Array((q.test_cases ?? []).length).fill(false)),
         };
+        const progressFullPass = {
+            team1: questions.map(_ => false),
+            team2: questions.map(_ => false),
+        };
 
         const game: GameRoom = {
             gameId,
@@ -107,6 +118,7 @@ export class GameService {
             team2,
             questions,
             progress,
+            progressFullPass,
             finished: false,
             drawVotes: new Set<string>(),
         };
@@ -167,21 +179,33 @@ export class GameService {
             game.progress[teamKey][questionIndex] = Array((question.test_cases ?? []).length).fill(false);
         }
 
-        // Count newly cleared test cases (that were false before)
+        // Normalize passedIndices to unique, valid indices
+        const uniquePassed = Array.from(new Set((passedIndices || []).map(Number)))
+            .filter(idx => Number.isInteger(idx) && idx >= 0 && idx < (question.test_cases ?? []).length);
+
+        // Always update per-test progress (so partial passes still count for sabotage)
         let newlyCleared = 0;
-        for (const idx of passedIndices) {
-            if (idx >= 0 && idx < game.progress[teamKey][questionIndex].length) {
-                if (!game.progress[teamKey][questionIndex][idx]) {
-                    game.progress[teamKey][questionIndex][idx] = true;
-                    newlyCleared++;
-                }
+        for (const idx of uniquePassed) {
+            if (!game.progress[teamKey][questionIndex][idx]) {
+                game.progress[teamKey][questionIndex][idx] = true;
+                newlyCleared++;
             }
         }
 
-        // Notify clients about the updated per-question progress for that team
+        // If this submission passed ALL tests in one run, mark full-pass for the question
+        if (uniquePassed.length === (question.test_cases ?? []).length) {
+            // ensure array exists
+            if (!game.progressFullPass[teamKey]) {
+                game.progressFullPass[teamKey] = game.questions.map(_ => false); // fallback init
+            }
+            game.progressFullPass[teamKey][questionIndex] = true;
+        }
+
+        // Notify clients about the updated per-question progress and full-pass flags
         this.io.to(`game-${gameId}`).emit("questionProgress", {
             team: teamKey,
-            progress: game.progress[teamKey], // array of arrays
+            progress: game.progress[teamKey],        // boolean[][]
+            progressFullPass: game.progressFullPass[teamKey], // boolean[]
             questionIndex
         });
 
@@ -190,13 +214,10 @@ export class GameService {
             this.io.to(`game-${gameId}-${teamKey}`).emit("awardSabotage", { amount: newlyCleared });
         }
 
-        // If all test-cases in a question are now true, mark question as done (implicit)
-        const allDoneForQuestion = game.progress[teamKey][questionIndex].every(Boolean);
-
-        // Check if the game should end (if one team has all test-cases true across all questions)
+        // If all test-cases in a question are now true, that was already handled by your earlier logic,
+        // but note: game end currently uses per-test progress (unchanged).
         this.checkGameEnd(game);
     }
-
 
     /** Check if game should end and announce winner */
     private checkGameEnd(game: GameRoom) {

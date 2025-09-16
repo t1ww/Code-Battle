@@ -6,6 +6,7 @@ export const usePvpGameStore = defineStore('pvpGame', () => {
   const gameId = ref<string | null>(null)
   const questions = ref<any[]>([])
   const progress = ref<any>({})
+  const progressFullPass = ref<any>({})
   const team1 = ref<any>({})
   const team2 = ref<any>({})
   const drawVotes = ref<Set<string>>(new Set())
@@ -42,6 +43,7 @@ export const usePvpGameStore = defineStore('pvpGame', () => {
     gameId, 
     questions, 
     progress, 
+    progressFullPass,
     team1, 
     team2, 
     drawVotes, 

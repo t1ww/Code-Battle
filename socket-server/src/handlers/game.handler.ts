@@ -42,6 +42,7 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
             gameId,
             questions: game.questions,
             progress: game.progress,
+            progressFullPass: game.progressFullPass,
             finished: game.finished,
             team1: game.team1 ? sanitizeTeam(game.team1) : undefined,
             team2: game.team2 ? sanitizeTeam(game.team2) : undefined,
