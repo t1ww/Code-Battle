@@ -16,9 +16,9 @@ const currentIndex = ref(0)
 </script>
 
 <template>
-    <div v-if="show" class="question-browser">
+    <div class="question-browser">
         <!-- 🔹 Tabs for switching between questions -->
-        <div class="tabs">
+        <div v-if="show" class="tabs">
             <button v-for="(q, idx) in questions" :key="q.question_id" :class="{ active: idx === currentIndex }"
                 @click="currentIndex = idx">
                 {{ q.question_name }}
@@ -26,12 +26,11 @@ const currentIndex = ref(0)
         </div>
 
         <!-- 🔹 The question description panel -->
-        <div v-if="show">
-            <QuestionDescriptionPanel :show="show" :question="questions[currentIndex]"
-                :timeLimitEnabled="timeLimitEnabled" :selectedModifier="selectedModifier" @close="$emit('close')" />
-        </div>
+        <QuestionDescriptionPanel :show="show" :question="questions[currentIndex]" :timeLimitEnabled="timeLimitEnabled"
+            :selectedModifier="selectedModifier" @close="$emit('close')" />
     </div>
 </template>
+
 
 <style scoped>
 .tabs {
