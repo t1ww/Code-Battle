@@ -20,8 +20,9 @@ import { useTimer } from '@/composables/useTimer'
 
 // Popup components
 import ResultPopup from '@/components/popups/ResultPopup.vue'
-import DescriptionPopup from '@/components/popups/DescriptionPopup.vue'
 import MessagePopup from '@/components/popups/MessagePopup.vue'
+
+import QuestionDescriptionPanel from '@/components/gameplay/QuestionDescriptionPanel.vue'
 
 // pvp
 import OpponentPanel from '@/components/gameplay/OpponentPanel.vue'
@@ -218,6 +219,7 @@ onMounted(async () => {
     gameStore.finished = game.finished
     gameStore.playerTeam = game.playerTeam
 
+    question_data.value = gameStore.questions[0];
     // 🔹 Log the full game state
     console.log("Game state received:", {
       gameId: gameStore.gameId,
@@ -291,7 +293,7 @@ onUnmounted(() => {
     </div>
 
     <!-- Slide Panel Toggle -->
-    <DescriptionPopup :show="showDescriptionPopup" :question="question_data" :timeLimitEnabled="timeLimitEnabled"
+    <QuestionDescriptionPanel :show="showDescriptionPopup" :question="question_data" :timeLimitEnabled="timeLimitEnabled"
       :selectedModifier="selectedModifier" @close="showDescriptionPopup = false" />
 
     <!-- Submission result -->
@@ -302,10 +304,24 @@ onUnmounted(() => {
     <!-- Opponent panel with sliding toggle -->
     <transition name="slide-right">
       <div class="opponent-panel-wrapper" v-if="showOpponentPanel">
-        <OpponentPanel :onClose="toggleOpponentPanel" :sendSabotage="sendSabotage"
-          :opponent="gameStore.opponentTeam === 'team1' ? gameStore.team1 : gameStore.team2"
-          :questions="gameStore.progress || []" :sabotagePoints="sabotagePoint" />
-
+        <OpponentPanel :onClose="toggleOpponentPanel" :sendSabotage="sendSabotage" :opponent="gameStore.opponentTeamObj?.players[0]"
+          :questions="gameStore.opponentTeam
+            ? gameStore.questions.map((q, idx) => {
+              const team = gameStore.opponentTeam as 'team1' | 'team2'
+              return {
+                id: idx + 1,
+                title: q.question_name,
+                cases: [
+                  {
+                    id: 1,
+                    status: gameStore.progress[team][idx]
+                      ? 'pass'
+                      : 'in-progress',
+                  },
+                ],
+              }
+            })
+            : []" :sabotagePoints="sabotagePoint" />
       </div>
     </transition>
 

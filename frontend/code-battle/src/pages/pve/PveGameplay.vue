@@ -25,8 +25,9 @@ import ResultPopup from '@/components/popups/ResultPopup.vue'
 import ConfidentLostPopup from '@/components/popups/ConfidentLostPopup.vue'
 import TimeoutPopup from '@/components/popups/TimeoutPopup.vue'
 import ClearedPopup from '@/components/popups/ClearedPopup.vue'
-import DescriptionPopup from '@/components/popups/DescriptionPopup.vue'
 import MessagePopup from '@/components/popups/MessagePopup.vue'
+
+import QuestionDescriptionPanel from '@/components/gameplay/QuestionDescriptionPanel.vue'
 
 // Stores
 import { useQuestionStore } from '@/stores/questionStore'
@@ -328,7 +329,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Slide Panel Toggle -->
-        <DescriptionPopup :show="showDescriptionPopup" :question="question_data" :timeLimitEnabled="timeLimitEnabled"
+        <QuestionDescriptionPanel :show="showDescriptionPopup" :question="question_data" :timeLimitEnabled="timeLimitEnabled"
             :selectedModifier="selectedModifier" @close="showDescriptionPopup = false" />
 
         <!-- Submission result -->

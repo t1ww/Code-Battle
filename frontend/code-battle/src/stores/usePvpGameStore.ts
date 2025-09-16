@@ -1,4 +1,4 @@
-// frontend\code-battle\src\stores\pvpGameStore.ts
+// frontend\code-battle\src\stores\usePvpGameStore.ts
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
@@ -10,14 +10,20 @@ export const usePvpGameStore = defineStore('pvpGame', () => {
   const team2 = ref<any>({})
   const drawVotes = ref<Set<string>>(new Set())
   const finished = ref(false)
-  
-  // Add playerTeam to track which team the current player is on
+
   const playerTeam = ref<'team1' | 'team2' | null>(null)
 
-  // Computed helper to get opponent team key
+  // 🔹 String key of opponent team
   const opponentTeam = computed(() => {
     if (playerTeam.value === 'team1') return 'team2'
     if (playerTeam.value === 'team2') return 'team1'
+    return null
+  })
+
+  // 🔹 Actual object of opponent team
+  const opponentTeamObj = computed(() => {
+    if (opponentTeam.value === 'team1') return team1.value
+    if (opponentTeam.value === 'team2') return team2.value
     return null
   })
 
@@ -32,5 +38,17 @@ export const usePvpGameStore = defineStore('pvpGame', () => {
     playerTeam.value = null
   }
 
-  return { gameId, questions, progress, team1, team2, drawVotes, finished, playerTeam, opponentTeam, clearGame }
+  return { 
+    gameId, 
+    questions, 
+    progress, 
+    team1, 
+    team2, 
+    drawVotes, 
+    finished, 
+    playerTeam, 
+    opponentTeam, 
+    opponentTeamObj,
+    clearGame 
+  }
 })
