@@ -280,6 +280,10 @@ onUnmounted(() => {
     :buttonOnClick="() => showMessagePopup = false" />
 
   <div class="container">
+    <!-- Slide Panel Toggle -->
+    <QuestionBrowser :show="showQuestionsPanel" :questions="gameStore.questions" :timeLimitEnabled="timeLimitEnabled"
+      :selectedModifier="selectedModifier" @close="showQuestionsPanel = false" />
+      
     <!-- In case question data is missing -->
     <template v-if="!question_data">
       <div class="error-message">
@@ -310,12 +314,6 @@ onUnmounted(() => {
       <span v-if="isLoading" class="loading-spinner">Loading...</span>
     </div>
 
-    <!-- Slide Panel Toggle -->
-    <transition name="slide-down">
-      <QuestionBrowser v-if="showQuestionsPanel" :show="showQuestionsPanel" :questions="gameStore.questions"
-        :timeLimitEnabled="timeLimitEnabled" :selectedModifier="selectedModifier"
-        @close="showQuestionsPanel = false" />
-    </transition>
 
     <!-- Submission result -->
     <ResultPopup :show="showResultPopup" :finalScore="finalScore"

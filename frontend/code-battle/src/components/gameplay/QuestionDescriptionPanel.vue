@@ -56,8 +56,8 @@ defineEmits(['close'])
 
 <style scoped>
 .description-popup-panel {
-    position: fixed;
-    top: 0;
+    position: absolute;
+    top: 2rem;
     left: 0;
     width: 100vw;
     color: white;
