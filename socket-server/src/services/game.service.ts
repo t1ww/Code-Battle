@@ -40,19 +40,10 @@ export class GameService {
     /** Create a game room fetching questions from API */
     async createGame(team1: Team, team2: Team): Promise<GameRoom> {
         const gameId = uuidv4();
-        const questions: Question[] = [];
-        for (let i = 0; i < 3; i++) {
-            const q = await this.fetchQuestion();
-            // ensure we have test_cases array shape
-            questions.push({
-                id: q.id ?? `q-${i}`,
-                question_name: q.question_name ?? q.title ?? `Question ${i + 1}`,
-                description: q.description,
-                time_limit: q.time_limit ?? 10,
-                level: q.level ?? "Easy",
-                test_cases: (q.test_cases ?? q.testCases ?? []) as TestCase[],
-            });
-        }
+        let questions: Question[] = [];
+
+        // Fetch 3 questions via fetchQuestion()
+        questions = await this.fetchQuestion();
 
         // build per-question per-test-case boolean arrays
         const progress = {
@@ -248,28 +239,47 @@ export class GameService {
         return this.games.get(gameId);
     }
 
-    /** Fetch question from backend API */
-    private async fetchQuestion() {
+    /** Fetch 3 random questions from backend API */
+    private async fetchQuestion(): Promise<Question[]> {
         try {
-            const levels = ["Easy", "Medium", "Hard"];
-            const level = levels[Math.floor(Math.random() * levels.length)]; // random level
-            const res = await api.get("/questions", { params: { level } }); // backend endpoint
-            // If backend returns an array, pick a random question
+            const res = await api.get("/questions/three"); // our new endpoint
+            console.log("Fetched questions:", res.data);
+
+            // normalize response to Question[]
             if (Array.isArray(res.data) && res.data.length > 0) {
-                const randomIndex = Math.floor(Math.random() * res.data.length);
-                return res.data[randomIndex];
+                return res.data.map((q, i) => ({
+                    id: q.id ?? `q-${i}`,
+                    question_name: q.question_name ?? q.title ?? `Question ${i + 1}`,
+                    description: q.description,
+                    time_limit: q.time_limit ?? 10,
+                    level: q.level ?? "Easy",
+                    test_cases: (q.test_cases ?? q.testCases ?? []) as TestCase[],
+                }));
             }
-            // fallback if API returns a single object
-            return res.data;
+
+            // fallback if response not array
+            return [
+                {
+                    id: "fallback",
+                    question_name: "Fallback Question",
+                    description: "Could not load question from backend",
+                    time_limit: 10,
+                    level: "Easy",
+                    test_cases: [],
+                },
+            ];
         } catch (err: any) {
-            console.error("Failed to fetch question:", err.message ?? err);
-            // Provide a fallback question to prevent server crash
-            return {
-                id: "fallback",
-                title: "Fallback Question",
-                description: "Could not load question from backend",
-                test_cases: [],
-            };
+            console.error("Failed to fetch 3 random questions:", err.message ?? err);
+            return [
+                {
+                    id: "fallback",
+                    question_name: "Fallback Question",
+                    description: "Could not load question from backend",
+                    time_limit: 10,
+                    level: "Easy",
+                    test_cases: [],
+                },
+            ];
         }
     }
 }

@@ -66,6 +66,43 @@ export class QuestionService {
         };
     }
 
+    async getRandomQuestions(count: number = 3): Promise<QuestionResponse[] | { error_message: string }> {
+        try {
+            const questions = await knex("questions")
+                .orderByRaw("RANDOM()")
+                .limit(count);
+
+            if (!questions.length) {
+                return { error_message: "No questions found." };
+            }
+
+            const results: QuestionResponse[] = [];
+
+            for (const q of questions) {
+                const test_cases = await knex("test_cases")
+                    .where({ question_id: q.question_id });
+
+                results.push({
+                    id: q.question_id,
+                    question_name: q.question_name,
+                    description: q.description,
+                    time_limit: q.time_limit,
+                    level: q.level,
+                    test_cases: test_cases.map((tc): TestCaseResponse => ({
+                        id: tc.test_case_id,
+                        input: tc.input,
+                        expected_output: tc.expected_output,
+                        score: tc.score,
+                    })),
+                });
+            }
+
+            return results;
+        } catch {
+            return { error_message: "Error fetching random questions." };
+        }
+    }
+
     async createQuestion(data: CreateQuestionInput): Promise<QuestionResponseWithError> {
         if (!data.question_name || !data.description || !data.time_limit || !data.level) {
             return { error_message: "All fields are required." };
