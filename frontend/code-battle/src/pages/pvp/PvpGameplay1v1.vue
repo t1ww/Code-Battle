@@ -48,7 +48,7 @@ const gameStore = usePvpGameStore()
 const code = ref('// Write code here')
 const player = getPlayerData();
 const isLoading = ref(false)
-const showDescriptionPopup = ref(false)
+const showQuestionsPanel = ref(false)
 const showOpponentPanel = ref(false)
 const showVoteDrawPanel = ref(false)
 const lockDrawVoteButton = ref(false)
@@ -290,8 +290,8 @@ onUnmounted(() => {
 
     <!-- Top bar -->
     <div class="top-bar">
-      <div v-if="!showDescriptionPopup" class="popup-toggle fixed">
-        <button @click="showDescriptionPopup = true">▼</button>
+      <div v-if="!showQuestionsPanel" class="popup-toggle fixed">
+        <button @click="showQuestionsPanel = true">▼</button>
       </div>
       <div class="timer">
         Time Left:
@@ -311,8 +311,11 @@ onUnmounted(() => {
     </div>
 
     <!-- Slide Panel Toggle -->
-    <QuestionBrowser :show="showDescriptionPopup" :questions="gameStore.questions" :timeLimitEnabled="timeLimitEnabled"
-      :selectedModifier="selectedModifier" @close="showDescriptionPopup = false" />
+    <transition name="slide-down">
+      <QuestionBrowser v-if="showQuestionsPanel" :show="showQuestionsPanel" :questions="gameStore.questions"
+        :timeLimitEnabled="timeLimitEnabled" :selectedModifier="selectedModifier"
+        @close="showQuestionsPanel = false" />
+    </transition>
 
     <!-- Submission result -->
     <ResultPopup :show="showResultPopup" :finalScore="finalScore"
