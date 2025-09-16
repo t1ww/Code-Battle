@@ -5,10 +5,11 @@ async function resetData() {
   try {
     await knex.raw(`
       TRUNCATE TABLE 
-        leaderboard_entries, 
-        scores, 
-        test_cases, 
-        players 
+        leaderboard_entries,
+        scores,
+        test_cases,
+        questions,
+        players
       RESTART IDENTITY CASCADE
     `);
 
