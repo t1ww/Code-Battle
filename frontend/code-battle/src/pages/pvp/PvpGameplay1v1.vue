@@ -312,6 +312,14 @@ onMounted(async () => {
     // Update per-test progress
     if (data.progress) {
       gameStore.progress[key] = data.progress;
+      // Check if all test cases are passed in this submission
+      const progress = gameStore.progress[gameStore.playerTeam || 'team1']?.[currentQuestionIndex.value];
+      const finished = progress?.every(Boolean) // all test cases passed
+      if (finished) {
+        setTimeout(() => {
+          triggerNotification("This question doesn't count yet — all test cases must pass in the same submission.", 1800);
+        }, 2000);
+      }
     }
     // Update full-pass flags if provided
     if (data.progressFullPass) {
@@ -320,7 +328,6 @@ onMounted(async () => {
       gameStore.progressFullPass[key] = data.progressFullPass;
     }
   });
-
 
   // Listen for awardSabotage events (server tells us how many points to add)
   socket.on("awardSabotage", (payload: { amount: number }) => {

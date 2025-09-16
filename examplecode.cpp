@@ -1,3 +1,10 @@
+// VERY SIMPLE C++14 EXAMPLES
+#include <iostream>
+int main(){
+    std::cout<< 3;
+    return 0; 
+}
+
 // Example for sum question
 #include <iostream>
 using namespace std;

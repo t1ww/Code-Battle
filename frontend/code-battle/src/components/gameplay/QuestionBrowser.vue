@@ -1,6 +1,6 @@
 <!-- frontend\code-battle\src\components\gameplay\QuestionBrowser.vue -->
 <script setup lang="ts">
-import QuestionDescriptionPanel from '@/components/gameplay/QuestionDescriptionPanel.vue'
+import QuestionDescriptionPanel from './QuestionDescriptionPanel.vue'
 import { computed } from 'vue'
 import { usePvpGameStore } from '@/stores/usePvpGameStore'
 
@@ -23,15 +23,14 @@ const currentIdx = computed({
 // Map questions with finished/testResults info
 const questionsWithStatus = computed(() =>
     props.questions.map((q, idx) => {
-        const teamKey = gameStore.playerTeam || 'team1';
-        const perTest = gameStore.progress?.[teamKey]?.[idx] || []; // boolean[]
+        const teamKey = gameStore.playerTeam || 'team1'
+        const progress = gameStore.progress[teamKey]?.[idx]
         const fullPassFlags = gameStore.progressFullPass?.[teamKey] || []; // boolean[]
         const finished = !!fullPassFlags[idx]; // true only if a single full-pass submission happened
-        // build testResults from perTest boolean flags
-        const testResults = perTest.map((passed: boolean) => ({ passed })) || [];
-        return { ...q, finished, testResults };
+        const testResults = progress?.map((passed: boolean) => ({ passed })) || []
+        return { ...q, finished, testResults }
     })
-);
+)
 </script>
 
 <template>
