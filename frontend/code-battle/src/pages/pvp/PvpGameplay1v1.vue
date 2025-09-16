@@ -231,6 +231,10 @@ function updateProgress(team: 'team1' | 'team2', questionIndex: number, progress
   if (fullPass?.[questionIndex] !== undefined) gameStore.progressFullPass[team][questionIndex] = fullPass[questionIndex];
 }
 
+function endGame() {
+  showResultPopup.value = false;
+  router.replace({ name: 'PvpTypeSelect' });
+}
 // =============================
 // 🖥️ Computed
 // =============================
@@ -481,10 +485,10 @@ onUnmounted(() => {
     :buttonOnClick="() => { showClearedPopup = false }" />
 
   <!-- Game End result -->
-  <PvpResultPopup :show="showResultPopup" :testResults="testResults?.results || []"
-    :questions="gameStore.questions" :progress="gameStore.progress[gameStore.playerTeam || 'team1'] || []"
+  <PvpResultPopup :show="showResultPopup" :testResults="[testResults?.results || []]" :questions="gameStore.questions"
+    :progress="gameStore.progress[gameStore.playerTeam || 'team1'] || []"
     :progressFullPass="gameStore.progressFullPass?.[gameStore.playerTeam || 'team1'] || []"
-    :winner="gameStore.finished ? gameStore.winner : null" @close="showResultPopup = false" />
+    :winner="gameStore.finished ? gameStore.winner : null" @close="endGame" />
 
   <div v-if="DEV" class="dev-buttons" style="position: fixed; bottom: 10px; right: 10px;">
     <button @click="forceClearQuestion"
