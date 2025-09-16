@@ -57,7 +57,7 @@ const currentIdx = computed({
     color: white;
     cursor: pointer;
     border-radius: 4px 4px 0 0;
-    width: 12rem;
+    width: 32rem;
 }
 
 .tabs button:hover {
