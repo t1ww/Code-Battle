@@ -4,7 +4,7 @@
 // 📦 Imports
 // =============================
 import type { CodeRunResponse } from '@/types/types'
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePvpGameStore } from '@/stores/usePvpGameStore'
 import { getPlayerData } from '@/stores/auth'
@@ -22,14 +22,13 @@ import { useTimer } from '@/composables/useTimer'
 import ResultPopup from '@/components/popups/ResultPopup.vue'
 import MessagePopup from '@/components/popups/MessagePopup.vue'
 
-import QuestionDescriptionPanel from '@/components/gameplay/QuestionDescriptionPanel.vue'
-
 // pvp
 import OpponentPanel from '@/components/gameplay/OpponentPanel.vue'
 import VotePanel from '@/components/gameplay/VotePanel.vue'
 
 // Stores
 import { useQuestionStore } from '@/stores/questionStore'
+import QuestionBrowser from '@/components/gameplay/QuestionBrowser.vue'
 const { question_data } = useQuestionStore()
 
 // Constant
@@ -199,13 +198,37 @@ function voteDraw() {
 // =============================
 // 🚀 Lifecycle Hooks
 // =============================
+const DEV = inject('DEV') as boolean
+
 onMounted(async () => {
-  // Check if player has a valid game
+  // Ensure we have a game ID
   if (!gameStore.gameId) {
-    triggerNotification("No active game found. Redirecting to game selection.", 2000);
-    router.replace({ name: 'PvpTypeSelect' })
-    return
+    if (DEV) {
+      console.log("DEV mode: Creating dummy game...");
+      try {
+        socket.emit("createDevGame", { playerId: player?.player_id });
+      } catch (err) {
+        console.error("Failed to create DEV game:", err);
+      }
+    } else {
+      triggerNotification("No active game found. Redirecting to game selection.", 2000);
+      router.replace({ name: 'PvpTypeSelect' });
+      return;
+    }
   }
+
+  // Listen for DEV game response
+  socket.once("devGameCreated", (game) => {
+    gameStore.gameId = game.gameId;
+    gameStore.questions = game.questions;
+    gameStore.progress = game.progress;
+    gameStore.team1 = game.team1;
+    gameStore.team2 = game.team2;
+    gameStore.playerTeam = game.playerTeam;
+
+    question_data.value = gameStore.questions[0];
+    console.log("DEV game created:", game);
+  });
 
   // Fetch game state from server
   socket.emit("getGameState", { gameId: gameStore.gameId })
@@ -231,11 +254,6 @@ onMounted(async () => {
       progress: gameStore.progress,
       finished: gameStore.finished
     })
-  })
-
-  // Handle error messages from server
-  socket.once("errorMessage", () => {
-    router.replace({ name: 'PvpTypeSelect' })
   })
 
   // Listen for sabotage
@@ -293,8 +311,8 @@ onUnmounted(() => {
     </div>
 
     <!-- Slide Panel Toggle -->
-    <QuestionDescriptionPanel :show="showDescriptionPopup" :question="question_data"
-      :timeLimitEnabled="timeLimitEnabled" :selectedModifier="selectedModifier" @close="showDescriptionPopup = false" />
+    <QuestionBrowser :show="showDescriptionPopup" :questions="gameStore.questions" :timeLimitEnabled="timeLimitEnabled"
+      :selectedModifier="selectedModifier" @close="showDescriptionPopup = false" />
 
     <!-- Submission result -->
     <ResultPopup :show="showResultPopup" :finalScore="finalScore"

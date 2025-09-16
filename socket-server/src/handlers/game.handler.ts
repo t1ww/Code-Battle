@@ -2,6 +2,7 @@
 import type { Server, Socket } from "socket.io";
 import { GameService } from "@/services/game.service";
 import { sanitizeTeam } from "@/utils/sanitize";
+import { Team } from "@/types";
 
 export function registerGameHandlers(io: Server, socket: Socket, gameService: GameService) {
     // Sabotage: one team sends an effect to the other
@@ -93,6 +94,30 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
             // Example: notify other players in the game
             io.to(gameRoom).emit("playerDisconnected", { socketId: socket.id });
         });
+    });
+
+    // DEV: Create a dummy game for testing
+    socket.on("createDevGame", async ({ playerId }) => {
+        try {
+            const dummyTeam1: Team = {
+                team_id: "dev-team1",
+                players: [{
+                    player_id: playerId, name: "DEV Player", socket,
+                    email: ""
+                }]
+            };
+            const dummyTeam2: Team = {
+                team_id: "dev-team2",
+                players: [{ player_id: "opponent-dev", name: "DEV Opponent", socket, email: "" }]
+            };
+
+            const game = await gameService.createGame(dummyTeam1, dummyTeam2);
+
+            socket.emit("devGameCreated", game);
+        } catch (err) {
+            console.error("Failed to create DEV game:", err);
+            socket.emit("errorMessage", { message: "Failed to create DEV game" });
+        }
     });
 
 }
