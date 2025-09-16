@@ -1,46 +1,4 @@
 <!-- frontend\code-battle\src\components\gameplay\QuestionDescriptionPanel.vue -->
-<template>
-    <transition name="slide-down">
-        <div v-if="show" class="description-popup-panel">
-            <div class="description-popup-inner-panel">
-                <div class="description-popup-content" v-if="question">
-                    <h3>Description</h3>
-                    <hr />
-                    <h4>Level {{ question.level }}: {{ question.question_name }}</h4>
-
-                    <div class="section">
-                        <p><strong>Description:</strong></p>
-                        <p>{{ question.description }}</p>
-                    </div>
-
-                    <div class="section">
-                        <p><strong>Test Cases:</strong></p>
-                        <div class="test-cases">
-                            <div v-for="(test, i) in question.test_cases" :key="i" class="test-case">
-                                <strong>Test Case {{ i + 1 }}</strong><br />
-                                Input: {{ test.input || '(no input)' }}<br />
-                                Output: {{ test.expected_output }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="section">
-                        <CheckboxToggle :model-value="timeLimitEnabled" label="Time limit" disabled />
-                    </div>
-
-                    <div class="section modifier">
-                        <span>Modifier:</span>
-                        <span class="modifier-value">{{ selectedModifier }}</span>
-                    </div>
-                </div>
-            </div>
-            <div class="description-popup-toggle">
-                <button @click="$emit('close')">▲</button>
-            </div>
-        </div>
-    </transition>
-</template>
-
 <script setup lang="ts">
 import CheckboxToggle from '../etc/CheckboxToggle.vue';
 
@@ -53,6 +11,49 @@ defineProps<{
 
 defineEmits(['close'])
 </script>
+
+<template>
+    <transition name="slide-down">
+        <div v-if="show" class="description-popup-panel">
+            <div class="description-popup-inner-panel" v-if="question">
+                <h3>Description</h3>
+                <hr />
+                <h4>Level {{ question.level }}: {{ question.question_name }}</h4>
+
+                <div class="section">
+                    <p><strong>Description:</strong></p>
+                    <p>{{ question.description }}</p>
+                </div>
+
+                <div class="section">
+                    <p><strong>Test Cases:</strong></p>
+                    <div class="test-cases">
+                        <div v-for="(test, i) in question.test_cases" :key="i" class="test-case"
+                            :class="{ passed: question.testResults?.[i]?.passed }">
+                            <strong>Test Case {{ i + 1 }}</strong>
+                            <span v-if="question.testResults?.[i]?.passed" class="checkmark">✔</span><br />
+                            Input: {{ test.input || '(no input)' }}<br />
+                            Output: {{ test.expected_output }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <CheckboxToggle :model-value="timeLimitEnabled" label="Time limit" disabled />
+                </div>
+
+                <div class="section modifier">
+                    <span>Modifier:</span>
+                    <span class="modifier-value">{{ selectedModifier }}</span>
+                </div>
+            </div>
+
+            <div class="description-popup-toggle">
+                <button @click="$emit('close')">▲</button>
+            </div>
+        </div>
+    </transition>
+</template>
 
 <style scoped>
 .description-popup-panel {
@@ -157,5 +158,32 @@ defineEmits(['close'])
         transform: translateY(-100%);
         opacity: 0;
     }
+}
+
+/* Test cases passed */
+.test-cases {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.test-case {
+    background-color: #6b7280;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-family: monospace;
+    width: 15vw;
+    position: relative;
+}
+
+.test-case.passed {
+    border: 2px solid #22c55e;
+    background-color: #4ade8020;
+}
+
+.checkmark {
+    color: #22c55e;
+    font-weight: bold;
+    margin-left: 0.25rem;
 }
 </style>

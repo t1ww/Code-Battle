@@ -1,40 +1,53 @@
 <!-- frontend\code-battle\src\components\gameplay\QuestionBrowser.vue -->
 <script setup lang="ts">
-import QuestionDescriptionPanel from './QuestionDescriptionPanel.vue'
+import QuestionDescriptionPanel from '@/components/gameplay/QuestionDescriptionPanel.vue'
 import { computed } from 'vue'
+import { usePvpGameStore } from '@/stores/usePvpGameStore'
+
+const gameStore = usePvpGameStore()
 
 const props = defineProps<{
     questions: any[],
     show: boolean,
     timeLimitEnabled: boolean,
     selectedModifier: string,
-    currentQuestionIndex: number, // passed from parent
+    currentQuestionIndex: number,
 }>()
 
-// Use a computed to sync with parent
 const emit = defineEmits(['close', 'update:currentQuestionIndex'])
 const currentIdx = computed({
-    get: () => props.currentQuestionIndex, // read prop
-    set: (val: number) => emit('update:currentQuestionIndex', val) // emit change to parent
+    get: () => props.currentQuestionIndex,
+    set: (val: number) => emit('update:currentQuestionIndex', val)
 })
+
+// Map questions with finished/testResults info
+const questionsWithStatus = computed(() =>
+    props.questions.map((q, idx) => {
+        const teamKey = gameStore.playerTeam || 'team1'
+        const progress = gameStore.progress[teamKey]?.[idx]
+        const finished = progress?.every(Boolean) // all test cases passed
+        const testResults = progress?.map((passed: boolean) => ({ passed })) || []
+        return { ...q, finished, testResults }
+    })
+)
 </script>
 
 <template>
     <div class="question-browser">
-        <!-- 🔹 Tabs for switching between questions -->
+        <!-- Tabs -->
         <div v-if="show" class="tabs">
-            <button v-for="(q, idx) in questions" :key="q.question_id" :class="{ active: idx === currentIdx }"
-                @click="currentIdx = idx">
+            <button v-for="(q, idx) in questionsWithStatus" :key="q.id"
+                :class="{ active: idx === currentIdx, finished: q.finished }" @click="currentIdx = idx">
                 {{ q.question_name }}
+                <span v-if="q.finished" class="checkmark">✔</span>
             </button>
         </div>
 
-        <!-- 🔹 The question description panel -->
-        <QuestionDescriptionPanel :show="show" :question="questions[currentQuestionIndex]" :timeLimitEnabled="timeLimitEnabled"
-            :selectedModifier="selectedModifier" @close="$emit('close')" />
+        <!-- Question description panel -->
+        <QuestionDescriptionPanel :show="show" :question="questionsWithStatus[currentIdx]"
+            :timeLimitEnabled="timeLimitEnabled" :selectedModifier="selectedModifier" @close="$emit('close')" />
     </div>
 </template>
-
 
 <style scoped>
 .tabs {
@@ -70,5 +83,16 @@ const currentIdx = computed({
     color: var(--theme-color);
     border: solid 1px var(--theme-color);
     font-weight: bold;
+}
+
+.tabs button.finished {
+    background: #00ff00;
+    color: black;
+}
+
+.checkmark {
+    color: #22c55e;
+    font-weight: bold;
+    margin-left: 0.5rem;
 }
 </style>
