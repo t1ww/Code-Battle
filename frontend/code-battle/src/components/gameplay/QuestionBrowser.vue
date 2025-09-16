@@ -52,15 +52,23 @@ const currentIdx = computed({
 
 .tabs button {
     padding: 0.25rem 0.5rem;
-    background: #4b5563;
+    background: #313a42;
     border: none;
     color: white;
     cursor: pointer;
     border-radius: 4px 4px 0 0;
+    width: 12rem;
+}
+
+.tabs button:hover {
+    background: #485466;
+    font-weight: bold;
 }
 
 .tabs button.active {
-    background: #6b7280;
+    background: #191d24;
+    color: var(--theme-color);
+    border: solid 1px var(--theme-color);
     font-weight: bold;
 }
 </style>
