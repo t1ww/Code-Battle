@@ -1,65 +1,100 @@
-<!-- frontend\code-battle\src\components\popups\ResultPopup.vue -->
+<!-- frontend\code-battle\src\components\popups\PvpResultPopup.vue -->
 <template>
-    <transition name="fade">
-        <div v-if="show" class="popup-backdrop" @click.self="$emit('close')">
-            <div class="popup-content">
-                <h2>Test Cases</h2>
-                <div v-for="(result, i) in testResults" :key="i" class="test-result"
-                    :style="{ color: result.passed ? 'green' : 'red' }">
-                    <p><strong>Test Case {{ i + 1 }}:</strong> {{ result.passed ? 'Passed' : 'Failed' }}</p>
-                </div>
-                <button @click="$emit('close')">Close</button>
-            </div>
+    <div v-if="show" class="popup-overlay">
+        <div class="popup-container">
+            <h2 v-if="winner">
+                <span v-if="isWinner">🎉 You Win! 🎉</span>
+                <span v-else-if="isLoser">💀 You Lose 💀</span>
+                <span v-else>🤝 Draw 🤝</span>
+            </h2>
+            <h2 v-else>Test Results</h2>
+
+            <ul class="test-results">
+                <li v-for="(test, index) in testResults" :key="index"
+                    :class="{ passed: test.passed, failed: !test.passed }">
+                    <strong>Test {{ index + 1 }}:</strong>
+                    <span>{{ test.passed ? '✅ Passed' : '❌ Failed' }}</span>
+                    <div class="details" v-if="!test.passed">
+                        <p><strong>Input:</strong> {{ test.input }}</p>
+                        <p><strong>Expected:</strong> {{ test.expected_output }}</p>
+                        <p><strong>Output:</strong> {{ test.output }}</p>
+                    </div>
+                </li>
+            </ul>
+            <button @click="$emit('close')">Close</button>
         </div>
-    </transition>
+    </div>
 </template>
 
 <script setup lang="ts">
-defineProps<{
+import { usePvpGameStore } from '@/stores/usePvpGameStore'
+import { computed, defineProps } from 'vue'
+const gameStore = usePvpGameStore()
+
+interface TestResult {
+    passed: boolean
+    input: string
+    output: string
+    expected_output: string
+}
+
+const props = defineProps<{
     show: boolean
-    testResults: {
-        passed: boolean
-        output: string
-        expected_output: string
-        input: string
-    }[]
+    testResults: TestResult[]
+    winner?: string | null
 }>()
-defineEmits(['close'])
+
+const isWinner = computed(() => props.winner === gameStore.playerTeam)
+const isLoser = computed(() => props.winner === gameStore.opponentTeam)
+const isDraw = computed(() => props.winner === 'draw')
 </script>
 
 <style scoped>
-.popup-backdrop {
+.popup-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.6);
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 9999;
 }
 
-.popup-content {
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
-    text-align: left;
+.popup-container {
+    background: #111;
+    color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    width: 400px;
     max-height: 80vh;
-    width: 20rem;
     overflow-y: auto;
 }
 
-.test-result {
-    margin-bottom: 1rem;
-    font-size: 0.9rem;
+.test-results li.passed {
+    color: #0f0;
 }
 
-.popup-content button {
-    display: block;
-    margin: 1rem auto 0;
-    padding: 0.5rem 1.5rem;
+.test-results li.failed {
+    color: #f00;
+}
+
+.details {
+    font-size: 0.85rem;
+    margin-left: 12px;
+}
+
+.score {
+    margin-top: 12px;
     font-weight: bold;
+}
+
+button {
+    margin-top: 16px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    background: #444;
+    color: #fff;
+    cursor: pointer;
 }
 </style>

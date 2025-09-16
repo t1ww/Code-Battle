@@ -80,9 +80,8 @@ const testResults = ref<{
   results: { passed: boolean; output: string; expected_output: string; input: string }[]
   total_score: number
 } | null>(null)
-const finalScore = ref(0)
 
-function openMessagePopup(title: string, message: string) {
+function openErrorMessagePopup(title: string, message: string) {
   messagePopupTitle.value = title
   messagePopupMessage.value = message
   showMessagePopup.value = true
@@ -113,8 +112,6 @@ const submitCode = async () => {
     const resultsForCurrent = mapTestResults(data, currentQuestion);
 
     testResults.value = resultsForCurrent;
-    finalScore.value = resultsForCurrent.total_score;
-
     // Determine passed test indices for this submission
     const passedIndices = resultsForCurrent.results
       .map((r, i) => (r.passed ? i : -1))
@@ -143,7 +140,7 @@ const submitCode = async () => {
 
   } catch (error) {
     console.error('Code run failed:', error)
-    openMessagePopup('Server Error', String((error as any).message || error))
+    openErrorMessagePopup('Server Error', String((error as any).message || error))
   } finally {
     isLoading.value = false
   }
@@ -161,7 +158,7 @@ async function runCodeOnApi(code: string, test_cases: any[]) {
   )
 
   if (errorResult) {
-    openMessagePopup(
+    openErrorMessagePopup(
       errorResult.output.startsWith('[Compilation Error]') ? 'Compilation Error' : 'Runtime Error',
       "---------- < Fix it before submitting! :D > ----------"
     )
@@ -188,9 +185,19 @@ function mapTestResults(data: CodeRunResponse, question: any) {
 }
 
 function saveProgress(questionIndex: number, results: any) {
-  const teamKey = gameStore.playerTeam || 'team1'
-  if (!gameStore.progress[teamKey]) gameStore.progress[teamKey] = []
-  gameStore.progress[teamKey][questionIndex] = results
+  const teamKey = gameStore.playerTeam || 'team1';
+  if (!gameStore.progress[teamKey]) gameStore.progress[teamKey] = [];
+
+  // store a boolean[] per-test so progress shape matches server (boolean[][])
+  const perTestBooleans = (results?.results ?? []).map((r: any) => !!r.passed);
+
+  gameStore.progress[teamKey][questionIndex] = perTestBooleans;
+
+  console.log('questions ids:', gameStore.questions.map((q, i) => ({ i, id: q.id, level: q.level })));
+  console.log('progress lengths:', {
+    team1: (gameStore.progress.team1 || []).length,
+    team2: (gameStore.progress.team2 || []).length
+  });
 }
 
 function updateGameState(game: any) {
@@ -261,6 +268,41 @@ function voteDraw() {
   } catch (e) {
     console.error("Failed to vote draw:", e);
     triggerNotification("Failed to vote draw", 1200);
+  }
+}
+
+// -----------------
+// 🛠️ DEV Helpers
+// -----------------
+function forceClearQuestion() {
+  if (!DEV) return; // only in DEV
+  const teamKey = gameStore.playerTeam || 'team1';
+  const qIndex = currentQuestionIndex.value;
+
+  // mark all tests as passed locally
+  const question = gameStore.questions[qIndex];
+  if (!question) return;
+
+  const allPassed = question.test_cases.map(() => true);
+  if (!gameStore.progress[teamKey]) gameStore.progress[teamKey] = [];
+  if (!gameStore.progressFullPass[teamKey]) gameStore.progressFullPass[teamKey] = [];
+
+  gameStore.progress[teamKey][qIndex] = allPassed;
+  gameStore.progressFullPass[teamKey][qIndex] = true;
+
+  showClearedPopup.value = true;
+
+  console.log(`DEV: Force cleared question ${qIndex} for ${teamKey}`);
+
+  // Emit to backend like a normal full pass
+  if (gameStore.gameId && gameStore.playerTeam) {
+    socket.emit('questionFinished', {
+      gameId: gameStore.gameId,
+      team: teamKey,
+      questionIndex: qIndex,
+      passedIndices: allPassed.map((_: any, i: any) => i) // mark all test cases as passed
+    });
+    triggerNotification(`DEV: Question ${qIndex} force-cleared and emitted to backend!`, 1200);
   }
 }
 
@@ -335,14 +377,23 @@ onMounted(async () => {
   });
 
   // Listen for game end
-  socket.on("gameEnd", (data: { winner: string, progress: any }) => {
+  socket.on("gameEnd", (data: { winner: 'team1' | 'team2' | 'draw', progress: any }) => {
     // show proper result popup (you may already have a PvpResultPopup for this)
-    // If you want to show a dedicated end popup:
+    // Hide other popups
+    showClearedPopup.value = false;
+    showMessagePopup.value = false;
+    showVoteDrawPanel.value = false;
+    showOpponentPanel.value = false;
+
+    // Show a dedicated end popup:
     showResultPopup.value = true;
+
     // Optionally set some store fields so popup can display winner
     gameStore.finished = true;
+    gameStore.winner = data.winner;
+
     // you can also store winner somewhere (gameStore.winner = data.winner)
-    triggerNotification(`Game ended — winner: ${data.winner}`, 2500);
+    setTimeout(() => triggerNotification(`Game ended — winner: ${data.winner}`, 2500), 2000);
   });
 
   // Start timer if enabled
@@ -358,6 +409,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <!-- Error message -->
   <MessagePopup v-if="showMessagePopup" :title="messagePopupTitle" :message="messagePopupMessage"
     :buttonOnClick="() => showMessagePopup = false" />
 
@@ -397,18 +449,13 @@ onUnmounted(() => {
       <span v-if="isLoading" class="loading-spinner">Loading...</span>
     </div>
 
-
-    <!-- Submission result -->
-    <PvpResultPopup :show="showResultPopup" :testResults="testResults?.results || []"
-      @close="showResultPopup = false" />
-
     <!-- Opponent panel with sliding toggle -->
     <transition name="slide-right">
       <div class="opponent-panel-wrapper" v-if="showOpponentPanel">
         <OpponentPanel :onClose="toggleOpponentPanel" :sendSabotage="sendSabotage"
           :opponent="gameStore.opponentTeamObj?.players[0]" :questions="gameStore.questions"
-          :progress="gameStore.progress[gameStore.opponentTeam || 'team1'] || {}"
-          :progressFullPass="gameStore.progressFullPass?.[gameStore.opponentTeam || 'team1'] || {}"
+          :progress="gameStore.progress[gameStore.opponentTeam || 'team1'] || []"
+          :progressFullPass="gameStore.progressFullPass?.[gameStore.opponentTeam || 'team1'] || []"
           :sabotagePoints="sabotagePoint" />
       </div>
     </transition>
@@ -432,6 +479,19 @@ onUnmounted(() => {
   <!-- Question cleared popup (not game end) -->
   <MessagePopup v-if="showClearedPopup" title="Question cleared!" message="Nice job — question cleared. Keep going!"
     :buttonOnClick="() => { showClearedPopup = false }" />
+
+  <!-- Game End result -->
+  <PvpResultPopup :show="showResultPopup" :testResults="testResults?.results || []"
+    :questions="gameStore.questions" :progress="gameStore.progress[gameStore.playerTeam || 'team1'] || []"
+    :progressFullPass="gameStore.progressFullPass?.[gameStore.playerTeam || 'team1'] || []"
+    :winner="gameStore.finished ? gameStore.winner : null" @close="showResultPopup = false" />
+
+  <div v-if="DEV" class="dev-buttons" style="position: fixed; bottom: 10px; right: 10px;">
+    <button @click="forceClearQuestion"
+      style="background: orange; color: white; padding: 6px 12px; border-radius: 4px;">
+      Force Clear Question
+    </button>
+  </div>
 </template>
 
 <style lang="css" src="@/styles/gameplay.css"></style>

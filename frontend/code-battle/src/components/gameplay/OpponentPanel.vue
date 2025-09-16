@@ -16,7 +16,7 @@ const props = defineProps<{
     }
     questions: Question[]
     progress: any
-    progressFullPass?: any // <--- added
+    progressFullPass?: any
     sabotagePoints: number
 }>()
 </script>
@@ -28,22 +28,24 @@ const props = defineProps<{
 
         <!-- Header -->
         <div class="panel-header">
-            <PlayerAvatar :player="opponent" size="40" />
+            <!-- use props.opponent here (previously used `opponent`) -->
+            <PlayerAvatar :player="props.opponent" size="40" />
             <span class="panel-title">
-                {{ opponent.name }} | Point : {{ opponent.points }}
+                {{ props.opponent?.name }} | Point : {{ props.opponent?.points }}
             </span>
         </div>
 
         <!-- Question progress -->
         <div class="questions">
-            <div v-for="q in props.questions" :key="q.id" class="question">
+            <!-- iterate with index so we can use the same index into the progress array -->
+            <div v-for="(q, qIndex) in props.questions" :key="q.id" class="question">
                 <hr />
                 <div class="question-title">
-                    Questions {{ q.id }} : {{ q.question_name }}
+                    Questions {{ qIndex + 1 }} : {{ q.question_name }}
                 </div>
 
                 <!-- Loop through each test case for this question -->
-                <div class="test-case" v-for="(test, index) in props.progress[q.id - 1] || []" :key="index">
+                <div class="test-case" v-for="(test, index) in props.progress?.[qIndex] || []" :key="index">
                     <span :class="['status-badge', test ? 'pass' : 'in-progress']">
                         <template v-if="test">✔ Passed</template>
                         <template v-else>
@@ -51,9 +53,9 @@ const props = defineProps<{
                         </template>
                     </span>
                 </div>
-                
+
                 <!-- Full pass status -->
-                <div v-if="props.progressFullPass?.[q.id - 1]" class="test-case pass">
+                <div v-if="props.progressFullPass?.[qIndex]" class="test-case pass">
                     <span class="status-badge pass">✔ Cleared</span>
                 </div>
             </div>
@@ -63,9 +65,9 @@ const props = defineProps<{
 
         <!-- Footer -->
         <div class="footer">
-            <div>Your sabotage point = {{ sabotagePoints }}</div>
+            <div>Your sabotage point = {{ props.sabotagePoints }}</div>
             <button class="sabotage-btn" @click="props.sendSabotage()">
-                Send sabotage!!!!
+                Send sabotage!!!!!
             </button>
         </div>
     </div>
