@@ -187,13 +187,42 @@ function mapTestResults(data: CodeRunResponse, question: any) {
   };
 }
 
-
 function saveProgress(questionIndex: number, results: any) {
   const teamKey = gameStore.playerTeam || 'team1'
   if (!gameStore.progress[teamKey]) gameStore.progress[teamKey] = []
   gameStore.progress[teamKey][questionIndex] = results
 }
 
+function updateGameState(game: any) {
+  gameStore.gameId = game.gameId
+  gameStore.questions = game.questions
+  gameStore.progress = game.progress
+  gameStore.progressFullPass = game.progressFullPass || { team1: [], team2: [] }
+  gameStore.team1 = game.team1
+  gameStore.team2 = game.team2
+  gameStore.playerTeam = game.playerTeam
+  gameStore.finished = game.finished
+  // 🔹 Log the full game state
+  console.log("Game state received:", {
+    gameId: gameStore.gameId,
+    playerTeam: gameStore.playerTeam,
+    opponentTeam: gameStore.opponentTeam,
+    team1: gameStore.team1,
+    team2: gameStore.team2,
+    questions: gameStore.questions,
+    progress: gameStore.progress,
+    finished: gameStore.finished
+  })
+}
+
+function updateProgress(team: 'team1' | 'team2', questionIndex: number, progress: any, fullPass?: any) {
+  if (!gameStore.progress[team]) gameStore.progress[team] = [];
+  if (!gameStore.progressFullPass) gameStore.progressFullPass = { team1: [], team2: [] };
+  if (!gameStore.progressFullPass[team]) gameStore.progressFullPass[team] = [];
+
+  if (progress?.[questionIndex]) gameStore.progress[team][questionIndex] = progress[questionIndex];
+  if (fullPass?.[questionIndex] !== undefined) gameStore.progressFullPass[team][questionIndex] = fullPass[questionIndex];
+}
 
 // =============================
 // 🖥️ Computed
@@ -259,25 +288,8 @@ onMounted(async () => {
 
   // Listen for DEV game response
   socket.once("devGameCreated", (game) => {
-    gameStore.gameId = game.gameId;
-    gameStore.questions = game.questions;
-    gameStore.progress = game.progress;
-    gameStore.progressFullPass = game.progressFullPass || { team1: [], team2: [] };
-    gameStore.team1 = game.team1;
-    gameStore.team2 = game.team2;
-    gameStore.playerTeam = game.playerTeam;
     console.log("DEV game created:", game);
-    // 🔹 Log the full game state
-    console.log("Game state received:", {
-      gameId: gameStore.gameId,
-      playerTeam: gameStore.playerTeam,
-      opponentTeam: gameStore.opponentTeam,
-      team1: gameStore.team1,
-      team2: gameStore.team2,
-      questions: gameStore.questions,
-      progress: gameStore.progress,
-      finished: gameStore.finished
-    })
+    updateGameState(game)
   });
 
   // Fetch game state from server
@@ -285,66 +297,24 @@ onMounted(async () => {
 
   // Listen for game state response
   socket.once("gameState", (game) => {
-    gameStore.questions = game.questions
-    gameStore.progress = game.progress
-    gameStore.progressFullPass = game.progressFullPass || { team1: [], team2: [] };
-    gameStore.team1 = game.team1
-    gameStore.team2 = game.team2
-    gameStore.finished = game.finished
-    gameStore.playerTeam = game.playerTeam
-    // 🔹 Log the full game state
-    console.log("Game state received:", {
-      gameId: gameStore.gameId,
-      playerTeam: gameStore.playerTeam,
-      opponentTeam: gameStore.opponentTeam,
-      team1: gameStore.team1,
-      team2: gameStore.team2,
-      questions: gameStore.questions,
-      progress: gameStore.progress,
-      finished: gameStore.finished
-    })
+    updateGameState(game)
   })
 
   // Listen for question progress updates from server (per-team per-question per-test)
-  socket.on("questionProgress", (data: {
-    team: string,
-    progress: any,
-    progressFullPass?: any,
-    questionIndex?: number
-  }) => {
-    if (!data || !data.team) return;
-    const key = data.team as "team1" | "team2";
+  socket.on("questionProgress", (data) => {
+    if (!data?.team) return;
     const qIndex = data.questionIndex ?? currentQuestionIndex.value;
+    updateProgress(data.team as 'team1' | 'team2', qIndex, data.progress, data.progressFullPass);
 
-    // Make sure the store structure exists
-    if (!gameStore.progress[key]) gameStore.progress[key] = [];
-    if (!gameStore.progressFullPass) gameStore.progressFullPass = { team1: [], team2: [] };
-    if (!gameStore.progressFullPass[key]) gameStore.progressFullPass[key] = [];
+    const progressArr = gameStore.progress[data.team as 'team1' | 'team2'][qIndex];
+    const testCasesFinished = Array.isArray(progressArr) && progressArr.every(Boolean);
+    const questionFinished = !!gameStore.progressFullPass[data.team as 'team1' | 'team2'][qIndex];
 
-    // Update per-test progress for this question
-    if (data.progress?.[qIndex]) {
-      gameStore.progress[key][qIndex] = data.progress[qIndex];
-    }
-
-    // Check if all test cases passed for this question
-    const progress = gameStore.progress[key][qIndex];
-    const testCasesFinished = Array.isArray(progress) && progress.every(Boolean);
-
-    // Update full-pass flags if provided
-    if (data.progressFullPass?.[qIndex] !== undefined) {
-      gameStore.progressFullPass[key][qIndex] = data.progressFullPass[qIndex];
-    }
-
-    const questionFinished = !!gameStore.progressFullPass[key][qIndex];
-
-    // Notify only if all test cases are done but question is not fully passed
     if (testCasesFinished && !questionFinished) {
-      setTimeout(() => {
-        triggerNotification(
-          "This question doesn't count yet — all test cases must pass in the same submission.",
-          1800
-        );
-      }, 2000);
+      setTimeout(() => triggerNotification(
+        "This question doesn't count yet — all test cases must pass in the same submission.",
+        1800
+      ), 2000);
     }
   });
 
