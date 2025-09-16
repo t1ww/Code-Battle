@@ -1,32 +1,36 @@
 <!-- frontend\code-battle\src\components\gameplay\QuestionBrowser.vue -->
 <script setup lang="ts">
 import QuestionDescriptionPanel from './QuestionDescriptionPanel.vue'
-import { ref } from 'vue'
+import { computed } from 'vue'
 
-defineProps<{
-    questions: any[] // array of questions (PvP)
-    show: boolean
-    timeLimitEnabled: boolean
-    selectedModifier: string
+const props = defineProps<{
+    questions: any[],
+    show: boolean,
+    timeLimitEnabled: boolean,
+    selectedModifier: string,
+    currentQuestionIndex: number, // passed from parent
 }>()
 
-defineEmits(['close'])
-
-const currentIndex = ref(0)
+// Use a computed to sync with parent
+const emit = defineEmits(['close', 'update:currentQuestionIndex'])
+const currentIdx = computed({
+    get: () => props.currentQuestionIndex, // read prop
+    set: (val: number) => emit('update:currentQuestionIndex', val) // emit change to parent
+})
 </script>
 
 <template>
     <div class="question-browser">
         <!-- 🔹 Tabs for switching between questions -->
         <div v-if="show" class="tabs">
-            <button v-for="(q, idx) in questions" :key="q.question_id" :class="{ active: idx === currentIndex }"
-                @click="currentIndex = idx">
+            <button v-for="(q, idx) in questions" :key="q.question_id" :class="{ active: idx === currentIdx }"
+                @click="currentIdx = idx">
                 {{ q.question_name }}
             </button>
         </div>
 
         <!-- 🔹 The question description panel -->
-        <QuestionDescriptionPanel :show="show" :question="questions[currentIndex]" :timeLimitEnabled="timeLimitEnabled"
+        <QuestionDescriptionPanel :show="show" :question="questions[currentQuestionIndex]" :timeLimitEnabled="timeLimitEnabled"
             :selectedModifier="selectedModifier" @close="$emit('close')" />
     </div>
 </template>

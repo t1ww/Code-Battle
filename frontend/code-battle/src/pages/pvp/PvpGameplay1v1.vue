@@ -59,6 +59,7 @@ const messagePopupTitle = ref('')
 const messagePopupMessage = ref('')
 const showTimeoutPopup = ref(false)
 const showResultPopup = ref(false)
+const currentQuestionIndex = ref(0)
 
 // Toggle functions
 function toggleOpponentPanel() { showOpponentPanel.value = !showOpponentPanel.value }
@@ -282,8 +283,9 @@ onUnmounted(() => {
   <div class="container">
     <!-- Slide Panel Toggle -->
     <QuestionBrowser :show="showQuestionsPanel" :questions="gameStore.questions" :timeLimitEnabled="timeLimitEnabled"
-      :selectedModifier="selectedModifier" @close="showQuestionsPanel = false" />
-      
+      :selectedModifier="selectedModifier" v-model:currentQuestionIndex="currentQuestionIndex"
+      @close="showQuestionsPanel = false" />
+
     <!-- In case question data is missing -->
     <template v-if="!question_data">
       <div class="error-message">
