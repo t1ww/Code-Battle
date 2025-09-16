@@ -306,26 +306,45 @@ onMounted(async () => {
   })
 
   // Listen for question progress updates from server (per-team per-question per-test)
-  socket.on("questionProgress", (data: { team: string, progress: any, progressFullPass?: any, questionIndex?: number }) => {
+  socket.on("questionProgress", (data: {
+    team: string,
+    progress: any,
+    progressFullPass?: any,
+    questionIndex?: number
+  }) => {
     if (!data || !data.team) return;
     const key = data.team as "team1" | "team2";
-    // Update per-test progress
-    if (data.progress) {
-      gameStore.progress[key] = data.progress;
-      // Check if all test cases are passed in this submission
-      const progress = gameStore.progress[gameStore.playerTeam || 'team1']?.[currentQuestionIndex.value];
-      const finished = progress?.every(Boolean) // all test cases passed
-      if (finished) {
-        setTimeout(() => {
-          triggerNotification("This question doesn't count yet — all test cases must pass in the same submission.", 1800);
-        }, 2000);
-      }
+    const qIndex = data.questionIndex ?? currentQuestionIndex.value;
+
+    // Make sure the store structure exists
+    if (!gameStore.progress[key]) gameStore.progress[key] = [];
+    if (!gameStore.progressFullPass) gameStore.progressFullPass = { team1: [], team2: [] };
+    if (!gameStore.progressFullPass[key]) gameStore.progressFullPass[key] = [];
+
+    // Update per-test progress for this question
+    if (data.progress?.[qIndex]) {
+      gameStore.progress[key][qIndex] = data.progress[qIndex];
     }
+
+    // Check if all test cases passed for this question
+    const progress = gameStore.progress[key][qIndex];
+    const testCasesFinished = Array.isArray(progress) && progress.every(Boolean);
+
     // Update full-pass flags if provided
-    if (data.progressFullPass) {
-      // Ensure structure on store
-      if (!gameStore.progressFullPass) gameStore.progressFullPass = { team1: [], team2: [] };
-      gameStore.progressFullPass[key] = data.progressFullPass;
+    if (data.progressFullPass?.[qIndex] !== undefined) {
+      gameStore.progressFullPass[key][qIndex] = data.progressFullPass[qIndex];
+    }
+
+    const questionFinished = !!gameStore.progressFullPass[key][qIndex];
+
+    // Notify only if all test cases are done but question is not fully passed
+    if (testCasesFinished && !questionFinished) {
+      setTimeout(() => {
+        triggerNotification(
+          "This question doesn't count yet — all test cases must pass in the same submission.",
+          1800
+        );
+      }, 2000);
     }
   });
 
