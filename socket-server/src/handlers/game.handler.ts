@@ -15,9 +15,9 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
     });
 
     // When a team finishes a question
-    socket.on("questionFinished", ({ gameId, team }) => {
+    socket.on("questionFinished", ({ gameId, team, questionIndex }) => {
         try {
-            gameService.handleQuestionFinished(gameId, team);
+            gameService.handleQuestionFinished(gameId, team, questionIndex);
         } catch (err) {
             console.error("Error handling questionFinished:", err);
             socket.emit("errorMessage", { message: "Failed to finish question" });

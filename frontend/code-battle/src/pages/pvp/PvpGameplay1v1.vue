@@ -302,7 +302,10 @@ onUnmounted(() => {
     <!-- Opponent panel with sliding toggle -->
     <transition name="slide-right">
       <div class="opponent-panel-wrapper" v-if="showOpponentPanel">
-        <OpponentPanel :onClose="toggleOpponentPanel" :sendSabotage="sendSabotage" />
+        <OpponentPanel :onClose="toggleOpponentPanel" :sendSabotage="sendSabotage"
+          :opponent="gameStore.opponentTeam === 'team1' ? gameStore.team1 : gameStore.team2"
+          :questions="gameStore.progress || []" :sabotagePoints="sabotagePoint" />
+
       </div>
     </transition>
 

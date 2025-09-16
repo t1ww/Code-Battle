@@ -7,44 +7,19 @@ import SandClock from '@/assets/icons.svg/SandClock.vue'
 const props = defineProps<{
     onClose: () => void
     sendSabotage: () => void
+    opponent: {
+        player_id: string
+        avatar_url?: string
+        name: string
+        points: number
+    }
+    questions: {
+        id: number
+        title: string
+        cases: { id: number; status: string }[]
+    }[]
+    sabotagePoints: number
 }>()
-
-// Dummy opponent for now
-const opponent = {
-    player_id: 'dummy-1',
-    avatar_url: '', // fallback avatar
-    name: 'Opponent',
-    points: 2,
-}
-
-// Example progress data
-const questions = [
-    {
-        id: 1,
-        title: 'Hello world',
-        cases: [
-            { id: 1, status: 'pass' },
-            { id: 2, status: 'pass' },
-        ],
-    },
-    {
-        id: 2,
-        title: 'Sum of Two Numbers',
-        cases: [
-            { id: 1, status: 'in-progress' },
-            { id: 2, status: 'in-progress' },
-        ],
-    },
-    {
-        id: 3,
-        title: 'Even or Odd',
-        cases: [
-            { id: 1, status: 'in-progress' },
-            { id: 2, status: 'in-progress' },
-        ],
-    },
-]
-const sabotagePoints = 2
 </script>
 
 <template>

@@ -23,7 +23,7 @@ export interface GameRoom {
     team1: Team;
     team2: Team;
     questions: Question[];
-    progress: Record<"team1" | "team2", number>;
+    progress: Record<"team1" | "team2", boolean[]>;
     finished: boolean;
     drawVotes?: Set<string>;
 }
@@ -50,7 +50,10 @@ export class GameService {
             team1,
             team2,
             questions,
-            progress: { team1: 0, team2: 0 },
+            progress: {
+                team1: Array(questions.length).fill(false),
+                team2: Array(questions.length).fill(false)
+            },
             finished: false,
             drawVotes: new Set<string>(),
         };
@@ -107,26 +110,29 @@ export class GameService {
     }
 
     /** Handle when a team finishes a question */
-    handleQuestionFinished(gameId: string, teamKey: "team1" | "team2") {
+    handleQuestionFinished(gameId: string, teamKey: "team1" | "team2", questionIndex: number) {
         const game = this.games.get(gameId);
         if (!game || game.finished) return;
 
-        game.progress[teamKey]++;
+        // Mark that question as finished
+        game.progress[teamKey][questionIndex] = true;
 
+        // Notify clients of updated progress
         this.io.to(`game-${gameId}`).emit("questionProgress", {
             team: teamKey,
-            progress: game.progress[teamKey],
+            progress: game.progress[teamKey]
         });
 
         this.checkGameEnd(game);
     }
 
+
     /** Check if game should end and announce winner */
     private checkGameEnd(game: GameRoom) {
         if (game.finished) return;
 
-        const team1Done = game.progress.team1 >= 3;
-        const team2Done = game.progress.team2 >= 3;
+        const team1Done = game.progress.team1.every(done => done);
+        const team2Done = game.progress.team2.every(done => done);
 
         if (team1Done || team2Done) {
             game.finished = true;
@@ -138,18 +144,8 @@ export class GameService {
 
             this.io.to(`game-${game.gameId}`).emit("gameEnd", {
                 winner,
-                progress: game.progress,
+                progress: game.progress
             });
-
-            // Remove all players from game and team rooms
-            for (const player of game.team1.players) {
-                player.socket.leave(`game-${game.gameId}`);
-                player.socket.leave(`game-${game.gameId}-team1`);
-            }
-            for (const player of game.team2.players) {
-                player.socket.leave(`game-${game.gameId}`);
-                player.socket.leave(`game-${game.gameId}-team2`);
-            }
 
             this.games.delete(game.gameId);
         }
