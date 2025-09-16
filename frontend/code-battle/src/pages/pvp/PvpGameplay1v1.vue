@@ -407,7 +407,9 @@ onUnmounted(() => {
       <div class="opponent-panel-wrapper" v-if="showOpponentPanel">
         <OpponentPanel :onClose="toggleOpponentPanel" :sendSabotage="sendSabotage"
           :opponent="gameStore.opponentTeamObj?.players[0]" :questions="gameStore.questions"
-          :progress="gameStore.progress[gameStore.opponentTeam || 'team1'] || {}" :sabotagePoints="sabotagePoint" />
+          :progress="gameStore.progress[gameStore.opponentTeam || 'team1'] || {}"
+          :progressFullPass="gameStore.progressFullPass?.[gameStore.opponentTeam || 'team1'] || {}"
+          :sabotagePoints="sabotagePoint" />
       </div>
     </transition>
 

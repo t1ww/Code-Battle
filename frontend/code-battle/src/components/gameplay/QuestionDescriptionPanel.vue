@@ -21,12 +21,12 @@ defineEmits(['close'])
                 <h4>Level {{ question.level }}: {{ question.question_name }}</h4>
 
                 <div class="section">
-                    <p><strong>Description:</strong></p>
+                    <h3><strong>Description:</strong></h3>
                     <p>{{ question.description }}</p>
                 </div>
 
                 <div class="section">
-                    <p><strong>Test Cases:</strong></p>
+                    <h3><strong>Test Cases:</strong></h3>
                     <div class="test-cases">
                         <div v-for="(test, i) in question.test_cases" :key="i" class="test-case"
                             :class="{ passed: question.testResults?.[i]?.passed }">
@@ -56,12 +56,15 @@ defineEmits(['close'])
 </template>
 
 <style scoped>
+p {
+    color: var(--theme-lighter-color)
+}
 .description-popup-panel {
     position: absolute;
     top: 2rem;
     left: 0;
     width: 100vw;
-    color: white;
+    color: var(--theme-color);
     z-index: 1000;
     font-size: 14px;
     text-align: left;
@@ -69,8 +72,9 @@ defineEmits(['close'])
 
 .description-popup-inner-panel {
     padding: .5rem;
-    background-color: #4b5563;
+    background-color: #2d3533af;
     border-bottom: 2px solid #ccc;
+    padding-inline: 10rem;
 }
 
 .description-popup-content {
@@ -100,20 +104,6 @@ defineEmits(['close'])
     margin-bottom: 1rem;
 }
 
-.test-cases {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.test-case {
-    background-color: #6b7280;
-    padding: 0.5rem;
-    border-radius: 4px;
-    font-family: monospace;
-    width: 15vw;
-}
-
 .modifier {
     display: flex;
     align-items: center;
@@ -121,8 +111,8 @@ defineEmits(['close'])
 }
 
 .modifier-value {
-    background: white;
-    color: black;
+    background: rgb(0, 0, 0);
+    color: var(--theme-color);
     padding: 2px 6px;
     border-radius: 3px;
     font-weight: bold;
@@ -168,7 +158,7 @@ defineEmits(['close'])
 }
 
 .test-case {
-    background-color: #6b7280;
+    background-color: #0b1816e8;
     padding: 0.5rem;
     border-radius: 4px;
     font-family: monospace;

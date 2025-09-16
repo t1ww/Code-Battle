@@ -16,6 +16,7 @@ const props = defineProps<{
     }
     questions: Question[]
     progress: any
+    progressFullPass?: any // <--- added
     sabotagePoints: number
 }>()
 </script>
@@ -40,13 +41,20 @@ const props = defineProps<{
                 <div class="question-title">
                     Questions {{ q.id }} : {{ q.question_name }}
                 </div>
-                <div class="test-case" :class="props.progress[q.id] || 'in-progress'">
-                    <span :class="['status-badge', props.progress[q.id] || 'in-progress']">
-                        <template v-if="props.progress[q.id] === 'pass'">✔ Pass</template>
+
+                <!-- Loop through each test case for this question -->
+                <div class="test-case" v-for="(test, index) in props.progress[q.id - 1] || []" :key="index">
+                    <span :class="['status-badge', test ? 'pass' : 'in-progress']">
+                        <template v-if="test">✔ Passed</template>
                         <template v-else>
                             <SandClock class="sandclock-icon" /> In progress
                         </template>
                     </span>
+                </div>
+                
+                <!-- Full pass status -->
+                <div v-if="props.progressFullPass?.[q.id - 1]" class="test-case pass">
+                    <span class="status-badge pass">✔ Cleared</span>
                 </div>
             </div>
         </div>
