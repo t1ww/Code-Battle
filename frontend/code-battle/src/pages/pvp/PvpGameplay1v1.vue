@@ -293,8 +293,8 @@ onUnmounted(() => {
     </div>
 
     <!-- Slide Panel Toggle -->
-    <QuestionDescriptionPanel :show="showDescriptionPopup" :question="question_data" :timeLimitEnabled="timeLimitEnabled"
-      :selectedModifier="selectedModifier" @close="showDescriptionPopup = false" />
+    <QuestionDescriptionPanel :show="showDescriptionPopup" :question="question_data"
+      :timeLimitEnabled="timeLimitEnabled" :selectedModifier="selectedModifier" @close="showDescriptionPopup = false" />
 
     <!-- Submission result -->
     <ResultPopup :show="showResultPopup" :finalScore="finalScore"
@@ -304,24 +304,9 @@ onUnmounted(() => {
     <!-- Opponent panel with sliding toggle -->
     <transition name="slide-right">
       <div class="opponent-panel-wrapper" v-if="showOpponentPanel">
-        <OpponentPanel :onClose="toggleOpponentPanel" :sendSabotage="sendSabotage" :opponent="gameStore.opponentTeamObj?.players[0]"
-          :questions="gameStore.opponentTeam
-            ? gameStore.questions.map((q, idx) => {
-              const team = gameStore.opponentTeam as 'team1' | 'team2'
-              return {
-                id: idx + 1,
-                title: q.question_name,
-                cases: [
-                  {
-                    id: 1,
-                    status: gameStore.progress[team][idx]
-                      ? 'pass'
-                      : 'in-progress',
-                  },
-                ],
-              }
-            })
-            : []" :sabotagePoints="sabotagePoint" />
+        <OpponentPanel :onClose="toggleOpponentPanel" :sendSabotage="sendSabotage"
+          :opponent="gameStore.opponentTeamObj?.players[0]" :questions="gameStore.questions"
+          :progress="gameStore.progress[gameStore.opponentTeam || 'team1'] || {}" :sabotagePoints="sabotagePoint" />
       </div>
     </transition>
 

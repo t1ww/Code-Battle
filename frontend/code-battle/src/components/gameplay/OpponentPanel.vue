@@ -2,6 +2,7 @@
 <script setup lang="ts">
 import PlayerAvatar from '@/components/pvp/PlayerAvatar.vue'
 import SandClock from '@/assets/icons.svg/SandClock.vue'
+import type { Question } from '@/types/types';
 
 // Add at the top in <script setup>
 const props = defineProps<{
@@ -13,11 +14,8 @@ const props = defineProps<{
         name: string
         points: number
     }
-    questions: {
-        id: number
-        title: string
-        cases: { id: number; status: string }[]
-    }[]
+    questions: Question[]
+    progress: any
     sabotagePoints: number
 }>()
 </script>
@@ -37,20 +35,16 @@ const props = defineProps<{
 
         <!-- Question progress -->
         <div class="questions">
-            <div v-for="q in questions" :key="q.id" class="question">
+            <div v-for="q in props.questions" :key="q.id" class="question">
                 <hr />
                 <div class="question-title">
-                    Questions {{ q.id }} : {{ q.title }}
+                    Questions {{ q.id }} : {{ q.question_name }}
                 </div>
-                <div v-for="c in q.cases" :key="c.id" class="test-case" :class="c.status">
-                    Test Case {{ c.id }} :
-                    <span :class="['status-badge', c.status]">
-                        <template v-if="c.status === 'pass'">
-                            ✔ Pass
-                        </template>
+                <div class="test-case" :class="props.progress[q.id] || 'in-progress'">
+                    <span :class="['status-badge', props.progress[q.id] || 'in-progress']">
+                        <template v-if="props.progress[q.id] === 'pass'">✔ Pass</template>
                         <template v-else>
-                            <SandClock class="sandclock-icon" />
-                            In progress
+                            <SandClock class="sandclock-icon" /> In progress
                         </template>
                     </span>
                 </div>
