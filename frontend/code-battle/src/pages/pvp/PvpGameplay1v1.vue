@@ -19,17 +19,15 @@ import { useSabotage } from '@/composables/useSabotage'
 import { useTimer } from '@/composables/useTimer'
 
 // Popup components
-import ResultPopup from '@/components/popups/ResultPopup.vue'
 import MessagePopup from '@/components/popups/MessagePopup.vue'
+import PvpResultPopup from '@/components/popups/PvpResultPopup.vue'
 
 // pvp
 import OpponentPanel from '@/components/gameplay/OpponentPanel.vue'
 import VotePanel from '@/components/gameplay/VotePanel.vue'
 
 // Stores
-import { useQuestionStore } from '@/stores/questionStore'
 import QuestionBrowser from '@/components/gameplay/QuestionBrowser.vue'
-const { question_data } = useQuestionStore()
 
 // Constant
 const PVP_TIME_LIMIT = 5400
@@ -98,45 +96,28 @@ const runCode = async () => {
 }
 
 const submitCode = async () => {
-  if (!question_data.value) return
   isLoading.value = true
   try {
-    const res = await codeRunnerApi.post('/run', {
-      code: code.value,
-      test_cases: question_data.value.test_cases,
-      score_pct: 1, // PvP: ignore time bonus
-    })
-    const data = res.data as CodeRunResponse
+    const currentQuestion = gameStore.questions[currentQuestionIndex.value]
+    if (!currentQuestion) return
 
-    // Check for compile/runtime errors first
-    const errorResult = data.results.find(r =>
-      r.output.startsWith('[Compilation Error]') || r.output.startsWith('[Runtime Error]')
-    )
+    const data = await runCodeOnApi(code.value, currentQuestion.test_cases)
 
-    if (errorResult) {
-      openMessagePopup(
-        errorResult.output.startsWith('[Compilation Error]') ? 'Compilation Error' : 'Runtime Error',
-        "---------- < Fix it before submitting! :D > ----------"
-      )
-      return
-    }
+    const resultsForCurrent = mapTestResults(data, currentQuestion)
 
-    // Normal test results
-    testResults.value = {
-      passed: data.total_score === question_data.value.test_cases.length,
-      results: data.results.map((r, i) => ({
-        passed: r.passed,
-        output: r.output,
-        expected_output: question_data.value!.test_cases[i].expected_output,
-        input: question_data.value!.test_cases[i].input,
-      })),
-      total_score: parseFloat(data.total_score as unknown as string) || 0,
-    }
+    testResults.value = resultsForCurrent
+    finalScore.value = resultsForCurrent.total_score
 
-    finalScore.value = testResults.value.total_score
+    saveProgress(currentQuestionIndex.value, resultsForCurrent)
 
-    if (data.passed) {
+    // Show popup & emit question finished if passed
+    if (resultsForCurrent.passed) {
       showClearedPopup.value = true
+      socket.emit('questionFinished', {
+        gameId: gameStore.gameId,
+        team: gameStore.playerTeam,
+        questionIndex: currentQuestionIndex.value
+      })
     } else {
       showResultPopup.value = true
     }
@@ -149,16 +130,51 @@ const submitCode = async () => {
   }
 }
 
+// -----------------
+// 🛠️ Helpers
+// -----------------
+async function runCodeOnApi(code: string, test_cases: any[]) {
+  const res = await codeRunnerApi.post('/run', { code, test_cases, score_pct: 1 })
+  const data = res.data as CodeRunResponse
+
+  const errorResult = data.results.find(r =>
+    r.output.startsWith('[Compilation Error]') || r.output.startsWith('[Runtime Error]')
+  )
+
+  if (errorResult) {
+    openMessagePopup(
+      errorResult.output.startsWith('[Compilation Error]') ? 'Compilation Error' : 'Runtime Error',
+      "---------- < Fix it before submitting! :D > ----------"
+    )
+    throw new Error('Code execution failed')
+  }
+
+  return data
+}
+
+function mapTestResults(data: CodeRunResponse, question: any) {
+  return {
+    passed: data.total_score === question.test_cases.length,
+    results: data.results.map((r, i) => ({
+      passed: r.passed,
+      output: r.output,
+      expected_output: question.test_cases[i].expected_output,
+      input: question.test_cases[i].input,
+    })),
+    total_score: parseFloat(data.total_score as unknown as string) || 0
+  }
+}
+
+function saveProgress(questionIndex: number, results: any) {
+  const teamKey = gameStore.playerTeam || 'team1'
+  if (!gameStore.progress[teamKey]) gameStore.progress[teamKey] = []
+  gameStore.progress[teamKey][questionIndex] = results
+}
+
+
 // =============================
 // 🖥️ Computed
 // =============================
-const totalPossibleScore = computed(() =>
-  question_data.value?.test_cases?.reduce((acc, t) => acc + (t.score ?? 0), 0) ?? 0
-)
-const clearedCount = computed(() => {
-  if (!testResults.value) return 0
-  return testResults.value.results.filter(r => r.passed).length
-})
 
 // ----------------------
 // 🖥️ Multiplayer Actions
@@ -226,8 +242,6 @@ onMounted(async () => {
     gameStore.team1 = game.team1;
     gameStore.team2 = game.team2;
     gameStore.playerTeam = game.playerTeam;
-
-    question_data.value = gameStore.questions[0];
     console.log("DEV game created:", game);
   });
 
@@ -242,8 +256,6 @@ onMounted(async () => {
     gameStore.team2 = game.team2
     gameStore.finished = game.finished
     gameStore.playerTeam = game.playerTeam
-
-    question_data.value = gameStore.questions[0];
     // 🔹 Log the full game state
     console.log("Game state received:", {
       gameId: gameStore.gameId,
@@ -287,7 +299,7 @@ onUnmounted(() => {
       @close="showQuestionsPanel = false" />
 
     <!-- In case question data is missing -->
-    <template v-if="!question_data">
+    <template v-if="!gameStore.questions || gameStore.questions.length === 0">
       <div class="error-message">
         <p>Error: Question data is missing.</p>
         <p>Redirecting to level selection...</p>
@@ -318,9 +330,8 @@ onUnmounted(() => {
 
 
     <!-- Submission result -->
-    <ResultPopup :show="showResultPopup" :finalScore="finalScore"
-      :totalPossibleScore="question_data?.test_cases?.reduce((acc, t) => acc + (t.score ?? 0), 0) ?? 0"
-      :testResults="testResults?.results || []" @close="showResultPopup = false" />
+    <PvpResultPopup :show="showResultPopup" :testResults="testResults?.results || []"
+      @close="showResultPopup = false" />
 
     <!-- Opponent panel with sliding toggle -->
     <transition name="slide-right">

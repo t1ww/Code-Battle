@@ -43,12 +43,21 @@ router.post("/run", async (req, res) => {
 
         res.json({ passed, total_score: Number(total_score.toFixed(3)), results });
     } catch (err: any) {
+        const errorResults: TestResult[] = (test_cases || []).map(tc => ({
+            input: tc.input,
+            output: `[Error] ${err.message}`,
+            expected_output: tc.expected_output,
+            passed: false,
+            score: 0
+        }));
+
         res.json({
             passed: false,
             total_score: 0,
-            results: [{ input: "", output: `[Error] ${err.message}`, expected_output: "", passed: false, score: 0 }]
+            results: errorResults
         });
-    } finally {
+    }
+    finally {
         fs.remove(cppFile).catch(() => { });
         fs.remove(exeFile).catch(() => { });
     }
