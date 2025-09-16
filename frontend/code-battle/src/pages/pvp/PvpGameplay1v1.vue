@@ -4,7 +4,7 @@
 // 📦 Imports
 // =============================
 import type { CodeRunResponse } from '@/types/types'
-import { ref, onMounted, onUnmounted, computed, inject } from 'vue'
+import { ref, onMounted, onUnmounted, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePvpGameStore } from '@/stores/usePvpGameStore'
 import { getPlayerData } from '@/stores/auth'
@@ -96,30 +96,42 @@ const runCode = async () => {
 }
 
 const submitCode = async () => {
-  isLoading.value = true
+  isLoading.value = true;
   try {
-    const currentQuestion = gameStore.questions[currentQuestionIndex.value]
-    if (!currentQuestion) return
+    const currentQuestion = gameStore.questions[currentQuestionIndex.value];
+    if (!currentQuestion) return;
 
-    const data = await runCodeOnApi(code.value, currentQuestion.test_cases)
+    const data = await runCodeOnApi(code.value, currentQuestion.test_cases);
 
-    const resultsForCurrent = mapTestResults(data, currentQuestion)
+    const resultsForCurrent = mapTestResults(data, currentQuestion);
 
-    testResults.value = resultsForCurrent
-    finalScore.value = resultsForCurrent.total_score
+    testResults.value = resultsForCurrent;
+    finalScore.value = resultsForCurrent.total_score;
 
-    saveProgress(currentQuestionIndex.value, resultsForCurrent)
+    // Determine passed test indices for this submission
+    const passedIndices = resultsForCurrent.results
+      .map((r, i) => (r.passed ? i : -1))
+      .filter(i => i >= 0);
 
-    // Show popup & emit question finished if passed
-    if (resultsForCurrent.passed) {
-      showClearedPopup.value = true
+    // Save local progress view (optional)
+    saveProgress(currentQuestionIndex.value, resultsForCurrent);
+
+    // If any test cases were passed, inform server with the indices
+    if (passedIndices.length > 0 && gameStore.gameId && gameStore.playerTeam) {
       socket.emit('questionFinished', {
         gameId: gameStore.gameId,
         team: gameStore.playerTeam,
-        questionIndex: currentQuestionIndex.value
-      })
+        questionIndex: currentQuestionIndex.value,
+        passedIndices
+      });
+    }
+
+    // If entire question passed (all tests), show question cleared popup
+    const allPassedForQuestion = resultsForCurrent.results.every(r => r.passed);
+    if (allPassedForQuestion) {
+      showClearedPopup.value = true;
     } else {
-      showResultPopup.value = true
+      showResultPopup.value = true;
     }
 
   } catch (error) {
@@ -153,17 +165,21 @@ async function runCodeOnApi(code: string, test_cases: any[]) {
 }
 
 function mapTestResults(data: CodeRunResponse, question: any) {
+  const perTest = data.results.map((r, i) => ({
+    passed: !!r.passed,
+    output: r.output,
+    expected_output: question.test_cases[i].expected_output,
+    input: question.test_cases[i].input,
+  }));
+  const passedCount = perTest.filter(p => p.passed).length;
+
   return {
-    passed: data.total_score === question.test_cases.length,
-    results: data.results.map((r, i) => ({
-      passed: r.passed,
-      output: r.output,
-      expected_output: question.test_cases[i].expected_output,
-      input: question.test_cases[i].input,
-    })),
-    total_score: parseFloat(data.total_score as unknown as string) || 0
-  }
+    passed: passedCount === (question.test_cases?.length ?? 0),
+    results: perTest,
+    total_score: Number(data.total_score) || passedCount
+  };
 }
+
 
 function saveProgress(questionIndex: number, results: any) {
   const teamKey = gameStore.playerTeam || 'team1'
@@ -269,12 +285,40 @@ onMounted(async () => {
     })
   })
 
+  // Listen for question progress updates from server (per-team per-question per-test)
+  socket.on("questionProgress", (data: { team: string, progress: any, questionIndex?: number }) => {
+    // Update local store progress shape to match server (progress is boolean[][] for that team)
+    if (data && data.team) {
+      const key = data.team as "team1" | "team2";
+      gameStore.progress[key] = data.progress;
+    }
+  });
+
+  // Listen for awardSabotage events (server tells us how many points to add)
+  socket.on("awardSabotage", (payload: { amount: number }) => {
+    if (typeof payload?.amount === "number") {
+      sabotagePoint.value += payload.amount;
+      triggerNotification(`+${payload.amount} sabotage point(s)!`, 1200);
+    }
+  });
+
   // Listen for sabotage
   socket.on("sabotageReceived", () => { sabotageOnce() })
 
   // Listen for draw vote results
   socket.on("voteDrawResult", (data: { votes: number, totalPlayers: number }) => {
     triggerNotification(`Draw vote: ${data.votes}/${data.totalPlayers} voted`, 1200);
+  });
+
+  // Listen for game end
+  socket.on("gameEnd", (data: { winner: string, progress: any }) => {
+    // show proper result popup (you may already have a PvpResultPopup for this)
+    // If you want to show a dedicated end popup:
+    showResultPopup.value = true;
+    // Optionally set some store fields so popup can display winner
+    gameStore.finished = true;
+    // you can also store winner somewhere (gameStore.winner = data.winner)
+    triggerNotification(`Game ended — winner: ${data.winner}`, 2500);
   });
 
   // Start timer if enabled
@@ -358,9 +402,9 @@ onUnmounted(() => {
     </div>
   </div>
 
-  <!-- Game ends -->
-  <MessagePopup v-if="showClearedPopup" title="Game ended" message="You win or lost"
-    :buttonOnClick="() => { router.replace({ name: 'PveLevelSelect' }) }"></MessagePopup>
+  <!-- Question cleared popup (not game end) -->
+  <MessagePopup v-if="showClearedPopup" title="Question cleared!" message="Nice job — question cleared. Keep going!"
+    :buttonOnClick="() => { showClearedPopup = false }" />
 </template>
 
 <style lang="css" src="@/styles/gameplay.css"></style>

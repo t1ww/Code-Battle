@@ -10,11 +10,11 @@ interface TestCase {
     score: number;
 }
 interface Question {
-    id: number;
-    question_name: string;
-    description: string;
-    time_limit: number;
-    level: string;
+    id: number | string;
+    question_name?: string;
+    description?: string;
+    time_limit?: number;
+    level?: string;
     test_cases: TestCase[];
 }
 
@@ -23,7 +23,8 @@ export interface GameRoom {
     team1: Team;
     team2: Team;
     questions: Question[];
-    progress: Record<"team1" | "team2", boolean[]>;
+    // now per-question arrays of booleans (one boolean per test case)
+    progress: Record<"team1" | "team2", boolean[][]>;
     finished: boolean;
     drawVotes?: Set<string>;
 }
@@ -36,52 +37,93 @@ export class GameService {
         this.io = io;
     }
 
-    /** Create a game room with two teams, fetch questions from API */
+    /** Create a game room fetching questions from API */
     async createGame(team1: Team, team2: Team): Promise<GameRoom> {
         const gameId = uuidv4();
-        const questions: any[] = [];
+        const questions: Question[] = [];
         for (let i = 0; i < 3; i++) {
             const q = await this.fetchQuestion();
-            questions.push(q);
+            // ensure we have test_cases array shape
+            questions.push({
+                id: q.id ?? `q-${i}`,
+                question_name: q.question_name ?? q.title ?? `Question ${i+1}`,
+                description: q.description,
+                time_limit: q.time_limit ?? 10,
+                level: q.level ?? "Easy",
+                test_cases: (q.test_cases ?? q.testCases ?? []) as TestCase[],
+            });
         }
+
+        // build per-question per-test-case boolean arrays
+        const progress = {
+            team1: questions.map(q => Array((q.test_cases ?? []).length).fill(false)),
+            team2: questions.map(q => Array((q.test_cases ?? []).length).fill(false)),
+        };
 
         const game: GameRoom = {
             gameId,
             team1,
             team2,
             questions,
-            progress: {
-                team1: Array(questions.length).fill(false),
-                team2: Array(questions.length).fill(false)
-            },
+            progress,
             finished: false,
             drawVotes: new Set<string>(),
         };
 
         this.games.set(gameId, game);
 
-        // Join players to global game room and their team rooms
+        // join sockets to rooms
         for (const player of team1.players) {
-            player.socket.join(`game-${gameId}`);        // global game events
-            player.socket.join(`game-${gameId}-team1`);  // team-specific updates
+            player.socket.join(`game-${gameId}`);
+            player.socket.join(`game-${gameId}-team1`);
         }
-
         for (const player of team2.players) {
             player.socket.join(`game-${gameId}`);
             player.socket.join(`game-${gameId}-team2`);
         }
 
-        // --- LOGGING ---
-        console.log(`--- New Game Created ---`);
-        console.log(`[Game Created] Game ID: ${gameId}`);
-        console.log(`[Team 1] ${team1.players.map(p => p.name).join(", ")}`);
-        console.log(`[Team 2] ${team2.players.map(p => p.name).join(", ")}`);
-        console.log(`[Total Questions] ${questions.length}`);
-        console.log(`[Questions] ${questions.map(q => (q as Question).question_name).join(" | ")}`);
-        console.log(`--- End Game Created ---`);
-        // ---------------
+        // notify start
+        this.io.to(`game-${gameId}`).emit("gameStart", {
+            gameId,
+            team1: team1.team_id,
+            team2: team2.team_id,
+            questions: game.questions,
+        });
 
-        // Notify clients that game started with questions
+        return game;
+    }
+
+    /** Create and register a dev game with provided questions (used by the dev handler) */
+    createDevGame(team1: Team, team2: Team, questions: Question[]): GameRoom {
+        const gameId = `dev-${Date.now()}`;
+        const progress = {
+            team1: questions.map(q => Array((q.test_cases ?? []).length).fill(false)),
+            team2: questions.map(q => Array((q.test_cases ?? []).length).fill(false)),
+        };
+
+        const game: GameRoom = {
+            gameId,
+            team1,
+            team2,
+            questions,
+            progress,
+            finished: false,
+            drawVotes: new Set<string>(),
+        };
+
+        this.games.set(gameId, game);
+
+        // join players to rooms
+        for (const player of team1.players) {
+            player.socket.join(`game-${gameId}`);
+            player.socket.join(`game-${gameId}-team1`);
+        }
+        for (const player of team2.players) {
+            player.socket.join(`game-${gameId}`);
+            player.socket.join(`game-${gameId}-team2`);
+        }
+
+        // notify clients
         this.io.to(`game-${gameId}`).emit("gameStart", {
             gameId,
             team1: team1.team_id,
@@ -109,20 +151,49 @@ export class GameService {
         this.io.to(`game-${gameId}-${targetTeam}`).emit("sabotageReceived");
     }
 
-    /** Handle when a team finishes a question */
-    handleQuestionFinished(gameId: string, teamKey: "team1" | "team2", questionIndex: number) {
+    /**
+     * Handle when a team finishes (or partially finishes) test cases in a question.
+     * passedIndices: indices of test cases that were passed in this submission attempt
+     */
+    handleQuestionFinished(gameId: string, teamKey: "team1" | "team2", questionIndex: number, passedIndices: number[]) {
         const game = this.games.get(gameId);
         if (!game || game.finished) return;
 
-        // Mark that question as finished
-        game.progress[teamKey][questionIndex] = true;
+        const question = game.questions[questionIndex];
+        if (!question) return;
 
-        // Notify clients of updated progress
+        // Ensure per-question array exists
+        if (!game.progress[teamKey][questionIndex]) {
+            game.progress[teamKey][questionIndex] = Array((question.test_cases ?? []).length).fill(false);
+        }
+
+        // Count newly cleared test cases (that were false before)
+        let newlyCleared = 0;
+        for (const idx of passedIndices) {
+            if (idx >= 0 && idx < game.progress[teamKey][questionIndex].length) {
+                if (!game.progress[teamKey][questionIndex][idx]) {
+                    game.progress[teamKey][questionIndex][idx] = true;
+                    newlyCleared++;
+                }
+            }
+        }
+
+        // Notify clients about the updated per-question progress for that team
         this.io.to(`game-${gameId}`).emit("questionProgress", {
             team: teamKey,
-            progress: game.progress[teamKey]
+            progress: game.progress[teamKey], // array of arrays
+            questionIndex
         });
 
+        // Award sabotage points equal to newly cleared test cases (emit to that team's players)
+        if (newlyCleared > 0) {
+            this.io.to(`game-${gameId}-${teamKey}`).emit("awardSabotage", { amount: newlyCleared });
+        }
+
+        // If all test-cases in a question are now true, mark question as done (implicit)
+        const allDoneForQuestion = game.progress[teamKey][questionIndex].every(Boolean);
+
+        // Check if the game should end (if one team has all test-cases true across all questions)
         this.checkGameEnd(game);
     }
 
@@ -131,8 +202,8 @@ export class GameService {
     private checkGameEnd(game: GameRoom) {
         if (game.finished) return;
 
-        const team1Done = game.progress.team1.every(done => done);
-        const team2Done = game.progress.team2.every(done => done);
+        const team1Done = game.progress.team1.every(perQuestion => perQuestion.every(Boolean));
+        const team2Done = game.progress.team2.every(perQuestion => perQuestion.every(Boolean));
 
         if (team1Done || team2Done) {
             game.finished = true;
@@ -176,7 +247,7 @@ export class GameService {
                 id: "fallback",
                 title: "Fallback Question",
                 description: "Could not load question from backend",
-                testCases: [],
+                test_cases: [],
             };
         }
     }

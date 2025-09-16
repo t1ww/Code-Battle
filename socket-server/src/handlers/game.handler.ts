@@ -15,10 +15,13 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
         }
     });
 
-    // When a team finishes a question
-    socket.on("questionFinished", ({ gameId, team, questionIndex }) => {
+    // When a team finishes a question (or some test-cases)
+    socket.on("questionFinished", ({ gameId, team, questionIndex, passedIndices }) => {
         try {
-            gameService.handleQuestionFinished(gameId, team, questionIndex);
+            // ensure types
+            const tidx = Number(questionIndex);
+            const pIndices: number[] = Array.isArray(passedIndices) ? passedIndices.map(Number) : [];
+            gameService.handleQuestionFinished(gameId, team, tidx, pIndices);
         } catch (err) {
             console.error("Error handling questionFinished:", err);
             socket.emit("errorMessage", { message: "Failed to finish question" });
@@ -26,7 +29,6 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
     });
 
     // Allow client to fetch current game state (for resync, reconnects, etc.)
-
     socket.on("getGameState", ({ gameId }) => {
         const game = gameService.getGame(gameId);
         if (!game) {
@@ -148,24 +150,12 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
                 }
             ];
 
-            const gameId = `dev-${Date.now()}`;
+            const game = gameService.createDevGame(dummyTeam1, dummyTeam2, dummyQuestions);
 
-            const game = {
-                gameId,
-                team1: dummyTeam1,
-                team2: dummyTeam2,
-                questions: dummyQuestions,
-                progress: {
-                    team1: Array(dummyQuestions.length).fill(false),
-                    team2: Array(dummyQuestions.length).fill(false)
-                },
-                finished: false,
-                drawVotes: new Set<string>(),
-            };
-
+            // emit back the dev game ID and sanitized teams/progress
             socket.emit("devGameCreated", {
-                gameId,
-                questions: dummyQuestions,
+                gameId: game.gameId,
+                questions: game.questions,
                 progress: game.progress,
                 finished: game.finished,
                 team1: sanitizeTeam(dummyTeam1),
@@ -177,5 +167,4 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
             socket.emit("errorMessage", { message: "Failed to create DEV game" });
         }
     });
-
 }
