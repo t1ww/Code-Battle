@@ -21,10 +21,6 @@ function handleBack() {
 </template>
 
 <style scoped>
-.back-button-wrapper {
-    padding: 1rem;
-}
-
 .back-button {
     position: fixed;
     top: 6rem;
@@ -34,6 +30,19 @@ function handleBack() {
     border: none;
     font-size: 1.5rem;
     cursor: pointer;
-    color: green;
+    color: var(--theme-lighter-color);
+
+    /* glow effect */
+    text-shadow: 0 0 5px #42b983, 0 0 10px #42b983, 0 0 15px #42b983;
+    transition: text-shadow 0.3s ease;
+}
+
+.back-button:hover {
+    text-shadow: 0 0 10px #42b983, 0 0 20px #42b983, 0 0 30px #42b983;
+}
+
+.back-button:active {
+    color: #e6ffe0;
+    text-shadow: 0 0 10px #42b983, 0 0 20px #ffffff, 0 0 30px #42b983;
 }
 </style>

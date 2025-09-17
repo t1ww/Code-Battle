@@ -21,6 +21,9 @@ const showLogout = ref(false);
 
 const online = computed(() => route.meta.online === true)
 const canAddPlayer = computed(() => route.meta.canFormTeam === true && !teamStore.isFull)
+const avatarContainer = ref<HTMLElement | null>(null)
+
+const disable = computed(() => route.meta.disableNavbar as boolean | undefined)
 
 // Team formation
 const selfAvatar = computed(() => {
@@ -71,6 +74,13 @@ const handleLogout = () => {
   router.push({ name: "Logout" });
 };
 
+const handleClickOutside = (event: MouseEvent) => {
+  if (!avatarContainer.value) return
+  if (!avatarContainer.value.contains(event.target as Node)) {
+    showLogout.value = false
+  }
+}
+
 // Set self on mount for initial load
 onMounted(() => {
   const player = getPlayerData()
@@ -112,6 +122,9 @@ onMounted(() => {
     teamStore.members = []
     teamStore.invite_link = ''
   })
+
+  // Watch for clicking anywhere
+  document.addEventListener('click', handleClickOutside)
 })
 
 // Watch for login/logout changes
@@ -134,14 +147,15 @@ watch(isAuthenticated, (loggedIn) => {
 onBeforeUnmount(() => {
   socket.off('teamJoined')
   socket.off('teamLeft')
+  document.removeEventListener('click', handleClickOutside)
 })
 
 </script>
 
 <template>
-  <nav class="navbar">
+  <nav v-if="!disable" class="navbar">
     <div class="team-wrapper" v-if="isLoggedIn">
-      <div class="avatar-container" v-if="selfAvatar">
+      <div class="avatar-container" v-if="selfAvatar" ref="avatarContainer">
         <div :title="self?.name" @click="toggleLogout">
           <PlayerAvatar :player="selfAvatar" />
         </div>
@@ -175,13 +189,14 @@ onBeforeUnmount(() => {
   left: 0;
   width: 100%;
   height: 8vh;
-  background: #b0f08e;
+  background: #3b4141b2;
   padding: 0.75rem 1.5rem;
-  z-index: 1000;
+  z-index: 9999;
   display: flex;
   justify-content: flex-end;
   align-items: center;
   box-sizing: border-box;
+  mix-blend-mode: difference;
 }
 
 .team-wrapper {
@@ -209,17 +224,24 @@ onBeforeUnmount(() => {
 
 .login-button {
   padding: 0.5rem 1rem;
-  background-color: #007bff;
+  background-color: #858585;
   border: none;
   color: white;
   font-weight: bold;
-  border-radius: 4px;
+  width: 8rem;
+  border-radius: .5rem;
   cursor: pointer;
 }
 
 .login-button:hover {
-  background-color: #0056b3;
+  background-color: var(--theme-darker-color);
 }
+
+.login-button:active {
+  background-color: #858585;
+  cursor: default;
+}
+
 
 /* Logout */
 .avatar-container {
@@ -232,26 +254,28 @@ onBeforeUnmount(() => {
 .logout-dropdown {
   position: absolute;
   top: 72px;
-  height: 1.5rem;
-  background: rgb(198, 255, 199);
-  border: .2rem solid #74ff8e;
-  padding: 0.5rem 2rem;
+  background: rgba(26, 26, 26, 0.836);
+  border: .2rem solid var(--theme-color);
   border-radius: 4px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 10;
 }
 
 .logout-dropdown button {
+  display: block;
   background: none;
-  padding: 0;
+  padding: 0.5rem 2rem;
+  width: 100%;
   border: none;
   font-weight: bold;
-  color: rgb(0, 0, 0);
+  color: var(--theme-color);
   cursor: pointer;
+  text-align: center;
 }
 
+
 .logout-dropdown button:hover {
-  text-decoration: underline;
+  background-color: #242b26cb;
 }
 
 .slide-fade-enter-active,

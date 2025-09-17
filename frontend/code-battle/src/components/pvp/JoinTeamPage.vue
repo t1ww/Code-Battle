@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { onMounted } from 'vue'
 import { useTeamStore } from '@/stores/team'
 import { getPlayerData } from '@/stores/auth'
+import { triggerNotification } from '@/composables/notificationService'
 
 const route = useRoute()
 const router = useRouter()
@@ -28,7 +29,7 @@ onMounted(async () => {
             router.push({ name: 'PvpTypeSelect' })
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : ''
-            alert(`Failed to join team: ${errorMessage ? ': ' + errorMessage : ''}`)
+            triggerNotification(`Failed to join team: ${errorMessage ? ': ' + errorMessage : ''}`)
             router.push({ name: 'Home' })
         }
     }

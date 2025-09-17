@@ -1,0 +1,191 @@
+/* frontend\code-battle\src\styles\gameplay.css */
+.buttons button {
+    outline: none;
+    border: none;
+    width: 6rem;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    outline: none;
+}
+
+button:hover {
+    background-color: #6b7280;
+    border: none;
+}
+
+button:active {
+    background-color: #9fb2a4;
+}
+
+.buttons button,
+.side-button,
+.top-bar button {
+  background-color: #2e2e2e;
+}
+
+.container {
+    padding: 0rem 6rem;
+    width: 100%;
+    height: 100vh;
+    box-sizing: border-box;
+}
+
+.top-bar {
+    position: relative;
+    margin-bottom: 6rem;
+    height: 40px;
+}
+
+
+.top-bar button {
+    margin-top: 0;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 20px;
+}
+
+.popup-toggle.fixed {
+    display: flex;
+    justify-content: center;
+    padding: 0.5rem;
+    z-index: 999;
+}
+
+.popup-toggle.fixed button {
+    width: 4rem;
+    background-color: #2e2e2e;
+    border-radius: 0rem 0rem .5rem .5rem;
+}
+
+.popup-toggle.fixed button:hover {
+    background-color: #2a3a2c;
+}
+
+.timer {
+    position: absolute;
+    right: 0;
+    transform: translateY(-50%);
+    font-weight: 600;
+    font-size: 14px;
+    color: black;
+}
+
+.buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.loading-spinner {
+    justify-self: flex-end;
+    margin-left: 8px;
+    font-size: 12px;
+    font-style: italic;
+    color: #555;
+}
+
+.side-button {
+    border: none;
+    padding: 0.5rem 0.7rem;
+    border-radius: 6px 0 0 6px;
+    height: 4rem;
+    width: 2rem;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+.side-buttons {
+    position: fixed;
+    top: 50%;
+    right: 0.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transform: translateY(-50%);
+    z-index: 1300;
+}
+
+.side-button:hover {
+    outline: none;
+    border: none;
+}
+
+.opponent-panel-wrapper {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    z-index: 1100;
+}
+
+.vote-panel-wrapper {
+    position: fixed;
+    top: calc(50% + 2.45rem);
+    right: 0.25rem;
+    transform: translateY(-50%);
+    z-index: 1150;
+}
+
+.terminal-wrapper {
+    position: fixed;
+    left: 18%;
+    bottom: 0%;
+    transform: translateX(0%);
+    z-index: 1200;
+}
+
+.terminal-input {
+    display: flex;
+    padding: 1rem 2rem;
+    /* more padding bottom and left/right */
+    border-top: 1px solid #444;
+}
+
+.terminal-toggle {
+    align-self: flex-start;
+    /* left-align button */
+    margin-bottom: 0.5rem;
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    outline: none;
+    border-radius: 4px;
+}
+
+.terminal-toggle:hover {
+    border: none;
+    background: #7e7e7e;
+}
+
+/* Slide transitions */
+/* slide-right (PvP panels) */
+.slide-right-enter-from {
+    transform: translateX(100%) translateY(-50%);
+    opacity: 0;
+}
+
+.slide-right-enter-to {
+    transform: translateX(0) translateY(-50%);
+    opacity: 1;
+}
+
+.slide-right-leave-from {
+    transform: translateX(0) translateY(-50%);
+    opacity: 1;
+}
+
+.slide-right-leave-to {
+    transform: translateX(100%) translateY(-50%);
+    opacity: 0;
+}
+
+.slide-right-enter-active,
+.slide-right-leave-active {
+    transition: transform 0.28s cubic-bezier(.2, .9, .3, 1), opacity 0.28s ease;
+}

@@ -1,7 +1,6 @@
-// backend\src\services\player.service.ts
-import pool from "@/clients/database.client";
+// backend/src/services/player.service.ts
+import knex from "@/clients/knex.client";
 import { PlayerResponse } from "../dtos/player.dto";
-import { RowDataPacket } from "mysql2";
 import { RegisterRequest, RegisterResponse } from "@/dtos/auth.dto";
 
 export class PlayerService {
@@ -14,12 +13,14 @@ export class PlayerService {
     }
 
     try {
-      // ✅ UTC-11 ID 1: Valid registration
       const hashedPassword = password; // Assumes password already hashed upstream if needed
-      await pool.query(
-        "INSERT INTO players (player_name, email, password_hash) VALUES (?, ?, ?)",
-        [username, email, hashedPassword]
-      );
+
+      // ✅ UTC-11 ID 1: Valid registration
+      await knex("players").insert({
+        player_name: username,
+        email,
+        password_hash: hashedPassword,
+      });
 
       return { error_message: null };
     } catch (err) {
@@ -33,21 +34,19 @@ export class PlayerService {
       return { error_message: "Player ID is required." };
     }
 
-    const [rows] = await pool.query<RowDataPacket[]>(
-      "SELECT player_id, player_name AS username, email, created_at FROM players WHERE id = ?",
-      [id]
-    );
+    const player = await knex("players")
+      .select("player_id", "player_name as username", "email", "created_at")
+      .where({ player_id: id })
+      .first();
 
     // ✅ UTC-12 ID 2: Player not found
-    if (rows.length === 0) {
+    if (!player) {
       return { error_message: "Player not found." };
     }
 
-    const player = rows[0];
-
     // ✅ UTC-12 ID 1: Valid player ID
     return {
-      id: player.id.toString(),
+      id: player.player_id.toString(),
       username: player.username,
       email: player.email,
       created_at: new Date(player.created_at),
@@ -66,21 +65,19 @@ export class PlayerService {
       return { error_message: "Invalid email format." };
     }
 
-    const [rows] = await pool.query<RowDataPacket[]>(
-      "SELECT player_id, player_name, email, created_at FROM players WHERE email = ?",
-      [email]
-    );
+    const player = await knex("players")
+      .select("player_id", "player_name", "email", "created_at")
+      .where({ email })
+      .first();
 
     // ✅ UTC-13 ID 2: Email not registered
-    if (rows.length === 0) {
+    if (!player) {
       return { error_message: "Player not found." };
     }
 
-    const player = rows[0];
-
     // ✅ UTC-13 ID 1: Valid email
     return {
-      id: player.id.toString(),
+      id: player.player_id.toString(),
       username: player.player_name,
       email: player.email,
       created_at: new Date(player.created_at),

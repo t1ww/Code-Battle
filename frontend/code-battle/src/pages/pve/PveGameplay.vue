@@ -1,4 +1,4 @@
-<!-- frontend\code-battle\src\pages\PveGameplay.vue -->
+<!-- frontend\code-battle\src\pages\pve\PveGameplay.vue -->
 <script setup lang="ts">
 // =============================
 // 📦 Imports
@@ -8,7 +8,8 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { getPlayerData } from '@/stores/auth'
 import codeRunnerApi from '@/clients/coderunner.api'
-import CodeEditor from '@/components/pve/CodeEditor.vue'
+import CodeEditor from '@/components/gameplay/CodeEditor.vue'
+import CodeTerminal from '@/components/gameplay/CodeTerminal.vue'
 import router from '@/router'
 import api from '@/clients/crud.api'
 
@@ -16,14 +17,17 @@ import api from '@/clients/crud.api'
 import { triggerNotification } from '@/composables/notificationService'
 import { useSabotage } from '@/composables/useSabotage'
 import { useTimer } from '@/composables/useTimer'
+import { useTerminal } from "@/composables/useTerminal";
+const { codeTerminal, startSession, sendInput, stopSession } = useTerminal();
 
 // Popup components
 import ResultPopup from '@/components/popups/ResultPopup.vue'
 import ConfidentLostPopup from '@/components/popups/ConfidentLostPopup.vue'
 import TimeoutPopup from '@/components/popups/TimeoutPopup.vue'
 import ClearedPopup from '@/components/popups/ClearedPopup.vue'
-import DescriptionPopup from '@/components/popups/DescriptionPopup.vue'
 import MessagePopup from '@/components/popups/MessagePopup.vue'
+
+import QuestionDescriptionPanel from '@/components/gameplay/QuestionDescriptionPanel.vue'
 
 // Stores
 import { useQuestionStore } from '@/stores/questionStore'
@@ -41,7 +45,11 @@ const timeLimitEnabled = route.query.timeLimitEnabled === 'true'
 // 🔁 Reactive State
 // =============================
 // Base
-const code = ref('// Write code here')
+const code = ref(`// Write code here
+int main() {
+    return 0;
+}`);
+
 const showDescriptionPopup = ref(false)
 const isLoading = ref(false)
 const MODIFIER_BONUS = 1.25
@@ -83,13 +91,28 @@ function openMessagePopup(title: string, message: string) {
     showMessagePopup.value = true
 }
 
+// Terminal
+const terminalOpen = ref(false) // default close
+
 
 // =============================
 // 🧪 Code Actions
 // =============================
-const runCode = async () => {
-    console.log('Running code:', code.value)
-}
+// Replace Run Code button to just focus the terminal or echo input
+const runCodeInteractive = () => {
+    if (!code.value.trim()) return;
+
+    // Stop previous session
+    stopSession();
+
+    // Open the terminal
+    terminalOpen.value = true;
+    codeTerminal.value?.pushOutput("> New session started");
+
+    // Start a new session
+    startSession(code.value)
+};
+
 
 const submitCode = async () => {
     if (!question_data.value) return
@@ -249,6 +272,8 @@ onMounted(async () => {
 onUnmounted(() => {
     stopTimer()
     stopSabotage()
+    stopSession()
+    codeTerminal.value?.pushOutput("> Session ended.");
 })
 </script>
 
@@ -281,17 +306,30 @@ onUnmounted(() => {
         <CodeEditor v-model="code" />
 
         <div class="buttons">
-            <button @click="runCode" :disabled="isLoading">Run code</button>
+            <button @click="runCodeInteractive" :disabled="isLoading">Run code</button>
             <button @click="submitCode" :disabled="isLoading">
                 Submit
             </button>
         </div>
+
+        <!-- Terminal under the editor -->
+        <button class="terminal-toggle" @click="terminalOpen = true"
+            :style="{ visibility: terminalOpen ? 'hidden' : 'visible' }">
+            Show Terminal ▲
+        </button>
+
+        <transition name="slide-down">
+            <div class="terminal-wrapper" v-show="terminalOpen">
+                <CodeTerminal ref="codeTerminal" @close="terminalOpen = false" :sendInput="sendInput" />
+            </div>
+        </transition>
+
         <div class="buttons">
             <span v-if="isLoading" class="loading-spinner">Loading...</span>
         </div>
 
         <!-- Slide Panel Toggle -->
-        <DescriptionPopup :show="showDescriptionPopup" :question="question_data" :timeLimitEnabled="timeLimitEnabled"
+        <QuestionDescriptionPanel :show="showDescriptionPopup" :question="question_data" :timeLimitEnabled="timeLimitEnabled"
             :selectedModifier="selectedModifier" @close="showDescriptionPopup = false" />
 
         <!-- Submission result -->
@@ -317,80 +355,5 @@ onUnmounted(() => {
 
 </template>
 
-
-<style scoped>
-.container {
-    background-color: #d1d5db;
-    padding: 5rem 6rem 3.6rem;
-    width: 100%;
-    max-width: 100vw;
-    box-sizing: border-box;
-    overflow-x: hidden;
-}
-
-.top-bar {
-    position: relative;
-    margin-bottom: 2rem;
-    height: 40px;
-}
-
-.top-bar button {
-    margin-top: 0;
-    background-color: #9ca3af;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 20px;
-}
-
-.popup-toggle.fixed {
-    display: flex;
-    justify-content: center;
-    padding: 0.5rem;
-    z-index: 999;
-}
-
-.timer {
-    position: absolute;
-    right: 0;
-    transform: translateY(-50%);
-    font-weight: 600;
-    font-size: 14px;
-    color: black;
-}
-
-.buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-}
-
-.buttons button {
-    background-color: #9ca3af;
-    border: none;
-    width: 6rem;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 14px;
-    outline: none;
-}
-
-.buttons button:hover {
-    background-color: #6b7280;
-}
-
-.buttons button:active {
-    background-color: #9fb2a4;
-}
-
-.loading-spinner {
-    justify-self: flex-end;
-    margin-left: 8px;
-    font-size: 12px;
-    font-style: italic;
-    color: #555;
-}
-</style>
+<style lang="css" src="@/styles/gameplay.css"></style>
+<style scoped></style>

@@ -1,6 +1,6 @@
 # Code Battle
 
-**Senior Project – CAMT SE65**  
+**Senior Project – CAMT SE65**
 A real-time code battle web app with live multiplayer functionality, built as a full-stack monorepo.
 
 ---
@@ -15,7 +15,7 @@ Follow these steps to set up and run the entire Code Battle project from scratch
 
 Before you begin, make sure you have these tools installed:
 
-## Node.js & npm  
+## Node.js & npm
   _Download and install from the [official website](https://nodejs.org/). This is required to run the project._
 
 _You can check if Node.js and npm are installed by running:_
@@ -127,60 +127,17 @@ This will install dependencies for all workspaces (backend, frontend, code runne
 
 ---
 
-### 4.1. Start the Database with Docker
+### 4. Set Up Supabase
 
-Copy `.env.docker.example` to `.env.docker` in the project root:
-
-```bash
-cp .env.docker.example .env.docker
-```
-
-Edit `.env.docker` if you need to change any values.
-
-Docker Compose will automatically use variables from `.env.docker` if you run:
-
-```bash
-docker-compose --env-file .env.docker -p code_battle up -d
-```
-
-- **phpMyAdmin:** [http://localhost:8081](http://localhost:8081)
-  **Example Credentials**
-  - Username: `root`
-  - Password: `root_password`
-
----
-> ⚠️ **Security Warning:**  
-> Example credentials (like `root_password`, `user_password`) are used for local development only.  
-> **Never use these in production!**  
-> Always change all passwords and secrets before deploying, and use environment variables or secret management tools to keep credentials
----
-
-### 4.2. To stop and remove Docker Containers
-_This step is optional. Only run these commands if you want to stop and remove the Docker containers and data._
-
-To stop and remove all Docker containers, networks, and volumes created by Docker Compose, run:
-
-```bash
-docker-compose --env-file .env.docker -p code_battle down
-```
-
-To also remove all volumes (delete database data):
-
-```bash
-docker-compose --env-file .env.docker -p code_battle down --volumes
-```
-
----
-
-### 5. Set Up Environment Variables
-
-Copy `.env.example` to `.env` in the `backend` folder and fill in any secrets:
+1. Create a project at [Supabase](https://supabase.com/).
+2. Obtain your **Project URL** and **anon/public key**.
+3. Copy `.env.example` to `.env` in the `backend` folder:
 
 ```bash
 cp backend/.env.example backend/.env
 ```
 
-**Generate a secure JWT secret:**  
+4. **Generate a secure JWT secret:**  
 You can use the built-in script to generate a random JWT secret key:
 
 ```bash
@@ -193,62 +150,77 @@ Edit `backend/.env` if you need to change any values (like database credentials 
 
 ---
 
-### 6. Run Database Migrations and Seed Data
+5. Replace database values with Supabase credentials:
 
-Set up the database tables and add initial data:
+```
+DB_HOST=<supabase-db-host>
+DB_PORT=5432
+DB_NAME=<supabase-db-name>
+DB_USER=<supabase-db-user>
+DB_PASSWORD=<supabase-db-password>
+JWT_SECRET=<random-secret>
+```
+
+> 🔒 Keep Supabase keys secret and never commit them.
+
+---
+
+### 5. Run Database Migrations and Seed Data
+
+Create tables and insert initial data:
 
 ```bash
 npm run be:db:migrate
 npm run be:db:seed
 ```
 
+These now run against your Supabase PostgreSQL database.
+
 ---
 
-### 7. Start All Project Servers
-
-To run everything (backend, frontend, code runner, socket server):
+### 6. Start All Project Servers
 
 ```bash
 npm run dev
 ```
 
-This runs all services concurrently in one terminal. You can stop all servers safely at any time by pressing Ctrl+C.
+This runs all services concurrently. Press Ctrl+C to stop.
 
-- **Frontend:** [http://localhost:5173](http://localhost:5173) (Vite default)
-- **Backend API:** [http://localhost:5000](http://localhost:5000)
-- **Socket Server:** [http://localhost:3001](http://localhost:3001)
-- **Code Runner:** [http://localhost:5001](http://localhost:5001)
+* **Frontend:** [http://localhost:5173](http://localhost:5173)
+* **Backend API:** [http://localhost:5000](http://localhost:5000)
+* **Socket Server:** [http://localhost:3001](http://localhost:3001)
+* **Code Runner:** [http://localhost:5001](http://localhost:5001)
 
-_If any port is busy, check your terminal output for the actual port used._
 ---
 
 ## 🧩 Project Structure
 
-| Folder                  | Description                                              |
-| ----------------------- | -------------------------------------------------------- |
-| `backend/`              | Express.js API server, MySQL DB, code validation    |
-| `frontend/code-battle/` | Vue 3 web app with Monaco Editor for coding interface    |
-| `ts-code-runner/`       | Isolated TypeScript runner for user-submitted code       |
-| `socket-server/`        | WebSocket (Socket.IO) server for real-time communication |
+| Folder                  | Description                                                 |
+| ----------------------- | ----------------------------------------------------------- |
+| `backend/`              | Express.js API server, Supabase PostgreSQL, code validation |
+| `frontend/code-battle/` | Vue 3 web app with Monaco Editor                            |
+| `ts-code-runner/`       | Isolated TypeScript runner for user-submitted code          |
+| `socket-server/`        | WebSocket (Socket.IO) server                                |
 
 ---
 
 ## 🧪 Tech Stack
 
-| Layer       | Stack                         |
-| ----------- | ----------------------------- |
-| Frontend    | Vue 3 + Vite + monaco-editor  |
-| Backend     | Node.js + Express + Knex + MySQL |
-| Realtime    | Socket.IO                     |
-| Code Runner | Sandboxed TS executor         |
-| Testing     | Jest + mock-req-res           |
+| Layer       | Stack                                            |
+| ----------- | ------------------------------------------------ |
+| Frontend    | Vue 3 + Vite + monaco-editor                     |
+| Backend     | Node.js + Express + Knex + PostgreSQL (Supabase) |
+| Realtime    | Socket.IO                                        |
+| Code Runner | Sandboxed TS executor                            |
+| Testing     | Jest + mock-req-res                              |
 
 ---
 
 ## 📚 More Documentation
 
-- [API Documentation](API.md)
-- [Tech stacks](TechStack.md)
-- [Submit Issues](https://github.com/t1ww/Code-Battle/issues)
+* [Command Scripts](commands.md)
+* [API Documentation](API.md)
+* [Tech stacks](TechStack.md)
+* [Submit Issues](https://github.com/t1ww/Code-Battle/issues)
 
 ---

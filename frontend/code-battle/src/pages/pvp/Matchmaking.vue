@@ -6,7 +6,7 @@ import { useRoute, useRouter } from 'vue-router'
 import type { PlayerData } from '@/types/types'
 
 import SearchIcon from '@/components/pvp/SearchIcon.vue'
-import MatchFoundIcon from '@/components/pvp/MatchFoundIcon.vue'
+import MatchFoundIcon from '@/assets/icons.svg/MatchFoundIcon.vue'
 import TeamList from '@/components/pvp/TeamList.vue'
 import MessagePopup from '@/components/popups/MessagePopup.vue'
 
@@ -123,28 +123,46 @@ onMounted(() => {
     })
 
     socket.on("matchStarted", (data: { player_id: any }) => {
-        console.log("Match started for player:", data.player_id)
-        // Run the sequence here
-        state.value = 'found'
-        setTimeout(() => {
+        console.log("Match started for player:", data.player_id);
+
+        // Step 1: Found state
+        const showFound = () => {
+            state.value = 'found';
+            setTimeout(showTeams, 1800); // 1.8s delay before showing teams
+        };
+        // Step 2: Show teams
+        const showTeams = () => {
+            state.value = 'showingTeams';
+            setTimeout(showCountdown, 1000); // 1s delay before countdown
+        };
+        // Step 3: Countdown before match
+        const showCountdown = () => {
+            state.value = 'countdown';
+            countdown.value = 3;
+            timer = setInterval(() => {
+                if (countdown.value <= 1) {
+                    clearInterval(timer!);
+                    timer = null;
+                    startMatch();
+                } else {
+                    countdown.value--;
+                }
+            }, 1000);
+        };
+        // Step 4: Start match and redirect
+        const startMatch = () => {
+            state.value = 'started';
             setTimeout(() => {
-                state.value = 'showingTeams'
-                setTimeout(() => {
-                    state.value = 'countdown'
-                    countdown.value = 3;
-                    timer = setInterval(() => {
-                        if (countdown.value <= 1) {
-                            clearInterval(timer!)
-                            timer = null
-                            state.value = 'started'
-                        } else {
-                            countdown.value--
-                        }
-                    }, 1000) // 1 second countdown
-                }, 1000) // 1 second before showing countdown
-            }, 1000) // 1 second before showing teams
-        }, 1800) // 1.8 seconds before showing teams;
-    })
+                router.push({
+                    name: 'PvpGameplay1v1',
+                    query: { timeLimitEnabled: String(timeLimit.value) }
+                });
+            }, 1500); // 1.5s delay to show "MATCH START!"
+        };
+
+        // Trigger the sequence
+        showFound();
+    });
 
     // Handle player queue cancellation
     socket.on("playerQueueCanceled", () => {
@@ -227,13 +245,25 @@ onBeforeUnmount(() => {
             <h1>MATCH START!</h1>
         </div>
 
-        <button v-if="state !== 'started'" class="cancel-btn" @click="cancelMatchmaking">
+        <button v-if="state !== 'started'" class="menu-button" @click="cancelMatchmaking">
             Cancel Matchmaking
         </button>
     </div>
 </template>
 
+<style scoped src="@/styles/menuButtons.css"></style>
 <style scoped>
+/* Overwrite */
+.menu-button {
+    width: 16rem;
+}
+
+.menu-button:hover {
+    transform: scale(1.05);
+    background-color: #2b3828;
+}
+
+/* Normal styles */
 .error-message {
     color: red;
     margin: 0.5rem 0;
@@ -245,7 +275,7 @@ onBeforeUnmount(() => {
     place-items: center;
     width: 100vw;
     height: 100vh;
-    background: #ccc;
+    color: var(--theme-color);
 }
 
 .teams-view {

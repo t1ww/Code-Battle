@@ -1,4 +1,4 @@
-<!-- frontend\code-battle\src\pages\PvpTypeSelect.vue -->
+<!-- frontend\code-battle\src\pages\pvp\PvpTypeSelect.vue -->
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useTeamStore } from '@/stores/team'
@@ -35,7 +35,7 @@ const getPrivateMessage = computed(() => {
       <!-- 1v1 -->
       <div class="button-with-text">
         <router-link :to="is1v1Disabled ? {} : { name: 'PvpTimeSelect', query: { mode: '1v1' } }" id="pvp1v1-button"
-          class="mode-button" :class="{ disabled: is1v1Disabled }">
+          class="menu-button" :class="{ disabled: is1v1Disabled }">
           1v1
         </router-link>
         <span v-if="is1v1Disabled" id="1v1mode-text" class="mode-text">{{ get1v1Message }}</span>
@@ -44,7 +44,7 @@ const getPrivateMessage = computed(() => {
       <!-- 3v3 -->
       <div class="button-with-text">
         <router-link :to="is3v3Disabled ? {} : { name: 'PvpTimeSelect', query: { mode: '3v3' } }" id="pvp3v3-button"
-          class="mode-button" :class="{ disabled: is3v3Disabled }">
+          class="menu-button" :class="{ disabled: is3v3Disabled }">
           3v3
         </router-link>
         <span v-if="is3v3Disabled" class="mode-text">{{ get3v3Message }}</span>
@@ -52,7 +52,7 @@ const getPrivateMessage = computed(() => {
 
       <!-- Private -->
       <div class="button-with-text">
-        <router-link :to="isPrivateDisabled ? {} : { name: 'PrivateRoom' }" id="pvp-private-button" class="mode-button"
+        <router-link :to="isPrivateDisabled ? {} : { name: 'PrivateRoom' }" id="pvp-private-button" class="menu-button"
           :class="{ disabled: isPrivateDisabled }">
           Private custom match
         </router-link>
@@ -62,6 +62,7 @@ const getPrivateMessage = computed(() => {
   </div>
 </template>
 
+<style scoped src="@/styles/menuButtons.css"></style>
 <style scoped>
 .container {
   display: flex;
@@ -70,17 +71,10 @@ const getPrivateMessage = computed(() => {
   justify-content: center;
   width: 100vw;
   height: 100vh;
-  background-color: #bbb;
 }
 
 h1 {
   margin-bottom: 40px;
-}
-
-.button-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
 }
 
 .button-with-text {
@@ -105,42 +99,23 @@ h1 {
 
 .mode-text {
   font-size: 14px;
-  color: #222;
+  color: var(--theme-lighter-color);
   white-space: nowrap;
-  /* force single line */
-  overflow: hidden;
-  /* optional: hides overflow if too long */
   text-overflow: ellipsis;
-  /* optional: adds "..." if too long */
+
+  /* glow effect */
+  text-shadow:
+    0 0 4px var(--text-glow-color),
+    0 0 8px var(--text-glow-color),
+    0 0 12px var(--text-glow-color);
 }
 
-.mode-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  color: inherit;
-  border-radius: .5em;
-  outline: none;
+.menu-button {
   width: 12rem;
   height: 2.5rem;
-  background-color: #ddd;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
-.mode-button:hover {
-  transform: scale(1.05) translateX(5px);
-  background-color: #eee;
-}
-
-.mode-button:active {
-  background-color: #bbb;
-}
-
-.mode-button.disabled {
+.menu-button.disabled {
   pointer-events: none;
   opacity: 0.5;
 }

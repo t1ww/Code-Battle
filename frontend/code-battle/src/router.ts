@@ -7,18 +7,23 @@ import Home from "@/pages/Home.vue";
 import Login from "@/pages/LoginForm.vue";
 import Logout from "@/pages/Logout.vue";
 import Register from "@/pages/RegisterForm.vue";
-import PveLevelSelect from "@/pages/pve/PveLevelSelect.vue";
 import { socket } from '@/clients/socket.api'
 
 import NProgress from "nprogress";
 import "nprogress/nprogress.css"; // import nprogress style
+
+// PVE
+import PveLevelSelect from "@/pages/pve/PveLevelSelect.vue";
+import PveQuestionView from "@/pages/pve/PveQuestionView.vue";
+import PveGameplay from "@/pages/pve/PveGameplay.vue";
+// PVP
 import PvpTypeSelect from "@/pages/pvp/PvpTypeSelect.vue";
 import PvpTimeSelect from "@/pages/pvp/PvpTimeSelect.vue";
-import PveLevelView from "@/pages/pve/PveQuestionView.vue";
-import Matchmaking from "@/pages/pvp/Matchmaking.vue";
-import PveGameplay from "@/pages/pve/PveGameplay.vue";
 import JoinTeamPage from "@/components/pvp/JoinTeamPage.vue";
+import Matchmaking from "@/pages/pvp/Matchmaking.vue";
 import PrivateRoom from "@/pages/pvp/PrivateRoom.vue";
+import PvpGameplay1v1 from "@/pages/pvp/PvpGameplay1v1.vue";
+
 import { isAuthenticated } from "@/stores/auth";
 
 /**
@@ -30,6 +35,7 @@ import { isAuthenticated } from "@/stores/auth";
  * - backTo:         Optional path the back button should navigate to from this route.
  * - online:         Paths that will requires socket connections.
  * - canFormTeam:    Whether the user can form a team in this route.
+ * - musicTrack:     Set music as we like, default (leave undefined) to 0
  */
 
 let connected = false
@@ -40,8 +46,8 @@ const routes = [
 
   // pve
   { name: "PveLevelSelect", path: "/pveSelect", component: PveLevelSelect, meta: { requiresAuth: true, backTo: "/" } },
-  { name: "PveLevelView", path: "/pveView", component: PveLevelView, meta: { requiresAuth: true, backTo: "/pveSelect" } },
-  { name: "PveGameplay", path: "/pveGameplay", component: PveGameplay, meta: { requiresAuth: true } },
+  { name: "PveLevelView", path: "/pveView", component: PveQuestionView, meta: { requiresAuth: true, online: true, backTo: "/pveSelect" } },
+  { name: "PveGameplay", path: "/pveGameplay", component: PveGameplay, meta: { requiresAuth: true, online: true, disableNavbar: true } },
 
   // pvp
   { name: "PvpTypeSelect", path: "/pvpSelect", component: PvpTypeSelect, meta: { requiresAuth: true, online: true, canFormTeam: true, backTo: "/" } },
@@ -51,9 +57,11 @@ const routes = [
     name: "PrivateRoom",
     path: "/privateRoom/:inviteId?",  // "?" makes it optional
     component: PrivateRoom,
-    meta: { requiresAuth: true, online: true, backTo: "/pvpSelect" },
+    meta: { requiresAuth: true, online: true, backTo: "/pvpSelect", musicTrack: 1 },
     props: true  // so route.params.inviteId is passed as a prop
   },
+  { name: "PvpGameplay1v1", path: "/pvpGameplay1v1", component: PvpGameplay1v1, meta: { requiresAuth: true, disableNavbar: true, online: true } },
+
 
   // Account
   { name: "Login", path: "/login", component: Login, meta: { hideAuth: true } },
@@ -62,7 +70,7 @@ const routes = [
     name: "Register",
     path: "/register",
     component: Register,
-    meta: { hideAuth: true, hidden: true, backTo: "/login" },
+    meta: { hideAuth: true, hidden: true },
   },
   {
     path: "/join/:inviteId",

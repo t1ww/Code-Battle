@@ -82,6 +82,51 @@ export class QuestionController {
         }
     }
 
+    async getThreeQuestions(_req: Request, res: Response) {
+        try {
+            const questions: QuestionResponse[] | { error_message: string } =
+                await this.questionService.getRandomQuestions();
+
+            // ✅ UTC-06 ID 2: No questions found
+            if ("error_message" in questions) {
+                res.status(404).json(questions);
+                return;
+            }
+
+            // ✅ UTC-06 ID 1: Valid random questions
+            res.status(200).json(questions);
+        } catch {
+            res.status(500).json({ error_message: "Error fetching random questions." });
+        }
+    }
+
+    async getRandomQuestions(req: Request, res: Response) {
+        // ✅ UTC-06 ID 3: Optional query param `count`
+        let count = 3;
+        if (req.query && typeof req.query.count === "string") {
+            const parsed = parseInt(req.query.count, 10);
+            if (!isNaN(parsed) && parsed > 0) {
+                count = parsed;
+            }
+        }
+
+        try {
+            const questions: QuestionResponse[] | { error_message: string } =
+                await this.questionService.getRandomQuestions(count);
+
+            // ✅ UTC-06 ID 2: No questions found
+            if ("error_message" in questions) {
+                res.status(404).json(questions);
+                return;
+            }
+
+            // ✅ UTC-06 ID 1: Valid random questions
+            res.status(200).json(questions);
+        } catch {
+            res.status(500).json({ error_message: "Error fetching random questions." });
+        }
+    }
+
     async createQuestion(req: Request, res: Response) {
         // Validate request body format
         if (!req.body || typeof req.body !== "object") {
