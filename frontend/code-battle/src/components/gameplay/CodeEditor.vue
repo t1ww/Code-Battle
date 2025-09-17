@@ -1,55 +1,84 @@
 <!-- frontend/code-battle/src/components/pve/CodeEditor.vue -->
-// frontend/code-battle/src/components/pve/CodeEditor.vue
 <script setup lang="ts">
-import { inject } from 'vue'
+import { inject, onMounted, ref } from 'vue'
 import MonacoEditor from 'monaco-editor-vue3'
-import * as monaco from 'monaco-editor'
 import { triggerNotification } from '@/composables/notificationService'
 
+// ----------------------------
+// Monaco Worker Setup
+// ----------------------------
+// Make sure you copied the workers into `public/monaco/...` as discussed
+(window as any).MonacoEnvironment = {
+    getWorker: (_: any, label: string) => {
+        if (label === 'json') return new Worker('/monaco/language/json/json.worker.js', { type: 'module' })
+        if (label === 'css' || label === 'scss' || label === 'less') return new Worker('/monaco/language/css/css.worker.js', { type: 'module' })
+        if (label === 'html' || label === 'handlebars' || label === 'razor') return new Worker('/monaco/language/html/html.worker.js', { type: 'module' })
+        if (label === 'typescript' || label === 'javascript') return new Worker('/monaco/language/typescript/ts.worker.js', { type: 'module' })
+        return new Worker('/monaco/editor/editor.worker.js', { type: 'module' })
+    }
+}
+
+// ----------------------------
+// Props / Emits
+// ----------------------------
 const DEV = inject('DEV') as boolean
 const props = defineProps<{ modelValue: string }>()
 const emit = defineEmits<{ (e: 'update:modelValue', value: string): void }>()
 
-const editorOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
+// ----------------------------
+// Editor Options
+// ----------------------------
+const editorOptions = {
     fontSize: 14,
     minimap: { enabled: false },
     scrollBeyondLastLine: false,
     wordWrap: 'on',
     automaticLayout: true,
+    // Disable suggestions
     quickSuggestions: false,
     suggestOnTriggerCharacters: false,
     acceptSuggestionOnEnter: 'off',
     parameterHints: { enabled: false },
-    snippetSuggestions: 'none',
+    snippetSuggestions: 'none'
 }
 
-function handleMount(editor: monaco.editor.IStandaloneCodeEditor) {
+// ----------------------------
+// Paste Prevention
+// ----------------------------
+const editorRef = ref<any>(null)
+onMounted(() => {
     if (DEV) {
-        triggerNotification("DEV mode is on, you can paste from clipboard, don't forgot to disable it in production.")
+        triggerNotification("DEV mode is on, you can paste from clipboard, don't forgot to disable it in production.");
     }
-
-    // disable right-click context menu
+    if (!editorRef.value) return
+    const container = editorRef.value.$el as HTMLElement
+    
+    // disable Monaco’s right-click menu (so no paste option)
+    const editor = editorRef.value.editor
     editor.updateOptions({ contextmenu: false })
 
-    // intercept paste attempts
-    editor.onDidPaste((e) => {
-        if (!DEV) {
-            e.event.preventDefault?.()
-            triggerNotification('Paste prevented!', 1000)
-        }
-    })
-}
+    container.addEventListener(
+        'paste',
+        (e: ClipboardEvent) => {
+            if (!DEV) {
+                e.preventDefault()
+                e.stopPropagation()
+                console.log('Paste prevented!')
+                triggerNotification('Paste prevented!', 1000);
+            }
+        },
+        { capture: true }
+    )
+})
 </script>
 
 <template>
-    <div class="editor-wrapper">
-        <MonacoEditor :value="props.modelValue" @update:value="emit('update:modelValue', $event)" language="cpp"
-            theme="vs-dark" :options="editorOptions" :onMount="handleMount" :style="{ height: '60vh' }" />
-    </div>
+    <MonacoEditor ref="editorRef" :value="props.modelValue" @update:value="emit('update:modelValue', $event)"
+        language="cpp" theme="vs-dark" :options="editorOptions" class="monaco-editor" :style="{ height: '60vh' }" />
 </template>
 
 <style scoped>
-.editor-wrapper {
+.monaco-editor {
     padding-top: 1rem;
     border: 1px solid #ccc;
     border-radius: 8px;
