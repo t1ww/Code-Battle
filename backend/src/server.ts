@@ -7,6 +7,12 @@ import questionRoutes from "@/routes/question.route"
 import scoreRoutes from "@/routes/score.route"
 
 dotenv.config();
+// Log environment variables to verify
+console.log("[ENV] PORT:", process.env.PORT);
+console.log("[ENV] DB_HOST:", process.env.DB_HOST);
+console.log("[ENV] DB_PORT:", process.env.DB_PORT);
+console.log("[ENV] DB_USER:", process.env.DB_USER);
+console.log("[ENV] DB_NAME:", process.env.DB_NAME);
 
 const app = express();
 const PORT = process.env.PORT || 5000;

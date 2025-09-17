@@ -6,14 +6,8 @@ dotenv.config();
 
 const config: { [key: string]: Knex.Config } = {
   development: {
-    client: "pg", // PostgreSQL instead of mysql2
-    connection: {
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      port: Number(process.env.DB_PORT) || 5432,
-    },
+    client: "pg",
+    connection: process.env.DATABASE_URL, // Use Session Pooler URL from Supabase
     migrations: {
       directory: "./db/migrations",
     },
