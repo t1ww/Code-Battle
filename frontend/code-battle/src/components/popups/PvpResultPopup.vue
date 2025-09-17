@@ -29,17 +29,32 @@ const loserMessages = [
     "Learning from mistakes is how champions are made! 🏆"
 ];
 
+const isWinner = computed(() => props.winner === gameStore.playerTeam)
+const isLoser = computed(() => props.winner === gameStore.opponentTeam)
+const isDraw = computed(() => props.winner === 'draw')
+
 const loserMessage = computed(() => {
-    if (isLoser.value) {
+    if (props.winner && isLoser.value) {
         const index = Math.floor(Math.random() * loserMessages.length);
         return loserMessages[index];
     }
     return "";
 });
-
-const isWinner = computed(() => props.winner === gameStore.playerTeam)
-const isLoser = computed(() => props.winner === gameStore.opponentTeam)
-const isDraw = computed(() => props.winner === 'draw')
+const emit = defineEmits<{
+    (e: 'close'): void
+    (e: 'endGame'): void
+}>()
+// Close handler
+function handleClose() {
+    if (props.winner) {
+        // Game ended → emit special event
+        // Parent can handle router redirect
+        emit('endGame')
+    } else {
+        // Just test results → hide popup
+        emit('close')
+    }
+}
 </script>
 
 <template>
@@ -56,7 +71,7 @@ const isDraw = computed(() => props.winner === 'draw')
             <!-- Add comforting message for loser -->
             <p v-if="isLoser" class="loser-message">{{ loserMessage }}</p>
 
-            <h2 v-else>Game Over</h2>
+            <h2 v-else>🧪 Test Results</h2>
             <!-- Questions & Test Progress -->
             <div v-for="(question, qIndex) in questions" :key="question.id" class="question-block">
                 <h3>Question {{ qIndex + 1 }} (ID: {{ question.id }})</h3>
@@ -74,7 +89,7 @@ const isDraw = computed(() => props.winner === 'draw')
                 </div>
             </div>
 
-            <button @click="$emit('close')">Close</button>
+            <button @click="handleClose">Close</button>
         </div>
     </div>
 </template>
