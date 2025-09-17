@@ -31,7 +31,7 @@ defineProps<{ onRestart: () => void }>()
 }
 
 .popup-content {
-    background: white;
+    background: #595959;
     padding: 2rem;
     border-radius: 12px;
     text-align: center;

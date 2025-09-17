@@ -32,7 +32,7 @@ defineProps<{
 }
 
 .popup-content {
-    background: white;
+    background: #595959;
     min-width: 20rem;
     padding: 2rem;
     border-radius: 12px;

@@ -44,7 +44,7 @@ defineEmits(['close'])
 }
 
 .popup-content {
-    background: white;
+    background: rgb(89, 89, 89);
     padding: 2rem;
     border-radius: 12px;
     text-align: left;
