@@ -37,12 +37,7 @@ export class QuestionController {
     }
 
     async getAQuestion(req: Request, res: Response) {
-        // ✅ UTC-05 ID 4: Invalid input format
-        if (
-            !req.query ||
-            typeof req.query !== "object" ||
-            !("level" in req.query)
-        ) {
+        if (!req.query || typeof req.query !== "object" || !("level" in req.query)) {
             res.status(400).json({
                 error_message: "Invalid input format, required level of; Easy, Medium, Hard.",
             });
@@ -51,34 +46,38 @@ export class QuestionController {
 
         const level = req.query.level as string;
 
-        // ✅ UTC-05 ID 4: Empty input
         if (!level) {
-            res.status(400).json({
-                error_message: "Level input must not be empty.",
-            });
+            res.status(400).json({ error_message: "Level input must not be empty." });
             return;
         }
 
-        // ✅ UTC-05 ID 2: Invalid level
         if (!["Easy", "Medium", "Hard"].includes(level)) {
-            res.status(400).json({
-                error_message: "Invalid level input.",
-            });
+            res.status(400).json({ error_message: "Invalid level input." });
             return;
         }
 
         try {
-            const question: QuestionResponse | null | { error_message: string } = await this.questionService.getAQuestion(level as "Easy" | "Medium" | "Hard");
+            const question: QuestionResponse | null | { error_message: string } =
+                await this.questionService.getAQuestion(level as "Easy" | "Medium" | "Hard");
 
             if (!question) {
                 res.status(404).json({ error_message: "Question not found." });
                 return;
             }
 
-            // ✅ UTC-05 ID 1: Valid level
             res.status(200).json(question);
-        } catch {
-            res.status(500).json({ error_message: "Error fetching question." });
+        } catch (err) {
+            // 🔎 log full error
+            console.error("[BE] getAQuestion error:", err);
+
+            const message =
+                err instanceof Error
+                    ? err.message
+                    : typeof err === "string"
+                        ? err
+                        : "Unknown error";
+
+            res.status(500).json({ error_message: "Error fetching question", details: message });
         }
     }
 
