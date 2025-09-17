@@ -1,14 +1,15 @@
+# socket-server/Dockerfile
 FROM node:20-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
-COPY ts-code-runner/package*.json ./ts-code-runner/
+COPY socket-server/package*.json ./socket-server/
 
-RUN npm install --workspace=ts-code-runner --production
+RUN npm install --workspace=socket-server --production
 
-COPY ts-code-runner ./ts-code-runner
+COPY socket-server/src ./socket-server/src
 
-EXPOSE 5001
+EXPOSE 3001
 
-CMD ["npm", "run", "tcr"]
+CMD ["npm", "run", "ss"]
