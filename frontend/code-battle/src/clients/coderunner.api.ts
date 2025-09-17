@@ -2,7 +2,7 @@
 import axios, { AxiosError } from "axios"
 
 const codeRunnerApi = axios.create({
-    baseURL: "http://localhost:5001",
+    baseURL: import.meta.env.VITE_CODE_RUNNER_URL,
     timeout: 30000, // give it more time if it's slow
 })
 
