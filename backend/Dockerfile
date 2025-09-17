@@ -11,7 +11,7 @@ COPY backend/package*.json ./backend/
 RUN npm install --workspace=backend --production
 
 # Copy backend source code
-COPY backend ./backend
+COPY backend .
 
 # Expose port
 EXPOSE 5000
