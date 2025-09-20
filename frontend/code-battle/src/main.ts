@@ -10,6 +10,7 @@ import axios from 'axios'
 import { isAuthenticated, getPlayerData } from '@/stores/auth'
 
 const app = createApp(App)
+console.log("import.meta.env:", import.meta.env);
 
 // Provide functions
 app.provide('isAuthenticated', isAuthenticated)
