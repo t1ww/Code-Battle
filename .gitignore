@@ -140,3 +140,4 @@ outer_temp_workspace/
 /ts-code-runner/temp
 .env.docker
 localnote.txt
+frontend/code-battle/src/.env.dev
