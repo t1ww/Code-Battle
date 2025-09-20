@@ -1,6 +1,6 @@
 // backend/src/services/player.service.ts
 import knex from "@/clients/knex.client";
-import { PlayerResponse } from "../dtos/player.dto";
+import { PlayerResponse } from "@/dtos/player.dto";
 import { RegisterRequest, RegisterResponse } from "@/dtos/auth.dto";
 
 export class PlayerService {
