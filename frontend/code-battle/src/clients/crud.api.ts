@@ -2,7 +2,7 @@
 import axios, { AxiosError } from "axios";
 
 const api = axios.create({
-  baseURL: window.__ENV__.VITE_API_URL,
+  baseURL: import.meta.env.VITE_API_URL,
   timeout: 10000,
   withCredentials: true,
 });
