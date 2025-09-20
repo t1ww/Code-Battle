@@ -1,88 +1,60 @@
 <!-- frontend/code-battle/src/components/pve/CodeEditor.vue -->
 <script setup lang="ts">
-import { inject, onMounted, ref } from 'vue'
-import MonacoEditor from 'monaco-editor-vue3'
-import { triggerNotification } from '@/composables/notificationService'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import * as monaco from 'monaco-editor'
 
-// ----------------------------
-// Monaco Worker Setup
-// ----------------------------
-// Make sure you copied the workers into `public/monaco/...` as discussed
-(window as any).MonacoEnvironment = {
-    getWorker: (_: any, label: string) => {
-        if (label === 'json') return new Worker('/monaco/language/json/json.worker.js', { type: 'module' })
-        if (label === 'css' || label === 'scss' || label === 'less') return new Worker('/monaco/language/css/css.worker.js', { type: 'module' })
-        if (label === 'html' || label === 'handlebars' || label === 'razor') return new Worker('/monaco/language/html/html.worker.js', { type: 'module' })
-        if (label === 'typescript' || label === 'javascript') return new Worker('/monaco/language/typescript/ts.worker.js', { type: 'module' })
-        return new Worker('/monaco/editor/editor.worker.js', { type: 'module' })
-    }
-}
+const editorContainer = ref<HTMLDivElement | null>(null)
+let editor: monaco.editor.IStandaloneCodeEditor | null = null
 
-// ----------------------------
-// Props / Emits
-// ----------------------------
-const DEV = inject('DEV') as boolean
-const props = defineProps<{ modelValue: string }>()
-const emit = defineEmits<{ (e: 'update:modelValue', value: string): void }>()
-
-// ----------------------------
-// Editor Options
-// ----------------------------
-const editorOptions = {
-    fontSize: 14,
-    minimap: { enabled: false },
-    scrollBeyondLastLine: false,
-    wordWrap: 'on',
-    automaticLayout: true,
-    // Disable suggestions
-    quickSuggestions: false,
-    suggestOnTriggerCharacters: false,
-    acceptSuggestionOnEnter: 'off',
-    parameterHints: { enabled: false },
-    snippetSuggestions: 'none'
-}
-
-// ----------------------------
-// Paste Prevention
-// ----------------------------
-const editorRef = ref<any>(null)
 onMounted(() => {
-    if (DEV) {
-        triggerNotification("DEV mode is on, you can paste from clipboard, don't forgot to disable it in production.");
-    }
-    if (!editorRef.value) return
-    const container = editorRef.value.$el as HTMLElement
-    
-    // disable Monaco’s right-click menu (so no paste option)
-    const editor = editorRef.value.editor
-    editor.updateOptions({ contextmenu: false })
+  if (!editorContainer.value) return
 
-    container.addEventListener(
-        'paste',
-        (e: ClipboardEvent) => {
-            if (!DEV) {
-                e.preventDefault()
-                e.stopPropagation()
-                console.log('Paste prevented!')
-                triggerNotification('Paste prevented!', 1000);
-            }
-        },
-        { capture: true }
-    )
+  // Monaco worker setup
+  ;(window as any).MonacoEnvironment = {
+    getWorker: (_: any, label: string) => {
+      if (label === 'json') return new Worker('monaco-editor/esm/vs/language/json/json.worker', { type: 'module' })
+      if (label === 'css') return new Worker('monaco-editor/esm/vs/language/css/css.worker', { type: 'module' })
+      if (label === 'html') return new Worker('monaco-editor/esm/vs/language/html/html.worker', { type: 'module' })
+      if (label === 'typescript' || label === 'javascript') return new Worker('monaco-editor/esm/vs/language/typescript/ts.worker', { type: 'module' })
+      return new Worker('monaco-editor/esm/vs/editor/editor.worker', { type: 'module' })
+    },
+  }
+
+  editor = monaco.editor.create(editorContainer.value, {
+    value: '',
+    language: 'javascript',
+    theme: 'vs-dark',
+    automaticLayout: true,
+    minimap: { enabled: false },
+    suggestOnTriggerCharacters: false,
+    quickSuggestions: false,
+    parameterHints: { enabled: false },
+    contextmenu: false, // disable right-click menu
+  })
+
+  // Prevent copy/paste/cut
+  const preventClipboard = (e: Event) => e.preventDefault()
+  editorContainer.value.addEventListener('copy', preventClipboard)
+  editorContainer.value.addEventListener('paste', preventClipboard)
+  editorContainer.value.addEventListener('cut', preventClipboard)
+  editorContainer.value.addEventListener('contextmenu', preventClipboard)
+})
+
+onBeforeUnmount(() => {
+  editor?.dispose()
 })
 </script>
 
 <template>
-    <MonacoEditor ref="editorRef" :value="props.modelValue" @update:value="emit('update:modelValue', $event)"
-        language="cpp" theme="vs-dark" :options="editorOptions" class="monaco-editor" :style="{ height: '60vh' }" />
+  <div ref="editorContainer" class="editor-container"></div>
 </template>
 
 <style scoped>
-.monaco-editor {
-    padding-top: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    overflow: hidden;
-    margin-bottom: 1rem;
+.editor-container {
+  width: 100%;
+  height: 400px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  overflow: hidden;
 }
 </style>
