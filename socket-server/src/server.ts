@@ -2,14 +2,23 @@
 import { createServer } from "http";
 import express from "express";
 import { Server } from "socket.io";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const app = express();
+const server = createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    credentials: true,
+  },
+});
 
 // factories
 import { createServices } from "@/factory/service.factory";
 import { registerAllHandlers } from "@/factory/handlers.factory";
-
-const app = express();
-const server = createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
 
 // initialize services
 const services = createServices(io);
@@ -20,7 +29,8 @@ startMatchmakingLoop(services);
 
 // socket connection
 io.on("connection", (socket) => {
-    registerAllHandlers(io, socket, services);
+  registerAllHandlers(io, socket, services);
 });
 
-server.listen(3001, () => console.log("Socket server running on port 3001"));
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => console.log(`Socket server running on port ${PORT}`));

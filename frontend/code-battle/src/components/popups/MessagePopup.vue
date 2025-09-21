@@ -17,34 +17,5 @@ defineProps<{
 }>()
 </script>
 
-<style scoped>
-.popup-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.popup-content {
-    background: white;
-    min-width: 20rem;
-    padding: 2rem;
-    border-radius: 12px;
-    text-align: center;
-}
-
-.popup-content h2,
-.popup-content p {
-    color: black;
-}
-
-.popup-content button {
-    margin: 0.5rem;
-}
-</style>
+<!-- Import shared popup CSS -->
+<style src="@/styles/messagePopup.css"></style>

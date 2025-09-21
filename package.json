@@ -31,7 +31,9 @@
     "ts-code-runner": "npm run tcr",
     "ss": "npm run dev --prefix socket-server",
     "socket-server": "npm run ss",
-    "dev": "npm run kill-ports && concurrently -n BE,FE,TCR,SS -c cyan,green,yellow,magenta \"npm run be\" \"npm run fe\" \"npm run tcr\" \"npm run ss\""
+    "dev": "npm run kill-ports && concurrently -n BE,FE,TCR,SS -c cyan,green,yellow,magenta \"npm run be\" \"npm run fe\" \"npm run tcr\" \"npm run ss\"",
+    "build:backend": "npm run build --workspace backend",
+    "build:frontend": "npm run build --workspace frontend/code-battle"
   },
   "repository": {
     "type": "git",

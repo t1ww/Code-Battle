@@ -22,6 +22,7 @@ defineEmits(['close'])
     top: 1rem;
     left: 1rem;
     background-color: #1f2937;
+    border: .1rem solid #92fffa;
     color: #f9fafb;
     padding: 10px 16px;
     border-radius: 6px;

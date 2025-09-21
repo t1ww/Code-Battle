@@ -26,8 +26,7 @@ import ConfidentLostPopup from '@/components/popups/ConfidentLostPopup.vue'
 import TimeoutPopup from '@/components/popups/TimeoutPopup.vue'
 import ClearedPopup from '@/components/popups/ClearedPopup.vue'
 import MessagePopup from '@/components/popups/MessagePopup.vue'
-
-import QuestionDescriptionPanel from '@/components/gameplay/QuestionDescriptionPanel.vue'
+import QuestionBrowser from '@/components/gameplay/QuestionBrowser.vue'
 
 // Stores
 import { useQuestionStore } from '@/stores/questionStore'
@@ -45,12 +44,10 @@ const timeLimitEnabled = route.query.timeLimitEnabled === 'true'
 // 🔁 Reactive State
 // =============================
 // Base
-const code = ref(`// Write code here
-int main() {
-    return 0;
-}`);
+const code = ref(`// Write code here`);
 
-const showDescriptionPopup = ref(false)
+const showQuestionsPanel = ref(false)
+const currentQuestionIndex = ref(0)
 const isLoading = ref(false)
 const MODIFIER_BONUS = 1.25
 // get player ID from auth
@@ -69,7 +66,7 @@ const showTimeoutPopup = ref(false)
 const showResultPopup = ref(false)
 const testResults = ref<{
     passed: boolean
-    results: { passed: boolean; output: string; expected_output: string; input: string }[]
+    results: { passed: boolean; output: string; expected_output: string; input: string; score?: number }[]
     total_score: number
 } | null>(null)
 const finalScore = ref(0);
@@ -93,7 +90,7 @@ function openMessagePopup(title: string, message: string) {
 
 // Terminal
 const terminalOpen = ref(false) // default close
-
+const selectedLanguage = ref('cpp')
 
 // =============================
 // 🧪 Code Actions
@@ -105,6 +102,9 @@ const runCodeInteractive = () => {
     // Stop previous session
     stopSession();
 
+    // Log to console for debugging
+    console.log("Running code:", code.value);
+
     // Open the terminal
     terminalOpen.value = true;
     codeTerminal.value?.pushOutput("> New session started");
@@ -114,6 +114,43 @@ const runCodeInteractive = () => {
 };
 
 
+// -----------------
+// 🛠️ Helpers
+// -----------------
+/**
+ * Map API results to our internal shape and compute a self-derived total_score.
+ * - For each test case we will compute a per-test score using question.test_cases[i].score (fallback to 1)
+ * - total_score is the sum of per-test scores for passed tests, multiplied by scorePct (0..1)
+ * - returns numbers rounded to 3 decimals
+ */
+function mapTestResults(data: CodeRunResponse, question: any, scorePct = 1) {
+    const perTest = data.results.map((r, i) => {
+        const tc = question.test_cases?.[i] ?? {}
+        const tcScore = Number(tc.score ?? 1) // fallback score per test
+        const passed = !!r.passed
+        const computedScore = +((passed ? tcScore : 0) * scorePct).toFixed(3)
+        return {
+            passed,
+            output: r.output,
+            expected_output: tc.expected_output,
+            input: tc.input,
+            score: computedScore
+        }
+    })
+    const passedCount = perTest.filter(p => p.passed).length
+
+    const total_score = +perTest.reduce((acc, t) => acc + (t.score ?? 0), 0).toFixed(3)
+
+    return {
+        passed: passedCount === (question.test_cases?.length ?? 0),
+        results: perTest,
+        total_score
+    }
+}
+
+// =============================
+// 🧪 Submission / run
+// =============================
 const submitCode = async () => {
     if (!question_data.value) return
     isLoading.value = true
@@ -124,11 +161,16 @@ const submitCode = async () => {
         let scorePct = 1
 
         if (timeLimitEnabled) {
+            // fraction of time remaining
             scorePct = timeLeft.value / baseLimit
         } else {
+            // if no time limit, approximate score by fraction of time used (keep existing behaviour)
             const timeUsed = baseLimit - timeLeft.value
             scorePct = timeUsed / baseLimit
         }
+
+        // clamp
+        scorePct = Math.max(0, Math.min(1, scorePct))
 
         console.log('Timer pct:', scorePct)
 
@@ -153,36 +195,44 @@ const submitCode = async () => {
             return // stop further processing
         }
 
-        // Normal test results
-        testResults.value = {
-            passed: data.total_score === question_data.value.test_cases.length,
-            results: data.results.map((r, i) => ({
-                passed: r.passed,
-                output: r.output,
-                expected_output: question_data.value!.test_cases[i].expected_output,
-                input: question_data.value!.test_cases[i].input,
-            })),
-            total_score: parseFloat(data.total_score as unknown as string) || 0,
-        }
+        // Map results (we compute per-test scores here so the client owns the scoring logic)
+        const mapped = mapTestResults(data, question_data.value, scorePct)
+        testResults.value = mapped
 
+        // Use mapped total_score (client-computed) and then apply modifier bonus if applicable
         finalScore.value = (selectedModifier === 'Sabotage' || selectedModifier === 'Confident')
-            ? +(testResults.value.total_score * MODIFIER_BONUS).toFixed(3)
-            : testResults.value.total_score
+            ? +(mapped.total_score * MODIFIER_BONUS).toFixed(3)
+            : mapped.total_score
 
-        if (data.passed) {
+        // If all tests passed according to our mapping
+        if (mapped.passed) {
             if (!player) {
                 console.warn("Player is null; skipping score submission.")
+                // still show cleared popup locally
+                stopTimer()
+                showClearedPopup.value = true
                 return
             }
 
             stopTimer()
             showClearedPopup.value = true
 
+            // Map your internal language keys to display/backend values
+            const languageMap: Record<string, string> = {
+                cpp: "C++",
+                java: "Java",
+                py: "Python",
+            }
+
+            // Get the mapped value
+            const languageKey = selectedLanguage.value || 'cpp'
+            const language = languageMap[languageKey] || "C++"
+
             const scorePayload: ScoreSubmitRequest = {
                 player_id: player.player_id!,
                 question_id: question_data.value.id.toString(),
                 score: finalScore.value,
-                language: "c++",
+                language: language,
                 modifier_state: selectedModifier as "None" | "Sabotage" | "Confident",
             }
 
@@ -195,6 +245,7 @@ const submitCode = async () => {
             }
 
         } else {
+            // not all tests passed
             if (selectedModifier === 'Confident') {
                 showConfidentLostPopup.value = true
             } else {
@@ -210,6 +261,9 @@ const submitCode = async () => {
     }
 }
 
+// =============================
+// 🧪 Restart
+// =============================
 const restartGame = () => {
     code.value = '// Write code here';
     isLoading.value = false;
@@ -222,7 +276,6 @@ const restartGame = () => {
     timeLeft.value = question_data.value?.time_limit ?? 0;
     startTimer();
 };
-
 
 // =============================
 // 🖥️ Computed
@@ -293,8 +346,8 @@ onUnmounted(() => {
         <!-- Top bar -->
         <div class="top-bar">
             <!-- Toggle Button when hidden -->
-            <div v-if="!showDescriptionPopup" class="popup-toggle fixed">
-                <button @click="showDescriptionPopup = true">▼</button>
+            <div v-if="!showQuestionsPanel" class="popup-toggle fixed">
+                <button @click="showQuestionsPanel = true">▼</button>
             </div>
             <div class="timer">
                 Time Left:
@@ -303,7 +356,9 @@ onUnmounted(() => {
         </div>
 
         <!-- Code editor and run/submit buttons -->
-        <CodeEditor v-model="code" />
+        <div class="code-editor-wrapper">
+            <CodeEditor v-model="code" v-model:modelLanguage="selectedLanguage" />
+        </div>
 
         <div class="buttons">
             <button @click="runCodeInteractive" :disabled="isLoading">Run code</button>
@@ -311,12 +366,6 @@ onUnmounted(() => {
                 Submit
             </button>
         </div>
-
-        <!-- Terminal under the editor -->
-        <button class="terminal-toggle" @click="terminalOpen = true"
-            :style="{ visibility: terminalOpen ? 'hidden' : 'visible' }">
-            Show Terminal ▲
-        </button>
 
         <transition name="slide-down">
             <div class="terminal-wrapper" v-show="terminalOpen">
@@ -329,8 +378,9 @@ onUnmounted(() => {
         </div>
 
         <!-- Slide Panel Toggle -->
-        <QuestionDescriptionPanel :show="showDescriptionPopup" :question="question_data" :timeLimitEnabled="timeLimitEnabled"
-            :selectedModifier="selectedModifier" @close="showDescriptionPopup = false" />
+        <QuestionBrowser :show="showQuestionsPanel" :questions="[question_data]" :timeLimitEnabled="timeLimitEnabled"
+            :selectedModifier="selectedModifier" v-model:currentQuestionIndex="currentQuestionIndex"
+            @close="showQuestionsPanel = false" />
 
         <!-- Submission result -->
         <ResultPopup :show="showResultPopup" :finalScore="finalScore"

@@ -1,5 +1,5 @@
 // backend\src\dtos\auth.dto.ts
-import { PlayerResponse } from "./player.dto";
+import { PlayerResponse } from "@/dtos/player.dto";
 
 export interface RegisterRequest {
   username: string;

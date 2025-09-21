@@ -1,7 +1,7 @@
-// ts-code-runner\services\execute.service.ts
+// ts-code-runner\src\services\execute.service.ts
 import { spawn } from "child_process";
-import { RUNTIME_TIMEOUT_MS } from "../config.js";
-import type { TestCase, TestResult } from "../types.js";
+import { RUNTIME_TIMEOUT_MS } from "@/config";
+import type { TestCase, TestResult } from "@/types";
 
 export function runSingleTest(exeFile: string, tc: TestCase): Promise<TestResult> {
   return new Promise((resolve) => {

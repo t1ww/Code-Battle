@@ -11,59 +11,77 @@ type QuestionResponseWithError = QuestionResponse | { error_message: string };
 
 export class QuestionService {
     async getQuestionById(question_id: string): Promise<QuestionResponseWithError> {
-        if (!question_id) return { error_message: "Question ID is required." };
+        try {
+            if (!question_id) return { error_message: "Question ID is required." };
 
-        const question = await knex("questions")
-            .where({ question_id })
-            .first();
+            const question = await knex("questions")
+                .where({ question_id })
+                .first();
 
-        if (!question) return { error_message: "Question not found." };
+            if (!question) {
+                console.log(`getQuestionById: question not found for ID "${question_id}"`);
+                return { error_message: "Question not found." };
+            }
 
-        const test_cases = await knex("test_cases")
-            .where({ question_id });
+            const test_cases = await knex("test_cases")
+                .where({ question_id });
 
-        return {
-            id: question.question_id,
-            question_name: question.question_name,
-            description: question.description,
-            time_limit: question.time_limit,
-            level: question.level,
-            test_cases: test_cases.map((tc): TestCaseResponse => ({
-                id: tc.test_case_id,
-                input: tc.input,
-                expected_output: tc.expected_output,
-                score: tc.score,
-            })),
-        };
+            console.log(`getQuestionById: fetched question ID "${question_id}" successfully`);
+
+            return {
+                id: question.question_id,
+                question_name: question.question_name,
+                description: question.description,
+                time_limit: question.time_limit,
+                level: question.level,
+                test_cases: test_cases.map((tc): TestCaseResponse => ({
+                    id: tc.test_case_id,
+                    input: tc.input,
+                    expected_output: tc.expected_output,
+                    score: tc.score,
+                })),
+            };
+        } catch (err) {
+            console.error(`getQuestionById error for ID "${question_id}":`, err);
+            return { error_message: "Error fetching question." };
+        }
     }
 
     async getAQuestion(level: "Easy" | "Medium" | "Hard"): Promise<QuestionResponseWithError> {
-        if (!level) return { error_message: "Level input must not be empty." };
-        if (!["Easy", "Medium", "Hard"].includes(level)) return { error_message: "Invalid level input." };
+        try {
+            if (!level) return { error_message: "Level input must not be empty." };
+            if (!["Easy", "Medium", "Hard"].includes(level)) return { error_message: "Invalid level input." };
 
-        const question = await knex("questions")
-            .where({ level })
-            .orderByRaw("RANDOM()") // PostgreSQL random
-            .first();
+            const question = await knex("questions")
+                .where({ level })
+                .orderByRaw("RANDOM()") // PostgreSQL random
+                .first();
 
-        if (!question) return { error_message: "No questions found." };
+            if (!question) {
+                console.log(`getAQuestion: no questions found for level "${level}"`);
+                return { error_message: "No questions found." };
+            }
 
-        const test_cases = await knex("test_cases")
-            .where({ question_id: question.question_id });
+            const test_cases = await knex("test_cases")
+                .where({ question_id: question.question_id });
 
-        return {
-            id: question.question_id,
-            question_name: question.question_name,
-            description: question.description,
-            time_limit: question.time_limit,
-            level: question.level,
-            test_cases: test_cases.map((tc): TestCaseResponse => ({
-                id: tc.test_case_id,
-                input: tc.input,
-                expected_output: tc.expected_output,
-                score: tc.score,
-            })),
-        };
+            return {
+                id: question.question_id,
+                question_name: question.question_name,
+                description: question.description,
+                time_limit: question.time_limit,
+                level: question.level,
+                test_cases: test_cases.map((tc): TestCaseResponse => ({
+                    id: tc.test_case_id,
+                    input: tc.input,
+                    expected_output: tc.expected_output,
+                    score: tc.score,
+                })),
+            };
+        } catch (err) {
+            console.error(`getAQuestion error for level "${level}":`, err);
+            return { error_message: "Error fetching question." };
+        }
     }
 
     async getRandomQuestions(count: number = 3): Promise<QuestionResponse[] | { error_message: string }> {
@@ -73,6 +91,7 @@ export class QuestionService {
                 .limit(count);
 
             if (!questions.length) {
+                console.log("getRandomQuestions: no questions found");
                 return { error_message: "No questions found." };
             }
 
@@ -98,7 +117,8 @@ export class QuestionService {
             }
 
             return results;
-        } catch {
+        } catch (err) {
+            console.error("getRandomQuestions error:", err);
             return { error_message: "Error fetching random questions." };
         }
     }

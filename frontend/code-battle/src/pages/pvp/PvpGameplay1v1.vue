@@ -29,6 +29,29 @@ import VotePanel from '@/components/gameplay/VotePanel.vue'
 // Stores
 import QuestionBrowser from '@/components/gameplay/QuestionBrowser.vue'
 
+// Terminal
+import { useTerminal } from "@/composables/useTerminal";
+import CodeTerminal from '@/components/gameplay/CodeTerminal.vue'
+
+const { codeTerminal, startSession, sendInput, stopSession } = useTerminal();
+
+const terminalOpen = ref(false); // default closed
+const runCodeInteractive = () => {
+  if (!code.value.trim()) return;
+
+  // Stop any previous session
+  stopSession();
+
+  console.log("Running code:", code.value);
+
+  // Open terminal
+  terminalOpen.value = true;
+  codeTerminal.value?.pushOutput("> New session started");
+
+  // Start a new session with the current code
+  startSession(code.value);
+};
+
 // Constant
 const PVP_TIME_LIMIT = 5400
 
@@ -58,6 +81,7 @@ const messagePopupMessage = ref('')
 const showTimeoutPopup = ref(false)
 const showResultPopup = ref(false)
 const currentQuestionIndex = ref(0)
+const selectedLanguage = ref('cpp')
 
 // Toggle functions
 function toggleOpponentPanel() { showOpponentPanel.value = !showOpponentPanel.value }
@@ -90,10 +114,6 @@ function openErrorMessagePopup(title: string, message: string) {
 // =============================
 // 🧪 Code Actions
 // =============================
-const runCode = async () => {
-  console.log('Running code:', code.value)
-}
-
 const submitCode = async () => {
   isLoading.value = true;
   try {
@@ -443,12 +463,23 @@ onUnmounted(() => {
     </div>
 
     <!-- Code editor and run/submit buttons -->
-    <CodeEditor v-model="code" />
+    <div class="code-editor-wrapper">
+      <CodeEditor v-model="code" v-model:modelLanguage="selectedLanguage" />
+    </div>
 
     <div class="buttons">
-      <button @click="runCode" :disabled="isLoading">Run code</button>
-      <button @click="submitCode" :disabled="isLoading">Submit</button>
+      <button @click="runCodeInteractive" :disabled="isLoading">Run code</button>
+      <button @click="submitCode" :disabled="isLoading">
+        Submit
+      </button>
     </div>
+
+    <transition name="slide-down">
+      <div class="terminal-wrapper" v-show="terminalOpen">
+        <CodeTerminal ref="codeTerminal" @close="terminalOpen = false" :sendInput="sendInput" />
+      </div>
+    </transition>
+
     <div class="buttons">
       <span v-if="isLoading" class="loading-spinner">Loading...</span>
     </div>
@@ -488,7 +519,7 @@ onUnmounted(() => {
   <PvpResultPopup :show="showResultPopup" :testResults="[testResults?.results || []]" :questions="gameStore.questions"
     :progress="gameStore.progress[gameStore.playerTeam || 'team1'] || []"
     :progressFullPass="gameStore.progressFullPass?.[gameStore.playerTeam || 'team1'] || []"
-    :winner="gameStore.finished ? gameStore.winner : null" @close="showResultPopup = false" @endGame="endGame"/>
+    :winner="gameStore.finished ? gameStore.winner : null" @close="showResultPopup = false" @endGame="endGame" />
 
   <div v-if="DEV" class="dev-buttons" style="position: fixed; bottom: 10px; right: 10px;">
     <button @click="forceClearQuestion"
