@@ -110,20 +110,23 @@ function handleClose() {
     margin: 6px 0;
 }
 
-.progress-segment {
-    flex: 1;
-    height: 12px;
-    margin-right: 2px;
-    border-radius: 2px;
-    background: #333;
+/* faint text overlay */
+.progress-label {
+    font-size: 0.9rem;
+    font-weight: 1000;
+    pointer-events: none;
+    letter-spacing: 0.5px;
+    user-select: none;
 }
 
 .progress-segment.passed {
     background: #0f0;
+    color: rgb(29, 58, 75); 
 }
 
 .progress-segment.failed {
     background: #f00;
+    color: rgb(255, 198, 123); 
 }
 
 .test-case.pass {
@@ -149,7 +152,7 @@ function handleClose() {
 /* progress text */
 .progress-segment {
     flex: 1;
-    height: 12px;
+    height: 1.6rem;
     margin-right: 2px;
     border-radius: 2px;
     background: #333;
@@ -159,10 +162,7 @@ function handleClose() {
     justify-content: center;
 }
 
-.progress-label {
-    font-size: 0.65rem;
-    color: rgba(255, 255, 255, 0.5);
-    pointer-events: none; /* so tooltip still works */
+button {
+    width: 10rem;
 }
-
 </style>

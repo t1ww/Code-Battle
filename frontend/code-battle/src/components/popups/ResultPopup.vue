@@ -9,7 +9,7 @@ interface TestResult {
     expected_output: string
 }
 
-const props = defineProps<{
+defineProps<{
     show: boolean
     testResults: TestResult[] // flat array
 }>()
@@ -41,8 +41,6 @@ function handleClose() {
                 <div v-if="testResults.every(t => t.passed)" class="test-case pass">
                     <span class="status-badge pass">✔ Cleared</span>
                 </div>
-
-                <hr>
             </div>
 
             <button @click="handleClose">Close</button>
@@ -58,7 +56,7 @@ function handleClose() {
 
 .progress-segment {
     flex: 1;
-    height: 20px;
+    height: 1.6rem;
     margin-right: 2px;
     border-radius: 2px;
     background: #333;
@@ -70,17 +68,21 @@ function handleClose() {
 
 .progress-segment.passed {
     background: #0f0;
+    color: rgb(29, 58, 75); 
 }
 
 .progress-segment.failed {
     background: #f00;
+    color: rgb(255, 198, 123); 
 }
 
 /* faint text overlay */
 .progress-label {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.5);
-    pointer-events: none; /* so hover still triggers the segment tooltip */
+    font-size: 0.9rem;
+    font-weight: 1000;
+    pointer-events: none;
+    letter-spacing: 0.5px;
+    user-select: none;
 }
 
 .test-case.pass {
@@ -94,5 +96,9 @@ function handleClose() {
     padding: 0.2rem 0.5rem;
     border-radius: 0.3rem;
     font-size: 0.85rem;
+}
+
+button {
+    width: 10rem;
 }
 </style>
