@@ -19,17 +19,3 @@ defineProps<{
 
 <!-- Import shared popup CSS -->
 <style src="@/styles/messagePopup.css"></style>
-
-<!-- Override colors locally to keep white popup -->
-<style scoped>
-.popup-content {
-    background: white;
-    color: black;
-    min-width: 20rem;
-}
-
-.popup-content h2,
-.popup-content p {
-    color: black;
-}
-</style>
