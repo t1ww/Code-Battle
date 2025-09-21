@@ -26,8 +26,7 @@ import ConfidentLostPopup from '@/components/popups/ConfidentLostPopup.vue'
 import TimeoutPopup from '@/components/popups/TimeoutPopup.vue'
 import ClearedPopup from '@/components/popups/ClearedPopup.vue'
 import MessagePopup from '@/components/popups/MessagePopup.vue'
-
-import QuestionDescriptionPanel from '@/components/gameplay/QuestionDescriptionPanel.vue'
+import QuestionBrowser from '@/components/gameplay/QuestionBrowser.vue'
 
 // Stores
 import { useQuestionStore } from '@/stores/questionStore'
@@ -47,7 +46,8 @@ const timeLimitEnabled = route.query.timeLimitEnabled === 'true'
 // Base
 const code = ref(`// Write code here`);
 
-const showDescriptionPopup = ref(false)
+const showQuestionsPanel = ref(false)
+const currentQuestionIndex = ref(0)
 const isLoading = ref(false)
 const MODIFIER_BONUS = 1.25
 // get player ID from auth
@@ -293,8 +293,8 @@ onUnmounted(() => {
         <!-- Top bar -->
         <div class="top-bar">
             <!-- Toggle Button when hidden -->
-            <div v-if="!showDescriptionPopup" class="popup-toggle fixed">
-                <button @click="showDescriptionPopup = true">▼</button>
+            <div v-if="!showQuestionsPanel" class="popup-toggle fixed">
+                <button @click="showQuestionsPanel = true">▼</button>
             </div>
             <div class="timer">
                 Time Left:
@@ -325,9 +325,9 @@ onUnmounted(() => {
         </div>
 
         <!-- Slide Panel Toggle -->
-        <QuestionDescriptionPanel :show="showDescriptionPopup" :question="question_data"
-            :timeLimitEnabled="timeLimitEnabled" :selectedModifier="selectedModifier"
-            @close="showDescriptionPopup = false" />
+        <QuestionBrowser :show="showQuestionsPanel" :questions="[question_data]" :timeLimitEnabled="timeLimitEnabled"
+            :selectedModifier="selectedModifier" v-model:currentQuestionIndex="currentQuestionIndex"
+            @close="showQuestionsPanel = false" />
 
         <!-- Submission result -->
         <ResultPopup :show="showResultPopup" :finalScore="finalScore"
