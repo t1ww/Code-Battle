@@ -1,8 +1,13 @@
 <!-- frontend/code-battle/src/components/pve/CodeEditor.vue -->
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, inject } from 'vue'
 import * as monaco from 'monaco-editor'
+import { triggerNotification } from '@/composables/notificationService';
 
+// =============================
+// Props / Emits
+// =============================
+const DEV = inject('DEV') as boolean
 // Accept v-model
 const props = defineProps<{ modelValue: string, modelLanguage?: string }>()
 const emit = defineEmits<{
@@ -26,7 +31,13 @@ watch(selectedLanguage, (lang) => {
   emit('update:modelLanguage', lang)
 })
 
+// =============================
 onMounted(() => {
+  if (DEV) {
+    triggerNotification(
+      "DEV mode is on, you can paste from clipboard. Don't forget to disable it in production."
+    )
+  }
   if (!editorContainer.value) return
 
     ; (window as any).MonacoEnvironment = {
@@ -56,17 +67,20 @@ onMounted(() => {
     emit('update:modelValue', editor!.getValue())
   })
 
-  // Prevent paste/copy/cut
-  const preventClipboard = (e: Event) => {
-    e.preventDefault()
-    e.stopPropagation()
-  }
+  // Replace your editorDom paste listener with this:
+  editor.onDidPaste(() => {
+    if (!DEV) {
+      console.log('Paste blocked!')
+      triggerNotification('Clipboard paste prevented!', 800)
 
-  const container = editorContainer.value
-  container.addEventListener('paste', preventClipboard, { capture: true })
-  container.addEventListener('copy', preventClipboard, { capture: true })
-  container.addEventListener('cut', preventClipboard, { capture: true })
-  container.addEventListener('contextmenu', preventClipboard, { capture: true })
+      const model = editor!.getModel()
+      if (!model) return
+
+      // simple approach: undo the paste
+      editor!.trigger('preventPaste', 'undo', null)
+    }
+  })
+
 })
 
 onBeforeUnmount(() => {
@@ -93,7 +107,7 @@ onBeforeUnmount(() => {
   border-radius: 0.25rem;
   overflow: hidden;
   text-align: left;
-  
+
   padding-top: 1rem;
   background: #202020;
 
@@ -105,6 +119,7 @@ onBeforeUnmount(() => {
 }
 
 @keyframes glowPulse {
+
   0%,
   60% {
     box-shadow: 0 0 0rem rgba(0, 0, 0, 0), 0 0 0rem var(--theme-color);
