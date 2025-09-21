@@ -1,11 +1,13 @@
-// ts-code-runner\routes\run.route.ts
+// ts-code-runner\src\routes\run.route.ts
 import { Router } from "express";
+
+import { TEMP_DIR } from "@/config";
+import { TestCase, TestResult } from "@/types";
+import { compileCode } from "@/services/compile.service";
+import { runSingleTest } from "@/services/execute.service";
+
 import fs from "fs-extra";
 import path from "path";
-import { TEMP_DIR } from "../config.js";
-import { compileCode } from "../services/compile.service.js";
-import { runSingleTest } from "../services/execute.service.js";
-import type { TestCase, TestResult } from "../types.js";
 
 const router = Router();
 

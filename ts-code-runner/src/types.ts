@@ -1,4 +1,4 @@
-// ts-code-runner\types.ts
+// ts-code-runner\src\types.ts
 export type TestCase = { input: string; expected_output: string; score: number };
 export type TestResult = {
   input: string;
