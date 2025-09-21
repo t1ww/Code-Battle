@@ -40,11 +40,12 @@ const loserMessage = computed(() => {
     }
     return "";
 });
+
 const emit = defineEmits<{
     (e: 'close'): void
     (e: 'endGame'): void
 }>()
-// Close handler
+
 function handleClose() {
     if (props.winner) {
         // Game ended → emit special event
@@ -58,8 +59,8 @@ function handleClose() {
 </script>
 
 <template>
-    <div v-if="show" class="popup-overlay">
-        <div class="popup-container">
+    <div v-if="show" class="popup-backdrop">
+        <div class="popup-content">
             <!-- Winner / Loser / Draw -->
             <h2 v-if="winner">
                 <template v-if="isWinner">🎉 You Win! 🎉</template>
@@ -68,19 +69,20 @@ function handleClose() {
                 <template v-else>⚠ Unexpected result ⚠</template>
             </h2>
 
-            <!-- Add comforting message for loser -->
             <p v-if="isLoser" class="loser-message">{{ loserMessage }}</p>
 
             <h2 v-else>🧪 Test Results</h2>
-            <!-- Questions & Test Progress -->
+            <hr>
+            <!-- Per-question progress -->
             <div v-for="(question, qIndex) in questions" :key="question.id" class="question-block">
                 <h3>Question {{ qIndex + 1 }} (ID: {{ question.id }})</h3>
 
-                <!-- Progress bar for test cases -->
                 <div class="progress-bar">
                     <div v-for="(passed, tIndex) in progress[qIndex]" :key="tIndex" class="progress-segment"
                         :class="{ passed, failed: !passed }"
-                        :title="'Test ' + (tIndex + 1) + (passed ? ': ✅ Passed' : ': ❌ Failed')"></div>
+                        :title="'Test ' + (tIndex + 1) + (passed ? ': ✅ Passed' : ': ❌ Failed')">
+                        <span class="progress-label">Test {{ tIndex + 1 }}</span>
+                    </div>
                 </div>
 
                 <!-- Full pass indicator -->
@@ -94,27 +96,11 @@ function handleClose() {
     </div>
 </template>
 
+<!-- Import shared popup CSS -->
+<style src="@/styles/messagePopup.css"></style>
+
+<!-- Custom styles for progress bars and loser message -->
 <style scoped>
-.popup-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-}
-
-.popup-container {
-    background: #111;
-    color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    width: 500px;
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
 .question-block {
     margin-bottom: 16px;
 }
@@ -140,11 +126,6 @@ function handleClose() {
     background: #f00;
 }
 
-.test-results {
-    margin-top: 6px;
-    font-size: 0.85rem;
-}
-
 .test-case.pass {
     color: #101d10;
     font-weight: bold;
@@ -158,20 +139,30 @@ function handleClose() {
     font-size: 0.85rem;
 }
 
-button {
-    margin-top: 16px;
-    padding: 6px 12px;
-    border: none;
-    border-radius: 4px;
-    background: #444;
-    color: #fff;
-    cursor: pointer;
-}
-
 .loser-message {
     margin-top: 8px;
     font-size: 0.9rem;
     color: #ffcccb;
     font-style: italic;
 }
+
+/* progress text */
+.progress-segment {
+    flex: 1;
+    height: 12px;
+    margin-right: 2px;
+    border-radius: 2px;
+    background: #333;
+    position: relative; /* for text overlay */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.progress-label {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.5);
+    pointer-events: none; /* so tooltip still works */
+}
+
 </style>

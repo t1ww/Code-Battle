@@ -15,7 +15,7 @@ console.log("import.meta.env:", import.meta.env);
 // Provide functions
 app.provide('isAuthenticated', isAuthenticated)
 app.provide('getPlayerData', getPlayerData)
-app.provide('DEV', false)
+app.provide('DEV', true)
 
 app.use(createPinia())
     .use(router)
