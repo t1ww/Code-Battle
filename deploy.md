@@ -1,5 +1,6 @@
 # Code Battle — Deployment Guide
 
+# Deploy is finished 🎉🎉🎉🎉🎉🎉
 This document explains how to deploy the **Code Battle** monorepo to Docker Hub and hosting services like Render.  
 
 ---
