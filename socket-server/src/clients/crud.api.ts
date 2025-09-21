@@ -1,5 +1,5 @@
 // socket-server\src\clients\crud.api.ts
-import axios, { AxiosError } from "axios";
+import axios, { type AxiosError } from "axios";
 
 const api = axios.create({
   baseURL: "http://localhost:5000/api",
