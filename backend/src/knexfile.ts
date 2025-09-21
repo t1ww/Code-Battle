@@ -7,14 +7,21 @@ dotenv.config();
 const config: { [key: string]: Knex.Config } = {
   development: {
     client: "pg",
-    connection: process.env.DATABASE_URL, // Use Session Pooler URL from Supabase
-    migrations: {
-      directory: "./db/migrations",
+    connection: process.env.DATABASE_URL,
+    pool: {
+      min: 2,
+      max: 10,
+      afterCreate: (conn: any, done: any) => {
+        conn.on("error", (err: any) => {
+          console.error("Postgres connection error:", err);
+        });
+        done(null, conn);
+      },
     },
-    seeds: {
-      directory: "./db/seeds",
-    },
+    migrations: { directory: "./db/migrations" },
+    seeds: { directory: "./db/seeds" },
   },
 };
+
 
 export default config;

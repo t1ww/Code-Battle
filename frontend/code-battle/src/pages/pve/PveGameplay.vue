@@ -45,10 +45,7 @@ const timeLimitEnabled = route.query.timeLimitEnabled === 'true'
 // 🔁 Reactive State
 // =============================
 // Base
-const code = ref(`// Write code here
-int main() {
-    return 0;
-}`);
+const code = ref(`// Write code here`);
 
 const showDescriptionPopup = ref(false)
 const isLoading = ref(false)
@@ -93,7 +90,7 @@ function openMessagePopup(title: string, message: string) {
 
 // Terminal
 const terminalOpen = ref(false) // default close
-
+const selectedLanguage = ref('cpp')
 
 // =============================
 // 🧪 Code Actions
@@ -104,6 +101,9 @@ const runCodeInteractive = () => {
 
     // Stop previous session
     stopSession();
+
+    // Log to console for debugging
+    console.log("Running code:", code.value);
 
     // Open the terminal
     terminalOpen.value = true;
@@ -303,7 +303,9 @@ onUnmounted(() => {
         </div>
 
         <!-- Code editor and run/submit buttons -->
-        <CodeEditor v-model="code" />
+        <div class="code-editor-wrapper">
+            <CodeEditor v-model="code" v-model:modelLanguage="selectedLanguage" />
+        </div>
 
         <div class="buttons">
             <button @click="runCodeInteractive" :disabled="isLoading">Run code</button>
@@ -311,12 +313,6 @@ onUnmounted(() => {
                 Submit
             </button>
         </div>
-
-        <!-- Terminal under the editor -->
-        <button class="terminal-toggle" @click="terminalOpen = true"
-            :style="{ visibility: terminalOpen ? 'hidden' : 'visible' }">
-            Show Terminal ▲
-        </button>
 
         <transition name="slide-down">
             <div class="terminal-wrapper" v-show="terminalOpen">
@@ -329,8 +325,9 @@ onUnmounted(() => {
         </div>
 
         <!-- Slide Panel Toggle -->
-        <QuestionDescriptionPanel :show="showDescriptionPopup" :question="question_data" :timeLimitEnabled="timeLimitEnabled"
-            :selectedModifier="selectedModifier" @close="showDescriptionPopup = false" />
+        <QuestionDescriptionPanel :show="showDescriptionPopup" :question="question_data"
+            :timeLimitEnabled="timeLimitEnabled" :selectedModifier="selectedModifier"
+            @close="showDescriptionPopup = false" />
 
         <!-- Submission result -->
         <ResultPopup :show="showResultPopup" :finalScore="finalScore"

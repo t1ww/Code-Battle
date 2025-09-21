@@ -13,6 +13,10 @@ export class TerminalService {
   private sessions = new Map<string, TerminalSession>();
 
   createSession(socketId: string, sessionId: string, code: string, emitOutput: (output: string) => void): TerminalSession {
+    // Log received code
+    console.log(`🔹 TerminalService received code for session ${sessionId} from socket ${socketId}:`);
+    console.log(code);
+
     // 1️⃣ Write code to a temporary file
     const tmpDir = "/tmp/code-battle";
     if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
@@ -24,10 +28,19 @@ export class TerminalService {
     // 2️⃣ Compile the C++ code
     const compile = spawn("g++", [codeFile, "-o", binaryFile]);
 
-    compile.stdout.on("data", (data) => emitOutput(data.toString()));
-    compile.stderr.on("data", (data) => emitOutput(`[Compilation Error] ${data.toString()}`));
+    compile.stdout.on("data", (data) => {
+      const output = data.toString();
+      console.log(`📄 [stdout] ${output}`);
+      emitOutput(output);
+    });
+    compile.stderr.on("data", (data) => {
+      const error = data.toString();
+      console.log(`❌ [stderr] ${error}`);
+      emitOutput(`[Compilation Error] ${error}`);
+    });
 
     compile.on("close", (codeExit) => {
+      console.log(`🔹 Compilation process exited with code ${codeExit}`);
       if (codeExit !== 0) {
         emitOutput("[Compilation Failed]");
         return;
@@ -38,8 +51,16 @@ export class TerminalService {
       // 3️⃣ Run the compiled binary
       const runProcess = spawn(binaryFile);
 
-      runProcess.stdout.on("data", (data) => emitOutput(data.toString()));
-      runProcess.stderr.on("data", (data) => emitOutput(`[Runtime Error] ${data.toString()}`));
+      runProcess.stdout.on("data", (data) => {
+        const output = data.toString();
+        console.log(`📤 [program stdout] ${output}`);
+        emitOutput(output);
+      });
+      runProcess.stderr.on("data", (data) => {
+        const error = data.toString();
+        console.log(`📤 [program stderr] ${error}`);
+        emitOutput(`[Runtime Error] ${error}`);
+      });
 
       // 4️⃣ Save the running process to session
       const session: TerminalSession = { sessionId, socketId, process: runProcess };
