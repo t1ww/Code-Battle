@@ -88,10 +88,6 @@ const drawRequestedByTeam = ref('');
 
 // Toggle functions
 function toggleOpponentPanel() { showOpponentPanel.value = !showOpponentPanel.value }
-function triggerDrawVote() {
-  lockDrawVoteButton.value = true;
-  showVoteDrawPanel.value = false
-}
 
 // toggle
 function toggleVoteDrawPanel() { showVoteDrawPanel.value = !showVoteDrawPanel.value }
@@ -284,6 +280,10 @@ function sendSabotage() {
   triggerNotification(`Sabotage sent! You have ${sabotagePoint.value} sabotages left.`, 1200);
 }
 
+function triggerDrawVote() {
+  lockDrawVoteButton.value = true;
+  showVoteDrawPanel.value = false
+}
 function voteDraw() {
   try {
     socket.emit("voteDraw", {
@@ -296,6 +296,12 @@ function voteDraw() {
     console.error("Failed to vote draw:", e);
     triggerNotification("Failed to vote draw", 1200);
   }
+}
+
+function handleEnableForfeit() {
+  lockDrawVoteButton.value = true;
+  forfeitEnabled.value = true;
+  triggerNotification("Vote draw failed — you can now forfeit.", 2000);
 }
 
 function handleForfeit() {
@@ -425,8 +431,7 @@ onMounted(async () => {
   });
 
   socket.on("enableForfeitButton", () => {
-    forfeitEnabled.value = true;
-    triggerNotification("Vote draw failed — you can now forfeit.", 2000);
+    handleEnableForfeit();
   });
 
   // Listen for game end
