@@ -61,9 +61,18 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
             game.drawVotes?.add(player_id);
 
             const totalPlayers = game.team1.players.length + game.team2.players.length;
+            const playerTeam = gameService.getPlayerTeam(gameId, player_id);
+
+            // Emit current vote count to all players
             io.to(`game-${gameId}`).emit("voteDrawResult", {
                 votes: game.drawVotes?.size ?? 0,
                 totalPlayers,
+            });
+
+            // Emit a "draw requested" feedback specifically to the opposite team
+            const oppositeTeam = playerTeam === "team1" ? "team2" : "team1";
+            io.to(`game-${gameId}-${oppositeTeam}`).emit("drawRequested", {
+                byTeam: playerTeam,
             });
 
             // All players voted → finish as draw
@@ -80,10 +89,9 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
             // First vote triggers the timeout
             if (!game.drawVoteTimeout) {
                 game.drawVoteTimeout = setTimeout(() => {
-                    // Vote draw failed → enable forfeit
                     game.forfeitEnabled = true;
                     io.to(`game-${gameId}`).emit("enableForfeitButton");
-                }, 15000); // 15 seconds timeout
+                }, 15000);
             }
         } catch (err) {
             console.error("Failed to handle voteDraw:", err);

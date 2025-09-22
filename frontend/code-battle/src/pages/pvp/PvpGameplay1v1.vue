@@ -83,6 +83,8 @@ const showResultPopup = ref(false)
 const currentQuestionIndex = ref(0)
 const selectedLanguage = ref('cpp')
 const forfeitEnabled = ref(false);
+const showDrawFeedback = ref(false);
+const drawRequestedByTeam = ref('');
 
 // Toggle functions
 function toggleOpponentPanel() { showOpponentPanel.value = !showOpponentPanel.value }
@@ -285,7 +287,7 @@ function sendSabotage() {
 function voteDraw() {
   try {
     socket.emit("voteDraw", {
-      gameId: route.query.gameId,
+      gameId: gameStore.gameId,
       player_id: player?.player_id
     });
     triggerNotification("Voted for a draw", 1200);
@@ -302,6 +304,13 @@ function handleForfeit() {
   triggerNotification("You forfeited the game.", 1200);
 }
 
+const acceptDraw = () => {
+  socket.emit("voteDraw", {
+    gameId: gameStore.gameId,
+    player_id: player?.player_id
+  });
+  showDrawFeedback.value = false;
+};
 
 // -----------------
 // 🛠️ DEV Helpers
@@ -406,6 +415,13 @@ onMounted(async () => {
   // Listen for draw vote results
   socket.on("voteDrawResult", (data: { votes: number, totalPlayers: number }) => {
     triggerNotification(`Draw vote: ${data.votes}/${data.totalPlayers} voted`, 1200);
+  });
+
+  socket.on("drawRequested", ({ byTeam }) => {
+    // Show a popup or a notice in the VoteDraw panel
+    triggerNotification("Opposing team has requested a draw!", 2000);
+    showDrawFeedback.value = true;
+    drawRequestedByTeam.value = byTeam; // e.g., "team1" or "team2"
   });
 
   socket.on("enableForfeitButton", () => {
@@ -513,6 +529,10 @@ onUnmounted(() => {
       <div class="vote-panel-wrapper" v-if="showVoteDrawPanel">
         <VotePanel :disabled="lockDrawVoteButton" @vote="voteDraw" @close="toggleVoteDrawPanel"
           @forfeit="handleForfeit" />
+        <div v-if="showDrawFeedback" class="draw-feedback">
+          Opposing team ({{ drawRequestedByTeam }}) has requested a draw.
+          <button @click="acceptDraw">Accept Draw</button>
+        </div>
       </div>
     </transition>
 
