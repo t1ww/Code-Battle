@@ -1,4 +1,4 @@
-// backend/src/services/question.service.ts
+// backend\src\services\question.service.ts
 import knex from "@/clients/knex.client";
 import {
     CreateQuestionInput,
@@ -6,6 +6,8 @@ import {
     TestCaseResponse,
     UpdateQuestionInput,
 } from "@/dtos/question.dto";
+import { withRetry } from "@/utils/withRetry";
+import { getErrorMessage } from "@/utils/errorUtils";
 
 type QuestionResponseWithError = QuestionResponse | { error_message: string };
 
@@ -14,17 +16,18 @@ export class QuestionService {
         try {
             if (!question_id) return { error_message: "Question ID is required." };
 
-            const question = await knex("questions")
-                .where({ question_id })
-                .first();
+            const question = await withRetry(() =>
+                knex("questions").where({ question_id }).first()
+            );
 
             if (!question) {
                 console.log(`getQuestionById: question not found for ID "${question_id}"`);
                 return { error_message: "Question not found." };
             }
 
-            const test_cases = await knex("test_cases")
-                .where({ question_id });
+            const test_cases = await withRetry(() =>
+                knex("test_cases").where({ question_id })
+            );
 
             console.log(`getQuestionById: fetched question ID "${question_id}" successfully`);
 
@@ -42,7 +45,7 @@ export class QuestionService {
                 })),
             };
         } catch (err) {
-            console.error(`getQuestionById error for ID "${question_id}":`, err);
+            console.error(`getQuestionById error for ID "${question_id}":`, getErrorMessage(err));
             return { error_message: "Error fetching question." };
         }
     }
@@ -52,18 +55,18 @@ export class QuestionService {
             if (!level) return { error_message: "Level input must not be empty." };
             if (!["Easy", "Medium", "Hard"].includes(level)) return { error_message: "Invalid level input." };
 
-            const question = await knex("questions")
-                .where({ level })
-                .orderByRaw("RANDOM()") // PostgreSQL random
-                .first();
+            const question = await withRetry(() =>
+                knex("questions").where({ level }).orderByRaw("RANDOM()").first()
+            );
 
             if (!question) {
                 console.log(`getAQuestion: no questions found for level "${level}"`);
                 return { error_message: "No questions found." };
             }
 
-            const test_cases = await knex("test_cases")
-                .where({ question_id: question.question_id });
+            const test_cases = await withRetry(() =>
+                knex("test_cases").where({ question_id: question.question_id })
+            );
 
             return {
                 id: question.question_id,
@@ -79,16 +82,16 @@ export class QuestionService {
                 })),
             };
         } catch (err) {
-            console.error(`getAQuestion error for level "${level}":`, err);
+            console.error(`getAQuestion error for level "${level}":`, getErrorMessage(err));
             return { error_message: "Error fetching question." };
         }
     }
 
     async getRandomQuestions(count: number = 3): Promise<QuestionResponse[] | { error_message: string }> {
         try {
-            const questions = await knex("questions")
-                .orderByRaw("RANDOM()")
-                .limit(count);
+            const questions = await withRetry(() =>
+                knex("questions").orderByRaw("RANDOM()").limit(count)
+            );
 
             if (!questions.length) {
                 console.log("getRandomQuestions: no questions found");
@@ -98,8 +101,9 @@ export class QuestionService {
             const results: QuestionResponse[] = [];
 
             for (const q of questions) {
-                const test_cases = await knex("test_cases")
-                    .where({ question_id: q.question_id });
+                const test_cases = await withRetry(() =>
+                    knex("test_cases").where({ question_id: q.question_id })
+                );
 
                 results.push({
                     id: q.question_id,
@@ -118,7 +122,7 @@ export class QuestionService {
 
             return results;
         } catch (err) {
-            console.error("getRandomQuestions error:", err);
+            console.error("getRandomQuestions error:", getErrorMessage(err));
             return { error_message: "Error fetching random questions." };
         }
     }
@@ -129,28 +133,33 @@ export class QuestionService {
         }
 
         try {
-            const [question_id] = await knex("questions")
-                .insert({
-                    question_name: data.question_name,
-                    description: data.description,
-                    time_limit: data.time_limit,
-                    level: data.level,
-                })
-                .returning("question_id"); // PostgreSQL returns inserted id
+            const [question_id] = await withRetry(() =>
+                knex("questions")
+                    .insert({
+                        question_name: data.question_name,
+                        description: data.description,
+                        time_limit: data.time_limit,
+                        level: data.level,
+                    })
+                    .returning("question_id")
+            );
 
             if (data.test_cases?.length) {
-                await knex("test_cases").insert(
-                    data.test_cases.map(tc => ({
-                        question_id,
-                        input: tc.input,
-                        expected_output: tc.expected_output,
-                        score: tc.score,
-                    }))
+                await withRetry(() =>
+                    knex("test_cases").insert(
+                        data.test_cases.map(tc => ({
+                            question_id,
+                            input: tc.input,
+                            expected_output: tc.expected_output,
+                            score: tc.score,
+                        }))
+                    )
                 );
             }
 
             return this.getQuestionById(question_id);
-        } catch {
+        } catch (err) {
+            console.error("createQuestion error:", getErrorMessage(err));
             return { error_message: "Failed to create question." };
         }
     }
@@ -164,25 +173,31 @@ export class QuestionService {
             if (data.level) updateData.level = data.level;
 
             if (Object.keys(updateData).length) {
-                await knex("questions")
-                    .where({ question_id: id })
-                    .update(updateData);
-            }
-
-            if (data.test_cases) {
-                await knex("test_cases").where({ question_id: id }).del();
-                await knex("test_cases").insert(
-                    data.test_cases.map(tc => ({
-                        question_id: id,
-                        input: tc.input,
-                        expected_output: tc.expected_output,
-                        score: tc.score,
-                    }))
+                await withRetry(() =>
+                    knex("questions").where({ question_id: id }).update(updateData)
                 );
             }
 
+            if (data.test_cases && data.test_cases.length > 0) {
+                await withRetry(() => knex("test_cases").where({ question_id: id }).del());
+                await withRetry(() =>
+                    knex("test_cases").insert(
+                        data.test_cases!.map(tc => ({
+                            question_id: id,
+                            input: tc.input,
+                            expected_output: tc.expected_output,
+                            score: tc.score,
+                        }))
+                    )
+                );
+            } else if (data.test_cases && data.test_cases.length === 0) {
+                // Explicitly clear test cases if empty array is passed
+                await withRetry(() => knex("test_cases").where({ question_id: id }).del());
+            }
+
             return this.getQuestionById(id);
-        } catch {
+        } catch (err) {
+            console.error("updateQuestion error:", getErrorMessage(err));
             return { error_message: "Failed to update question." };
         }
     }
