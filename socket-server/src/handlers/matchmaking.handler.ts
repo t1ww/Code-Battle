@@ -96,5 +96,5 @@ export function startMatchmakingLoop(services: Services) {
             matchmakingService.startMatch3v3();
         }
         alternate = !alternate;
-    }, 6000);
+    }, 3000);
 }

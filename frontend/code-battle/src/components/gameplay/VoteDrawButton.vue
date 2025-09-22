@@ -1,3 +1,4 @@
+<!-- frontend\code-battle\src\components\gameplay\VoteDrawButton.vue -->
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 

@@ -63,20 +63,63 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
             const totalPlayers = game.team1.players.length + game.team2.players.length;
             io.to(`game-${gameId}`).emit("voteDrawResult", {
                 votes: game.drawVotes?.size ?? 0,
-                totalPlayers
+                totalPlayers,
             });
 
+            // All players voted → finish as draw
             if ((game.drawVotes?.size ?? 0) >= totalPlayers) {
+                clearTimeout(game.drawVoteTimeout);
                 game.finished = true;
                 io.to(`game-${gameId}`).emit("gameEnd", {
                     winner: "draw",
-                    progress: game.progress
+                    progress: game.progress,
                 });
+                return;
             }
 
+            // First vote triggers the timeout
+            if (!game.drawVoteTimeout) {
+                game.drawVoteTimeout = setTimeout(() => {
+                    // Vote draw failed → enable forfeit
+                    game.forfeitEnabled = true;
+                    io.to(`game-${gameId}`).emit("enableForfeitButton");
+                }, 15000); // 15 seconds timeout
+            }
         } catch (err) {
             console.error("Failed to handle voteDraw:", err);
             socket.emit("errorMessage", { message: "Failed to vote draw" });
+        }
+    });
+
+    socket.on("forfeit", ({ gameId, player_id }) => {
+        try {
+            const game = gameService.getGame(gameId);
+            if (!game || game.finished) return;
+
+            const playerTeam = gameService.getPlayerTeam(gameId, player_id);
+            if (!playerTeam) return;
+
+            // Only allow if forfeit is enabled
+            if (!game.forfeitEnabled) {
+                socket.emit("errorMessage", { message: "Cannot forfeit yet." });
+                return;
+            }
+
+            const winnerTeam = playerTeam === "team1" ? "team2" : "team1";
+            game.finished = true;
+
+            clearTimeout(game.drawVoteTimeout);
+
+            io.to(`game-${gameId}`).emit("gameEnd", {
+                winner: winnerTeam,
+                progress: game.progress,
+                forfeitBy: playerTeam,
+            });
+
+            gameService.deleteGame(gameId); // optional: remove from memory
+        } catch (err) {
+            console.error("Failed to handle forfeit:", err);
+            socket.emit("errorMessage", { message: "Failed to forfeit" });
         }
     });
 

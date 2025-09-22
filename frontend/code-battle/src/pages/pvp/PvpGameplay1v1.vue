@@ -82,6 +82,7 @@ const showTimeoutPopup = ref(false)
 const showResultPopup = ref(false)
 const currentQuestionIndex = ref(0)
 const selectedLanguage = ref('cpp')
+const forfeitEnabled = ref(false);
 
 // Toggle functions
 function toggleOpponentPanel() { showOpponentPanel.value = !showOpponentPanel.value }
@@ -295,6 +296,13 @@ function voteDraw() {
   }
 }
 
+function handleForfeit() {
+  if (!gameStore.gameId || !player?.player_id) return;
+  socket.emit('forfeit', { gameId: gameStore.gameId, player_id: player.player_id });
+  triggerNotification("You forfeited the game.", 1200);
+}
+
+
 // -----------------
 // 🛠️ DEV Helpers
 // -----------------
@@ -400,6 +408,11 @@ onMounted(async () => {
     triggerNotification(`Draw vote: ${data.votes}/${data.totalPlayers} voted`, 1200);
   });
 
+  socket.on("enableForfeitButton", () => {
+    forfeitEnabled.value = true;
+    triggerNotification("Vote draw failed — you can now forfeit.", 2000);
+  });
+
   // Listen for game end
   socket.on("gameEnd", (data: { winner: 'team1' | 'team2' | 'draw', progress: any }) => {
     // show proper result popup (you may already have a PvpResultPopup for this)
@@ -498,7 +511,8 @@ onUnmounted(() => {
     <!-- Vote panel component slides in/out -->
     <transition name="slide-right">
       <div class="vote-panel-wrapper" v-if="showVoteDrawPanel">
-        <VotePanel :disabled="lockDrawVoteButton" @vote="voteDraw" @close="toggleVoteDrawPanel" />
+        <VotePanel :disabled="lockDrawVoteButton" @vote="voteDraw" @close="toggleVoteDrawPanel"
+          @forfeit="handleForfeit" />
       </div>
     </transition>
 
