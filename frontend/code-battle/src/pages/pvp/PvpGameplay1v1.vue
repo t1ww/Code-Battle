@@ -137,8 +137,41 @@ initPvpSockets()
 // ----------------------
 // 🛠️ Helper functions
 // ----------------------
-function helperSubmitCode() {
-  submitCode(currentQuestionIndex.value, selectedLanguage.value)
+async function helperSubmitCode() {
+  try {
+    const response = await submitCode(currentQuestionIndex.value, selectedLanguage.value)
+    if (!response) return
+
+    const { resultsForCurrent, error, alreadyCompleted } = response
+
+    if (alreadyCompleted) {
+      openErrorMessagePopup("Question already completed", "This question has already been fully passed.")
+      return
+    }
+
+    if (error) {
+      const output = (error as { output?: string }).output
+      if (output?.startsWith('[Compilation Error]')) {
+        openErrorMessagePopup('Compilation Error', output)
+      } else if (output?.startsWith('[Runtime Error]')) {
+        openErrorMessagePopup('Runtime Error', output)
+      } else {
+        openErrorMessagePopup('Server Error', String((error as any).message || JSON.stringify(error)))
+      }
+      return
+    }
+
+    if (resultsForCurrent) {
+      if (resultsForCurrent.passed) {
+        showClearedPopup.value = true
+      } else {
+        showResultPopup.value = true
+      }
+    }
+  } catch (e) {
+    openErrorMessagePopup('Unexpected Error', String(e))
+    console.error('helperSubmitCode failed', e)
+  }
 }
 
 function helperForceClearQuestion() {

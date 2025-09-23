@@ -15,8 +15,8 @@ export function usePvpCode() {
     // ------------------------------
     // Core API call
     // ------------------------------
-    async function runCodeOnApi(code: string, test_cases: any[]) {
-        const res = await codeRunnerApi.post('/run', { code, test_cases, score_pct: 1 })
+    async function runCodeOnApi(code: string, test_cases: any[], language: string) {
+        const res = await codeRunnerApi.post('/run', { code, test_cases, language, score_pct: 1 })
         return res.data as CodeRunResponse
     }
 
@@ -56,43 +56,35 @@ export function usePvpCode() {
     // ------------------------------
     // Submit code for current question
     // ------------------------------
-    async function submitCode(currentQuestionIndex: number, selectedLanguage: string) {
+    type SubmitCodeResponse = {
+        resultsForCurrent: ReturnType<typeof mapTestResults> | null
+        error?: { output?: string } | any
+        alreadyCompleted: boolean
+    }
+    async function submitCode(currentQuestionIndex: number, selectedLanguage: string): Promise<SubmitCodeResponse | null> {
         isLoading.value = true
         try {
             const currentQuestion = gameStore.questions[currentQuestionIndex]
             if (!currentQuestion) return null
 
-            // Prevent resubmitting fully passed questions
             const teamKey = gameStore.playerTeam
             if (teamKey != null && gameStore.progressFullPass?.[teamKey]?.[currentQuestionIndex]) {
-                triggerNotification("Question already completed (full pass).", 1200)
-                return null
+                return { resultsForCurrent: null, alreadyCompleted: true }
             }
 
-            const data = await runCodeOnApi(code.value, currentQuestion.test_cases)
+            const data = await runCodeOnApi(code.value, currentQuestion.test_cases, selectedLanguage)
 
-            // Handle compilation/runtime errors
             const errorResult = data.results.find(r =>
                 r.output.startsWith('[Compilation Error]') || r.output.startsWith('[Runtime Error]')
             )
-            if (errorResult) {
-                triggerNotification(
-                    errorResult.output.startsWith('[Compilation Error]') ? 'Compilation Error' : 'Runtime Error',
-                    2000
-                )
-                throw new Error('Code execution failed')
-            }
 
             const resultsForCurrent = mapTestResults(data, currentQuestion)
             testResults.value = resultsForCurrent
-
-            // Save progress locally
             saveProgress(currentQuestionIndex, resultsForCurrent)
 
-            // Emit to server any passed test indices
             const passedIndices = resultsForCurrent.results
                 .map((r: any, i: number) => (r.passed ? i : -1))
-                .filter((i: number) => i >= 0)
+                .filter(i => i >= 0)
 
             if (passedIndices.length > 0 && gameStore.gameId && teamKey) {
                 socket.emit('questionFinished', {
@@ -103,15 +95,15 @@ export function usePvpCode() {
                 })
             }
 
-            // Show notification for full-pass
-            if (resultsForCurrent.passed) {
-                triggerNotification('All test cases passed! Question cleared.', 1200)
+            return {
+                resultsForCurrent,
+                error: errorResult || null,
+                alreadyCompleted: false
             }
 
-            return resultsForCurrent
         } catch (e) {
             console.error('submitCode failed', e)
-            return null
+            return { resultsForCurrent: null, error: e, alreadyCompleted: false }
         } finally {
             isLoading.value = false
         }
