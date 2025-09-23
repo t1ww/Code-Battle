@@ -1,4 +1,4 @@
-<!-- frontend\code-battle\src\pages\pvp\PvpGameplay1v1.vue -->
+// frontend\code-battle\src\pages\pvp\PvpGameplay1v1.vue
 <script setup lang="ts">
 // =============================
 // 📦 Imports
@@ -17,6 +17,7 @@ import { socket } from '@/clients/socket.api'
 import { triggerNotification } from '@/composables/notificationService'
 import { useSabotage } from '@/composables/useSabotage'
 import { useTimer } from '@/composables/useTimer'
+import { usePvpAction } from '@/composables/usePvpAction'
 
 // Popup components
 import MessagePopup from '@/components/popups/MessagePopup.vue'
@@ -24,10 +25,10 @@ import PvpResultPopup from '@/components/popups/PvpResultPopup.vue'
 
 // pvp
 import OpponentPanel from '@/components/gameplay/OpponentPanel.vue'
-import VotePanel from '@/components/gameplay/VotePanel.vue'
+import VotePanel from '@/components/gameplay/votedraw/VotePanel.vue'
 
 // Stores
-import QuestionBrowser from '@/components/gameplay/QuestionBrowser.vue'
+import QuestionBrowser from '@/components/gameplay/questiondescription/QuestionBrowser.vue'
 
 // Terminal
 import { useTerminal } from "@/composables/useTerminal";
@@ -72,8 +73,6 @@ const isLoading = ref(false)
 const showQuestionsPanel = ref(false)
 const showOpponentPanel = ref(false)
 const showVoteDrawPanel = ref(false)
-const lockDrawVoteButton = ref(false)
-const sabotagePoint = ref(3)
 const showClearedPopup = ref(false)
 const showMessagePopup = ref(false)
 const messagePopupTitle = ref('')
@@ -82,7 +81,6 @@ const showTimeoutPopup = ref(false)
 const showResultPopup = ref(false)
 const currentQuestionIndex = ref(0)
 const selectedLanguage = ref('cpp')
-const forfeitEnabled = ref(false);
 const showDrawFeedback = ref(false);
 const drawRequestedByTeam = ref('');
 
@@ -98,6 +96,25 @@ const { timeLeft, formattedTime, startTimer, stopTimer } = useTimer(true, 5400, 
   showTimeoutPopup.value = true
 })
 
+// ===== Integrate PvP actions composable =====
+const {
+  sabotagePoint,
+  lockDrawVoteButton,
+  sendSabotage,
+  voteDraw,
+  acceptDraw,
+  forfeit,
+  enableForfeit
+} = usePvpAction()
+
+// ---------------- forfeit wrapper that preserves existing checks --------------
+async function handleForfeit() {
+  // composable handles guard + notification, but keep local early-return for safety
+  if (!gameStore.gameId || !player?.player_id) return;
+  await forfeit()
+}
+
+// Composables testResults / error popup
 const testResults = ref<{
   passed: boolean
   results: { passed: boolean; output: string; expected_output: string; input: string }[]
@@ -261,62 +278,9 @@ function endGame() {
 // ----------------------
 // 🖥️ Multiplayer Actions
 // ----------------------
-function sendSabotage() {
-  if (sabotagePoint.value <= 0) {
-    triggerNotification("No sabotage points left!", 1200);
-    return;
-  }
-  if (!gameStore.playerTeam || !gameStore.gameId) {
-    triggerNotification("Game not ready yet!", 1200); // <--- add this
-    return;
-  }
+// NOTE: sendSabotage, voteDraw, forfeit, acceptDraw are provided by usePvpActions().
+// Use triggerDrawVote() locally if you want to close the vote panel after voting.
 
-  socket.emit("sabotage", {
-    gameId: gameStore.gameId,
-    targetTeam: gameStore.opponentTeam,
-  });
-
-  sabotagePoint.value--;
-  triggerNotification(`Sabotage sent! You have ${sabotagePoint.value} sabotages left.`, 1200);
-}
-
-function triggerDrawVote() {
-  lockDrawVoteButton.value = true;
-  showVoteDrawPanel.value = false
-}
-function voteDraw() {
-  try {
-    socket.emit("voteDraw", {
-      gameId: gameStore.gameId,
-      player_id: player?.player_id
-    });
-    triggerNotification("Voted for a draw", 1200);
-    triggerDrawVote();
-  } catch (e) {
-    console.error("Failed to vote draw:", e);
-    triggerNotification("Failed to vote draw", 1200);
-  }
-}
-
-function handleEnableForfeit() {
-  lockDrawVoteButton.value = true;
-  forfeitEnabled.value = true;
-  triggerNotification("Vote draw failed — you can now forfeit.", 2000);
-}
-
-function handleForfeit() {
-  if (!gameStore.gameId || !player?.player_id) return;
-  socket.emit('forfeit', { gameId: gameStore.gameId, player_id: player.player_id });
-  triggerNotification("You forfeited the game.", 1200);
-}
-
-const acceptDraw = () => {
-  socket.emit("voteDraw", {
-    gameId: gameStore.gameId,
-    player_id: player?.player_id
-  });
-  showDrawFeedback.value = false;
-};
 
 // -----------------
 // 🛠️ DEV Helpers
@@ -431,7 +395,9 @@ onMounted(async () => {
   });
 
   socket.on("enableForfeitButton", () => {
-    handleEnableForfeit();
+    // delegate to composable and keep same UX message
+    enableForfeit()
+    triggerNotification("Vote draw failed — you can now forfeit.", 2000);
   });
 
   // Listen for game end
