@@ -1,13 +1,14 @@
 // frontend\code-battle\src\composables\usePvpSocket.ts
 import { onMounted, onUnmounted, type Ref } from 'vue'
 import { socket } from '@/clients/socket.api'
-import { usePvpGameStore } from '@/stores/usePvpGameStore'
+import { usePvpGameStore } from '@/stores/game'
 import { triggerNotification } from './notificationService'
 import router from '@/router'
 
 interface UsePvpSocketOptions {
     playerId: string | null | undefined
     DEV: boolean
+    leaveGame: () => void
     sabotageOnce: () => void
     enableForfeit: () => void
     handleQuestionProgress: (data: any) => void
@@ -25,6 +26,7 @@ export function usePvpSocket(options: UsePvpSocketOptions) {
     const {
         playerId,
         DEV,
+        leaveGame,
         sabotageOnce,
         enableForfeit,
         handleQuestionProgress,
@@ -100,6 +102,9 @@ export function usePvpSocket(options: UsePvpSocketOptions) {
 
         onUnmounted(() => {
             unregisterSocketEvents()
+            if (!gameStore.finished) {
+                leaveGame()
+            }
         })
     }
 

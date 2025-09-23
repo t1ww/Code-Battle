@@ -41,22 +41,20 @@ const props = defineProps<{
             <div v-for="(q, qIndex) in props.questions" :key="q.id" class="question">
                 <hr />
                 <div class="question-title">
+                    <span v-if="props.progressFullPass?.[qIndex]" class="test-case status-badge pass">✔ Cleared</span>
                     Questions {{ qIndex + 1 }} : {{ q.question_name }}
                 </div>
 
                 <!-- Loop through each test case for this question -->
-                <div class="test-case" v-for="(test, index) in props.progress?.[qIndex] || []" :key="index">
-                    <span :class="['status-badge', test ? 'pass' : 'in-progress']">
-                        <template v-if="test">✔ Passed</template>
-                        <template v-else>
-                            <SandClock class="sandclock-icon" /> In progress
-                        </template>
-                    </span>
-                </div>
-
-                <!-- Full pass status -->
-                <div v-if="props.progressFullPass?.[qIndex]" class="test-case pass">
-                    <span class="status-badge pass">✔ Cleared</span>
+                <div class="test-cases-row">
+                    <div class="test-case" v-for="(test, index) in props.progress?.[qIndex] || []" :key="index">
+                        <span :class="['status-badge', test ? 'pass' : 'in-progress']">
+                            <template v-if="test">TestCase#{{index+1}}: ✔ Passed</template>
+                            <template v-else>
+                                <SandClock class="sandclock-icon" /> In progress
+                            </template>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -153,6 +151,14 @@ hr {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+.test-cases-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-left: 0.5rem;
+    margin-top: 0.5rem;
 }
 
 .test-case.pass {

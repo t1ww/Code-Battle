@@ -3,12 +3,11 @@
 // =============================
 // 📦 Imports
 // =============================
-import { ref, onMounted, onUnmounted, inject } from 'vue'
+import { ref, inject } from 'vue'
 import { useRoute } from 'vue-router'
-import { usePvpGameStore } from '@/stores/usePvpGameStore'
+import { usePvpGameStore } from '@/stores/game'
 import { getPlayerData } from '@/stores/auth'
 import router from '@/router'
-import { socket } from '@/clients/socket.api'
 
 // Components
 import CodeEditor from '@/components/gameplay/CodeEditor.vue'
@@ -58,9 +57,9 @@ const {
   lockDrawVoteButton,
   sendSabotage,
   voteDraw,
-  acceptDraw,
   forfeit,
-  enableForfeit
+  enableForfeit,
+  leaveGame
 } = usePvpAction()
 
 // Terminal
@@ -106,33 +105,6 @@ function openErrorMessagePopup(title: string, message: string) {
   messagePopupMessage.value = message
   showMessagePopup.value = true
 }
-
-// =============================
-// 🚀 Lifecycle Hooks
-// =============================
-import { usePvpSocket } from '@/composables/usePvpSocket'
-
-const { initPvpSockets } = usePvpSocket({
-  playerId: player?.player_id,
-  DEV,
-  sabotageOnce,
-  enableForfeit,
-  handleQuestionProgress,
-  handleGameEnd,
-  sabotagePoint,
-  timeLeft,
-  timeLimitEnabled,
-  PVP_TIME_LIMIT,
-  onDrawRequested: (team) => {
-    showDrawFeedback.value = true
-    drawRequestedByTeam.value = team
-  },
-  onVoteDrawResult: (_votes, _totalPlayers) => {
-    // Currently not used
-  }
-})
-
-initPvpSockets()
 
 // ----------------------
 // 🛠️ Helper functions
@@ -205,7 +177,7 @@ function updateProgress(team: 'team1' | 'team2', questionIndex: number, progress
   if (fullPass?.[questionIndex] !== undefined) gameStore.progressFullPass[team][questionIndex] = fullPass[questionIndex]
 }
 
-function handleGameEnd(data: { winner: 'team1' | 'team2' | 'draw' }) {
+function handleGameEnd(data: { winner: 'team1' | 'team2' | 'draw', forfeitBy?: string, leaveBy?: string }) {
   showClearedPopup.value = false
   showMessagePopup.value = false
   showVoteDrawPanel.value = false
@@ -213,6 +185,14 @@ function handleGameEnd(data: { winner: 'team1' | 'team2' | 'draw' }) {
   showResultPopup.value = true
   gameStore.finished = true
   gameStore.winner = data.winner
+
+  // Determine reason
+  let reason = ''
+  if (data.forfeitBy === gameStore.playerTeam) reason = 'You forfeited'
+  if (data.forfeitBy === gameStore.opponentTeam) reason = 'Opponent forfeited'
+  else if (data.leaveBy) reason = 'Opponent disconnected'
+
+  gameStore.endReason = reason
   triggerNotification(`Game ended — winner: ${data.winner}`, 2500)
 }
 
@@ -220,6 +200,34 @@ function endGame() {
   showResultPopup.value = false;
   router.replace({ name: 'PvpTypeSelect' });
 }
+
+// =============================
+// 🚀 Lifecycle Hooks
+// =============================
+import { usePvpSocket } from '@/composables/usePvpSocket'
+
+const { initPvpSockets } = usePvpSocket({
+  playerId: player?.player_id,
+  DEV,
+  leaveGame,
+  sabotageOnce,
+  enableForfeit,
+  handleQuestionProgress,
+  handleGameEnd,
+  sabotagePoint,
+  timeLeft,
+  timeLimitEnabled,
+  PVP_TIME_LIMIT,
+  onDrawRequested: (team) => {
+    showDrawFeedback.value = true
+    drawRequestedByTeam.value = team
+  },
+  onVoteDrawResult: (_votes, _totalPlayers) => {
+    // Currently not used
+  }
+})
+
+initPvpSockets()
 </script>
 
 <template>
@@ -310,12 +318,16 @@ function endGame() {
   <PvpResultPopup :show="showResultPopup" :testResults="[testResults?.results || []]" :questions="gameStore.questions"
     :progress="gameStore.progress[gameStore.playerTeam || 'team1'] || []"
     :progressFullPass="gameStore.progressFullPass?.[gameStore.playerTeam || 'team1'] || []"
-    :winner="gameStore.finished ? gameStore.winner : null" @close="showResultPopup = false" @endGame="endGame" />
+    :winner="gameStore.finished ? gameStore.winner : null" :endReason="gameStore.endReason"
+    @close="showResultPopup = false" @endGame="endGame" />
 
   <div v-if="DEV" class="dev-buttons" style="position: fixed; bottom: 10px; right: 10px;">
     <button @click="helperForceClearQuestion"
       style="background: orange; color: white; padding: 6px 12px; border-radius: 4px;">
       Force Clear Question
+    </button>
+    <button @click="handleForfeit" style="background: orange; color: white; padding: 6px 12px; border-radius: 4px;">
+      Forfeit Game
     </button>
   </div>
 </template>

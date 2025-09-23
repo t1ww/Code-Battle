@@ -99,6 +99,32 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
         }
     });
 
+    socket.on("leaveGame", ({ gameId, player_id }) => {
+        try {
+            const game = gameService.getGame(gameId);
+            if (!game || game.finished) return;
+
+            const playerTeam = gameService.getPlayerTeam(gameId, player_id);
+            if (!playerTeam) return;
+
+            const winnerTeam = playerTeam === "team1" ? "team2" : "team1";
+            game.finished = true;
+
+            clearTimeout(game.drawVoteTimeout);
+
+            io.to(`game-${gameId}`).emit("gameEnd", {
+                winner: winnerTeam,
+                progress: game.progress,
+                leaveBy: playerTeam,
+            });
+
+            gameService.deleteGame(gameId);
+        } catch (err) {
+            console.error("Failed to handle leave game:", err);
+            socket.emit("errorMessage", { message: "Failed to leave game" });
+        }
+    });
+
     socket.on("forfeit", ({ gameId, player_id }) => {
         try {
             const game = gameService.getGame(gameId);
@@ -124,7 +150,7 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
                 forfeitBy: playerTeam,
             });
 
-            gameService.deleteGame(gameId); // optional: remove from memory
+            gameService.deleteGame(gameId);
         } catch (err) {
             console.error("Failed to handle forfeit:", err);
             socket.emit("errorMessage", { message: "Failed to forfeit" });

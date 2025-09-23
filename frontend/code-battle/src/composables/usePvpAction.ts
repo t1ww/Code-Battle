@@ -1,7 +1,7 @@
 // frontend\code-battle\src\composables\usePvpAction.ts
 import { ref } from 'vue'
 import { socket } from '@/clients/socket.api'
-import { usePvpGameStore } from '@/stores/usePvpGameStore'
+import { usePvpGameStore } from '@/stores/game'
 import { triggerNotification } from '@/composables/notificationService'
 import { getPlayerData } from '@/stores/auth'
 
@@ -52,11 +52,6 @@ export function usePvpAction(initialSabotage = 3) {
     }
   }
 
-  async function acceptDraw() {
-    // alias to voteDraw but kept separate for clarity
-    await voteDraw()
-  }
-
   async function forfeit() {
     if (!gameStore.gameId || !player?.player_id) {
       triggerNotification('Unable to forfeit — game or player missing', 1200)
@@ -76,14 +71,19 @@ export function usePvpAction(initialSabotage = 3) {
     forfeitEnabled.value = true
   }
 
+  function leaveGame() {
+    if (!gameStore.gameId || !player?.player_id) return;
+    socket.emit("leaveGame", { gameId: gameStore.gameId, player_id: player.player_id });
+  }
+
   return {
     sabotagePoint,
     lockDrawVoteButton,
     forfeitEnabled,
     sendSabotage,
     voteDraw,
-    acceptDraw,
     forfeit,
     enableForfeit,
+    leaveGame,
   }
 }

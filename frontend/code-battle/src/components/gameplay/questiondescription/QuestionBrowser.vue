@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import QuestionDescriptionPanel from './QuestionDescriptionPanel.vue'
 import { computed } from 'vue'
-import { usePvpGameStore } from '@/stores/usePvpGameStore'
+import { usePvpGameStore } from '@/stores/game'
 
 const gameStore = usePvpGameStore()
 

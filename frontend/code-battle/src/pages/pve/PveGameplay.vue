@@ -29,7 +29,7 @@ import MessagePopup from '@/components/popups/MessagePopup.vue'
 import QuestionBrowser from '@/components/gameplay/questiondescription/QuestionBrowser.vue'
 
 // Stores
-import { useQuestionStore } from '@/stores/questionStore'
+import { useQuestionStore } from '@/stores/question'
 const { question_data } = useQuestionStore()
 
 // =============================

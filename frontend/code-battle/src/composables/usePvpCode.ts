@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import type { CodeRunResponse } from '@/types/types'
 import codeRunnerApi from '@/clients/coderunner.api'
-import { usePvpGameStore } from '@/stores/usePvpGameStore'
+import { usePvpGameStore } from '@/stores/game'
 import { socket } from '@/clients/socket.api'
 import { triggerNotification } from './notificationService'
 

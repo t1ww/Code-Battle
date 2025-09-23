@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router'
 import api from '@/clients/crud.api'
 import type { Question, LeaderboardEntry } from '@/types/types'
 import { getPlayerData } from '@/stores/auth'
-import { useQuestionStore } from '@/stores/questionStore'
+import { useQuestionStore } from '@/stores/question'
 import CheckboxToggle from '@/components/etc/CheckboxToggle.vue'
 
 const route = useRoute()
