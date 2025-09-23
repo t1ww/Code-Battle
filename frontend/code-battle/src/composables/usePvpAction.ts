@@ -72,7 +72,7 @@ export function usePvpAction(initialSabotage = 3) {
   }
 
   function enableForfeit() {
-    lockDrawVoteButton.value = true
+    lockDrawVoteButton.value = false
     forfeitEnabled.value = true
   }
 
