@@ -1,4 +1,4 @@
-// frontend\code-battle\src\composables\usePvpActions.ts
+// frontend\code-battle\src\composables\usePvpAction.ts
 import { ref } from 'vue'
 import { socket } from '@/clients/socket.api'
 import { usePvpGameStore } from '@/stores/usePvpGameStore'

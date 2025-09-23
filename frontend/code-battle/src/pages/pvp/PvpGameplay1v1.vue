@@ -1,102 +1,58 @@
-// frontend\code-battle\src\pages\pvp\PvpGameplay1v1.vue
+<!-- frontend\code-battle\src\pages\pvp\PvpGameplay1v1.vue -->
 <script setup lang="ts">
 // =============================
 // 📦 Imports
 // =============================
-import type { CodeRunResponse } from '@/types/types'
 import { ref, onMounted, onUnmounted, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePvpGameStore } from '@/stores/usePvpGameStore'
 import { getPlayerData } from '@/stores/auth'
-import codeRunnerApi from '@/clients/coderunner.api'
-import CodeEditor from '@/components/gameplay/CodeEditor.vue'
 import router from '@/router'
 import { socket } from '@/clients/socket.api'
+
+// Components
+import CodeEditor from '@/components/gameplay/CodeEditor.vue'
+import CodeTerminal from '@/components/gameplay/CodeTerminal.vue'
+import MessagePopup from '@/components/popups/MessagePopup.vue'
+import PvpResultPopup from '@/components/popups/PvpResultPopup.vue'
+import OpponentPanel from '@/components/gameplay/OpponentPanel.vue'
+import VotePanel from '@/components/gameplay/votedraw/VotePanel.vue'
+import QuestionBrowser from '@/components/gameplay/questiondescription/QuestionBrowser.vue'
 
 // Composables
 import { triggerNotification } from '@/composables/notificationService'
 import { useSabotage } from '@/composables/useSabotage'
 import { useTimer } from '@/composables/useTimer'
 import { usePvpAction } from '@/composables/usePvpAction'
-
-// Popup components
-import MessagePopup from '@/components/popups/MessagePopup.vue'
-import PvpResultPopup from '@/components/popups/PvpResultPopup.vue'
-
-// pvp
-import OpponentPanel from '@/components/gameplay/OpponentPanel.vue'
-import VotePanel from '@/components/gameplay/votedraw/VotePanel.vue'
-
-// Stores
-import QuestionBrowser from '@/components/gameplay/questiondescription/QuestionBrowser.vue'
-
-// Terminal
 import { useTerminal } from "@/composables/useTerminal";
-import CodeTerminal from '@/components/gameplay/CodeTerminal.vue'
+import { usePvpCode } from '@/composables/usePvpCode'
 
-const { codeTerminal, startSession, sendInput, stopSession } = useTerminal();
-
-const terminalOpen = ref(false); // default closed
-const runCodeInteractive = () => {
-  if (!code.value.trim()) return;
-
-  // Stop any previous session
-  stopSession();
-
-  console.log("Running code:", code.value);
-
-  // Open terminal
-  terminalOpen.value = true;
-  codeTerminal.value?.pushOutput("> New session started");
-
-  // Start a new session with the current code
-  startSession(code.value);
-};
-
-// Constant
-const PVP_TIME_LIMIT = 5400
 
 // =============================
-// 📍 Route & Query Params
+// 🔁 Reactive State & Composables
 // =============================
+const gameStore = usePvpGameStore()
+const player = getPlayerData()
 const route = useRoute()
+const DEV = inject('DEV') as boolean
+
+// =============================
+// 📍 Query Params
+// =============================
 const selectedModifier = route.query.modifier as string || 'None'
 const timeLimitEnabled = route.query.timeLimitEnabled === 'true'
 
-// =============================
-// 🔁 Reactive State
-// =============================
-const gameStore = usePvpGameStore()
-const code = ref('// Write code here')
-const player = getPlayerData();
-const isLoading = ref(false)
-const showQuestionsPanel = ref(false)
-const showOpponentPanel = ref(false)
-const showVoteDrawPanel = ref(false)
-const showClearedPopup = ref(false)
-const showMessagePopup = ref(false)
-const messagePopupTitle = ref('')
-const messagePopupMessage = ref('')
-const showTimeoutPopup = ref(false)
-const showResultPopup = ref(false)
-const currentQuestionIndex = ref(0)
-const selectedLanguage = ref('cpp')
-const showDrawFeedback = ref(false);
-const drawRequestedByTeam = ref('');
+// PvP code composable
+const { code, testResults, isLoading, submitCode, forceClearQuestion } = usePvpCode()
 
-// Toggle functions
-function toggleOpponentPanel() { showOpponentPanel.value = !showOpponentPanel.value }
-
-// toggle
-function toggleVoteDrawPanel() { showVoteDrawPanel.value = !showVoteDrawPanel.value }
-
-// Composables setup
-const { sabotageOnce } = useSabotage(code, triggerNotification)
-const { timeLeft, formattedTime, startTimer, stopTimer } = useTimer(true, 5400, () => {
+// Timer
+const PVP_TIME_LIMIT = 5400
+const { timeLeft, formattedTime, startTimer, stopTimer } = useTimer(true, PVP_TIME_LIMIT, () => {
   showTimeoutPopup.value = true
 })
 
-// ===== Integrate PvP actions composable =====
+// Sabotage
+const { sabotageOnce } = useSabotage(code, triggerNotification)
 const {
   sabotagePoint,
   lockDrawVoteButton,
@@ -107,20 +63,44 @@ const {
   enableForfeit
 } = usePvpAction()
 
-// ---------------- forfeit wrapper that preserves existing checks --------------
+// Terminal
+const { codeTerminal, startSession, sendInput, stopSession } = useTerminal();
+const terminalOpen = ref(false)
+
+const runCodeInteractive = () => {
+  if (!code.value.trim()) return
+  stopSession()
+  terminalOpen.value = true
+  codeTerminal.value?.pushOutput("> New session started")
+  startSession(code.value)
+}
+
+// UI state
+const showQuestionsPanel = ref(false)
+const showOpponentPanel = ref(false)
+const showVoteDrawPanel = ref(false)
+const showClearedPopup = ref(false)
+const showMessagePopup = ref(false)
+const showTimeoutPopup = ref(false)
+const showResultPopup = ref(false)
+const messagePopupTitle = ref('')
+const messagePopupMessage = ref('')
+const currentQuestionIndex = ref(0)
+const selectedLanguage = ref('cpp')
+const showDrawFeedback = ref(false)
+const drawRequestedByTeam = ref('')
+
+// Toggle helpers
+const toggleOpponentPanel = () => { showOpponentPanel.value = !showOpponentPanel.value }
+const toggleVoteDrawPanel = () => { showVoteDrawPanel.value = !showVoteDrawPanel.value }
+
+// Player forfeit wrapper
 async function handleForfeit() {
-  // composable handles guard + notification, but keep local early-return for safety
-  if (!gameStore.gameId || !player?.player_id) return;
+  if (!gameStore.gameId || !player?.player_id) return
   await forfeit()
 }
 
-// Composables testResults / error popup
-const testResults = ref<{
-  passed: boolean
-  results: { passed: boolean; output: string; expected_output: string; input: string }[]
-  total_score: number
-} | null>(null)
-
+// Message popup helper
 function openErrorMessagePopup(title: string, message: string) {
   messagePopupTitle.value = title
   messagePopupMessage.value = message
@@ -128,308 +108,85 @@ function openErrorMessagePopup(title: string, message: string) {
 }
 
 // =============================
-// 🧪 Code Actions
+// 🚀 Lifecycle Hooks
 // =============================
-const submitCode = async () => {
-  isLoading.value = true;
-  try {
-    const currentQuestion = gameStore.questions[currentQuestionIndex.value];
-    if (!currentQuestion) return;
+import { usePvpSocket } from '@/composables/usePvpSocket'
 
-    // Prevent full-pass questions from being submitted again
-    const teamKey = gameStore.playerTeam
-    if (teamKey != null && gameStore.progressFullPass?.[teamKey]?.[currentQuestionIndex.value]) {
-      triggerNotification("Question already completed (full pass).", 1200);
-      return;
-    }
-
-    const data = await runCodeOnApi(code.value, currentQuestion.test_cases);
-
-    const resultsForCurrent = mapTestResults(data, currentQuestion);
-
-    testResults.value = resultsForCurrent;
-    // Determine passed test indices for this submission
-    const passedIndices = resultsForCurrent.results
-      .map((r, i) => (r.passed ? i : -1))
-      .filter(i => i >= 0);
-
-    // Save local progress view (optional)
-    saveProgress(currentQuestionIndex.value, resultsForCurrent);
-
-    // If any test cases were passed, inform server with the indices
-    if (passedIndices.length > 0 && gameStore.gameId && gameStore.playerTeam) {
-      socket.emit('questionFinished', {
-        gameId: gameStore.gameId,
-        team: gameStore.playerTeam,
-        questionIndex: currentQuestionIndex.value,
-        passedIndices
-      });
-    }
-
-    // If entire question passed (all tests), show question cleared popup
-    const allPassedForQuestion = resultsForCurrent.results.every(r => r.passed);
-    if (allPassedForQuestion) {
-      showClearedPopup.value = true;
-    } else {
-      showResultPopup.value = true;
-    }
-
-  } catch (error) {
-    console.error('Code run failed:', error)
-    openErrorMessagePopup('Server Error', String((error as any).message || error))
-  } finally {
-    isLoading.value = false
+const { initPvpSockets } = usePvpSocket({
+  playerId: player?.player_id,
+  DEV,
+  sabotageOnce,
+  enableForfeit,
+  handleQuestionProgress,
+  handleGameEnd,
+  sabotagePoint,
+  timeLeft,
+  timeLimitEnabled,
+  PVP_TIME_LIMIT,
+  onDrawRequested: (team) => {
+    showDrawFeedback.value = true
+    drawRequestedByTeam.value = team
+  },
+  onVoteDrawResult: (_votes, _totalPlayers) => {
+    // Currently not used
   }
+})
+
+initPvpSockets()
+
+// ----------------------
+// 🛠️ Helper functions
+// ----------------------
+function helperSubmitCode() {
+  submitCode(currentQuestionIndex.value, selectedLanguage.value)
 }
 
-// -----------------
-// 🛠️ Helpers
-// -----------------
-async function runCodeOnApi(code: string, test_cases: any[]) {
-  const res = await codeRunnerApi.post('/run', { code, test_cases, score_pct: 1 })
-  const data = res.data as CodeRunResponse
+function helperForceClearQuestion() {
+  if (!DEV) return
+  forceClearQuestion(currentQuestionIndex.value)
+}
 
-  const errorResult = data.results.find(r =>
-    r.output.startsWith('[Compilation Error]') || r.output.startsWith('[Runtime Error]')
-  )
+function handleQuestionProgress(data: any) {
+  if (!data?.team) return
+  const qIndex = data.questionIndex ?? currentQuestionIndex.value
+  updateProgress(data.team, qIndex, data.progress, data.progressFullPass)
 
-  if (errorResult) {
-    openErrorMessagePopup(
-      errorResult.output.startsWith('[Compilation Error]') ? 'Compilation Error' : 'Runtime Error',
-      "---------- < Fix it before submitting! :D > ----------"
-    )
-    throw new Error('Code execution failed')
+  const progressArr = gameStore.progress[data.team][qIndex]
+  const testCasesFinished = Array.isArray(progressArr) && progressArr.every(Boolean)
+  const questionFinished = !!gameStore.progressFullPass[data.team][qIndex]
+
+  if (testCasesFinished && !questionFinished) {
+    setTimeout(() => triggerNotification(
+      "This question doesn't count yet — all test cases must pass in the same submission.",
+      1800
+    ), 2000)
   }
-
-  return data
-}
-
-function mapTestResults(data: CodeRunResponse, question: any) {
-  const perTest = data.results.map((r, i) => ({
-    passed: !!r.passed,
-    output: r.output,
-    expected_output: question.test_cases[i].expected_output,
-    input: question.test_cases[i].input,
-  }));
-  const passedCount = perTest.filter(p => p.passed).length;
-
-  return {
-    passed: passedCount === (question.test_cases?.length ?? 0),
-    results: perTest,
-    total_score: Number(data.total_score) || passedCount
-  };
-}
-
-function saveProgress(questionIndex: number, results: any) {
-  const teamKey = gameStore.playerTeam || 'team1';
-  if (!gameStore.progress[teamKey]) gameStore.progress[teamKey] = [];
-
-  // store a boolean[] per-test so progress shape matches server (boolean[][])
-  const perTestBooleans = (results?.results ?? []).map((r: any) => !!r.passed);
-
-  gameStore.progress[teamKey][questionIndex] = perTestBooleans;
-
-  console.log('questions ids:', gameStore.questions.map((q, i) => ({ i, id: q.id, level: q.level })));
-  console.log('progress lengths:', {
-    team1: (gameStore.progress.team1 || []).length,
-    team2: (gameStore.progress.team2 || []).length
-  });
-}
-
-function updateGameState(game: any) {
-  gameStore.gameId = game.gameId
-  gameStore.questions = game.questions
-  gameStore.progress = game.progress
-  gameStore.progressFullPass = game.progressFullPass || { team1: [], team2: [] }
-  gameStore.team1 = game.team1
-  gameStore.team2 = game.team2
-  gameStore.playerTeam = game.playerTeam
-  gameStore.finished = game.finished
-  // 🔹 Log the full game state
-  console.log("Game state received:", {
-    gameId: gameStore.gameId,
-    playerTeam: gameStore.playerTeam,
-    opponentTeam: gameStore.opponentTeam,
-    team1: gameStore.team1,
-    team2: gameStore.team2,
-    questions: gameStore.questions,
-    progress: gameStore.progress,
-    finished: gameStore.finished
-  })
 }
 
 function updateProgress(team: 'team1' | 'team2', questionIndex: number, progress: any, fullPass?: any) {
-  if (!gameStore.progress[team]) gameStore.progress[team] = [];
-  if (!gameStore.progressFullPass) gameStore.progressFullPass = { team1: [], team2: [] };
-  if (!gameStore.progressFullPass[team]) gameStore.progressFullPass[team] = [];
+  if (!gameStore.progress[team]) gameStore.progress[team] = []
+  if (!gameStore.progressFullPass) gameStore.progressFullPass = { team1: [], team2: [] }
+  if (!gameStore.progressFullPass[team]) gameStore.progressFullPass[team] = []
 
-  if (progress?.[questionIndex]) gameStore.progress[team][questionIndex] = progress[questionIndex];
-  if (fullPass?.[questionIndex] !== undefined) gameStore.progressFullPass[team][questionIndex] = fullPass[questionIndex];
+  if (progress?.[questionIndex]) gameStore.progress[team][questionIndex] = progress[questionIndex]
+  if (fullPass?.[questionIndex] !== undefined) gameStore.progressFullPass[team][questionIndex] = fullPass[questionIndex]
+}
+
+function handleGameEnd(data: { winner: 'team1' | 'team2' | 'draw' }) {
+  showClearedPopup.value = false
+  showMessagePopup.value = false
+  showVoteDrawPanel.value = false
+  showOpponentPanel.value = false
+  showResultPopup.value = true
+  gameStore.finished = true
+  gameStore.winner = data.winner
+  triggerNotification(`Game ended — winner: ${data.winner}`, 2500)
 }
 
 function endGame() {
   showResultPopup.value = false;
   router.replace({ name: 'PvpTypeSelect' });
 }
-// =============================
-// 🖥️ Computed
-// =============================
-
-// ----------------------
-// 🖥️ Multiplayer Actions
-// ----------------------
-// NOTE: sendSabotage, voteDraw, forfeit, acceptDraw are provided by usePvpActions().
-// Use triggerDrawVote() locally if you want to close the vote panel after voting.
-
-
-// -----------------
-// 🛠️ DEV Helpers
-// -----------------
-function forceClearQuestion() {
-  if (!DEV) return; // only in DEV
-  const teamKey = gameStore.playerTeam || 'team1';
-  const qIndex = currentQuestionIndex.value;
-
-  // mark all tests as passed locally
-  const question = gameStore.questions[qIndex];
-  if (!question) return;
-
-  const allPassed = question.test_cases.map(() => true);
-  if (!gameStore.progress[teamKey]) gameStore.progress[teamKey] = [];
-  if (!gameStore.progressFullPass[teamKey]) gameStore.progressFullPass[teamKey] = [];
-
-  gameStore.progress[teamKey][qIndex] = allPassed;
-  gameStore.progressFullPass[teamKey][qIndex] = true;
-
-  showClearedPopup.value = true;
-
-  console.log(`DEV: Force cleared question ${qIndex} for ${teamKey}`);
-
-  // Emit to backend like a normal full pass
-  if (gameStore.gameId && gameStore.playerTeam) {
-    socket.emit('questionFinished', {
-      gameId: gameStore.gameId,
-      team: teamKey,
-      questionIndex: qIndex,
-      passedIndices: allPassed.map((_: any, i: any) => i) // mark all test cases as passed
-    });
-    triggerNotification(`DEV: Question ${qIndex} force-cleared and emitted to backend!`, 1200);
-  }
-}
-
-// =============================
-// 🚀 Lifecycle Hooks
-// =============================
-const DEV = inject('DEV') as boolean
-
-onMounted(async () => {
-  // Ensure we have a game ID
-  if (!gameStore.gameId) {
-    if (DEV) {
-      console.log("DEV mode: Creating dummy game...");
-      try {
-        socket.emit("createDevGame", { playerId: player?.player_id });
-      } catch (err) {
-        console.error("Failed to create DEV game:", err);
-      }
-    } else {
-      triggerNotification("No active game found. Redirecting to game selection.", 2000);
-      router.replace({ name: 'PvpTypeSelect' });
-      return;
-    }
-  }
-
-  // Listen for DEV game response
-  socket.once("devGameCreated", (game) => {
-    console.log("DEV game created:", game);
-    updateGameState(game)
-  });
-
-  // Fetch game state from server
-  socket.emit("getGameState", { gameId: gameStore.gameId })
-
-  // Listen for game state response
-  socket.once("gameState", (game) => {
-    updateGameState(game)
-  })
-
-  // Listen for question progress updates from server (per-team per-question per-test)
-  socket.on("questionProgress", (data) => {
-    if (!data?.team) return;
-    const qIndex = data.questionIndex ?? currentQuestionIndex.value;
-    updateProgress(data.team as 'team1' | 'team2', qIndex, data.progress, data.progressFullPass);
-
-    const progressArr = gameStore.progress[data.team as 'team1' | 'team2'][qIndex];
-    const testCasesFinished = Array.isArray(progressArr) && progressArr.every(Boolean);
-    const questionFinished = !!gameStore.progressFullPass[data.team as 'team1' | 'team2'][qIndex];
-
-    if (testCasesFinished && !questionFinished) {
-      setTimeout(() => triggerNotification(
-        "This question doesn't count yet — all test cases must pass in the same submission.",
-        1800
-      ), 2000);
-    }
-  });
-
-  // Listen for awardSabotage events (server tells us how many points to add)
-  socket.on("awardSabotage", (payload: { amount: number }) => {
-    if (typeof payload?.amount === "number") {
-      sabotagePoint.value += payload.amount;
-      triggerNotification(`+${payload.amount} sabotage point(s)!`, 1200);
-    }
-  });
-
-  // Listen for sabotage
-  socket.on("sabotageReceived", () => { sabotageOnce() })
-
-  // Listen for draw vote results
-  socket.on("voteDrawResult", (data: { votes: number, totalPlayers: number }) => {
-    triggerNotification(`Draw vote: ${data.votes}/${data.totalPlayers} voted`, 1200);
-  });
-
-  socket.on("drawRequested", ({ byTeam }) => {
-    // Show a popup or a notice in the VoteDraw panel
-    triggerNotification("Opposing team has requested a draw!", 2000);
-    showDrawFeedback.value = true;
-    drawRequestedByTeam.value = byTeam; // e.g., "team1" or "team2"
-  });
-
-  socket.on("enableForfeitButton", () => {
-    // delegate to composable and keep same UX message
-    enableForfeit()
-    triggerNotification("Vote draw failed — you can now forfeit.", 2000);
-  });
-
-  // Listen for game end
-  socket.on("gameEnd", (data: { winner: 'team1' | 'team2' | 'draw', progress: any }) => {
-    // show proper result popup (you may already have a PvpResultPopup for this)
-    // Hide other popups
-    showClearedPopup.value = false;
-    showMessagePopup.value = false;
-    showVoteDrawPanel.value = false;
-    showOpponentPanel.value = false;
-
-    // Show a dedicated end popup:
-    showResultPopup.value = true;
-
-    // Optionally set some store fields so popup can display winner
-    gameStore.finished = true;
-    gameStore.winner = data.winner;
-
-    // you can also store winner somewhere (gameStore.winner = data.winner)
-    setTimeout(() => triggerNotification(`Game ended — winner: ${data.winner}`, 2500), 2000);
-  });
-
-  // Start timer if enabled
-  if (timeLimitEnabled) { timeLeft.value = PVP_TIME_LIMIT || 0 }
-  startTimer()
-})
-
-onUnmounted(() => {
-  stopTimer();
-  socket.off("sabotageReceived");
-  socket.off("questionProgress");
-});
 </script>
 
 <template>
@@ -469,7 +226,7 @@ onUnmounted(() => {
 
     <div class="buttons">
       <button @click="runCodeInteractive" :disabled="isLoading">Run code</button>
-      <button @click="submitCode" :disabled="isLoading">
+      <button @click="helperSubmitCode" :disabled="isLoading">
         Submit
       </button>
     </div>
@@ -527,7 +284,7 @@ onUnmounted(() => {
     :winner="gameStore.finished ? gameStore.winner : null" @close="showResultPopup = false" @endGame="endGame" />
 
   <div v-if="DEV" class="dev-buttons" style="position: fixed; bottom: 10px; right: 10px;">
-    <button @click="forceClearQuestion"
+    <button @click="helperForceClearQuestion"
       style="background: orange; color: white; padding: 6px 12px; border-radius: 4px;">
       Force Clear Question
     </button>
