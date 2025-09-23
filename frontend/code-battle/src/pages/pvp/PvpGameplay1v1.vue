@@ -287,13 +287,9 @@ function endGame() {
 
     <!-- Vote panel component slides in/out -->
     <transition name="slide-right">
-      <div class="vote-panel-wrapper" v-if="showVoteDrawPanel">
-        <VotePanel :disabled="lockDrawVoteButton" @vote="voteDraw" @close="toggleVoteDrawPanel"
-          @forfeit="handleForfeit" />
-        <div v-if="showDrawFeedback" class="draw-feedback">
-          Opposing team ({{ drawRequestedByTeam }}) has requested a draw.
-          <button @click="acceptDraw">Accept Draw</button>
-        </div>
+      <div class="vote-panel-wrapper" v-show="showVoteDrawPanel">
+        <VotePanel :showDrawFeedback="showDrawFeedback" :disabled="lockDrawVoteButton" @vote="voteDraw"
+          @close="toggleVoteDrawPanel" @forfeit="handleForfeit" />
       </div>
     </transition>
 

@@ -6,7 +6,7 @@ import ForfeitButton from './ForfeitButton.vue'
 import { socket } from '@/clients/socket.api'
 import { usePvpAction } from '@/composables/usePvpAction'
 
-const props = defineProps<{ disabled?: boolean }>()
+const props = defineProps<{ disabled?: boolean; showDrawFeedback?: boolean }>()
 const emit = defineEmits<{
     (e: 'vote'): void
     (e: 'close'): void
@@ -43,8 +43,9 @@ onUnmounted(() => {
         <button class="side-button close-btn" @click="closePanel">▶</button>
 
         <!-- Conditional button: vote draw OR forfeit -->
-        <VoteDrawButton v-if="!forfeitEnabled" :disabled="props.disabled" @vote="onVote" />
-        <ForfeitButton v-else :disabled="props.disabled" @forfeit="onForfeit" />
+        <VoteDrawButton v-show="!forfeitEnabled" :disabled="props.disabled" :blinking="props.showDrawFeedback"
+            :text="props.showDrawFeedback ? 'Accept Draw' : 'Vote Draw'" @vote="onVote" />
+        <ForfeitButton v-show="forfeitEnabled" :disabled="props.disabled" @forfeit="onForfeit" />
     </div>
 </template>
 

@@ -1,31 +1,51 @@
 <!-- frontend\code-battle\src\components\gameplay\VoteDrawButton.vue -->
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
 
-const props = defineProps<{ disabled?: boolean }>()
+const props = defineProps<{ disabled?: boolean; blinking?: boolean; text?: string }>()
 const emit = defineEmits<{ (e: 'vote'): void }>()
 
 const isLoading = ref(false)
+const isBlinking = ref(false)
+let blinkInterval: number | undefined
 
 function onClick() {
   if (props.disabled || isLoading.value) return
   isLoading.value = true
   emit('vote')
-  setTimeout(() => {
-    isLoading.value = false
-  }, 600)
+  setTimeout(() => { isLoading.value = false }, 600)
 }
 
+// Watch for disabled prop
 watch(() => props.disabled, val => {
   if (val) isLoading.value = false
+})
+
+// Watch for blinking prop
+watch(() => props.blinking, val => {
+  if (blinkInterval) {
+    clearInterval(blinkInterval)
+    blinkInterval = undefined
+  }
+
+  if (val) {
+    isBlinking.value = true
+    blinkInterval = setInterval(() => { isBlinking.value = !isBlinking.value }, 500)
+  } else {
+    isBlinking.value = false
+  }
+})
+
+onUnmounted(() => {
+  if (blinkInterval) clearInterval(blinkInterval)
 })
 </script>
 
 <template>
   <button class="draw-button" :disabled="props.disabled || isLoading" @click="onClick" type="button"
-          aria-pressed="false" aria-label="Vote for a draw" title="Vote for a draw">
-    <span v-if="isLoading" class="spinner" aria-hidden="true"></span>
-    <span v-else>Vote Draw</span>
+    :class="{ blinking: isBlinking }">
+    <span v-if="isLoading" class="spinner"></span>
+    <span v-else>{{ props.text || 'Vote Draw' }}</span>
   </button>
 </template>
 
@@ -48,9 +68,38 @@ watch(() => props.disabled, val => {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
   transition: transform .06s ease, background .12s ease;
 }
-.draw-button:hover:not(:disabled) { background: #5eff00; color:#000000; }
-.draw-button:active:not(:disabled) { transform: translateY(0); }
-.draw-button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.draw-button:hover:not(:disabled) {
+  background: #5eff00;
+  color: #000000;
+}
+
+.draw-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.draw-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.blinking {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+
+  0%,
+  50%,
+  100% {
+    opacity: 1;
+  }
+
+  25%,
+  75% {
+    opacity: 0;
+  }
+}
 
 .spinner {
   width: 14px;
@@ -61,5 +110,10 @@ watch(() => props.disabled, val => {
   animation: spin 0.8s linear infinite;
   box-sizing: border-box;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 </style>
