@@ -35,8 +35,10 @@ function createSoloTeam(player: PlayerSession): Team {
 export class MatchmakingService {
     constructor(private io: Server, private gameService: GameService) { }
 
-    private queue1v1: Map<string, PlayerSession> = new Map();
-    private queue3v3: Map<string, Team> = new Map();
+    private queue1v1Normal: Map<string, PlayerSession> = new Map();
+    private queue1v1Timed: Map<string, PlayerSession> = new Map();
+    private queue3v3Normal: Map<string, Team> = new Map();
+    private queue3v3Timed: Map<string, Team> = new Map();
 
     // ✅ Type Guards
     private isPlayerSession(input: any): input is PlayerSession {
@@ -62,7 +64,7 @@ export class MatchmakingService {
 
 
     // ✅ UTC-21: queuePlayer for 1v1
-    queuePlayer(player: PlayerSession): { message?: string; error_message?: string } {
+    queuePlayer(player: PlayerSession, timeLimit: boolean): { message?: string; error_message?: string } {
         try {
             // ✅ UTC-21 ID 3: Invalid player object
             if (!this.isPlayerSession(player)) {
@@ -74,7 +76,7 @@ export class MatchmakingService {
                 return { error_message: "Player is required" };
             }
 
-            const queue = this.queue1v1;
+            const queue = timeLimit ? this.queue1v1Timed : this.queue1v1Normal;
 
             // ✅ UTC-21 ID 2: Duplicate player
             if (queue.has(player.player_id)) {
@@ -87,9 +89,8 @@ export class MatchmakingService {
 
             // ✅ SRS-091: If no suitable match is found within a timeout period, the system shall cancel matchmaking and notify the player accordingly.
             const timeoutId = setTimeout(() => {
-                if (this.queue1v1.has(player.player_id)) {
-                    this.queue1v1.delete(player.player_id);
-                    console.log(`Player ${player.player_id} removed from 1v1 queue due to timeout`); // log expiration
+                if (queue.has(player.player_id)) {
+                    queue.delete(player.player_id);
                     player.socket.emit("queueTimeout", { message: TIMEOUT_MESSAGE });
                 }
             }, MAX_QUEUE_TIME_MS);
@@ -97,7 +98,7 @@ export class MatchmakingService {
 
             // ✅ UTC-21 ID 1: Valid player added
             queue.set(player.player_id, player);
-            return { message: "Player added to 1v1 queue successfully" };
+            return { message: `Player added to 1v1 queue ${timeLimit ? "with time limit " : ""}successfully` };
         } catch (err) {
             // ✅ SRS-092: If a server error occurs during matchmaking, the frontend shall display: "Matchmaking service is currently unavailable. Please try again later." [UI-04-06]
             console.error("Matchmaking error:", err);
@@ -109,14 +110,14 @@ export class MatchmakingService {
     }
 
     // ✅ UTC-21: queueTeam for 3v3
-    queueTeam(team: Team): { message?: string; error_message?: string } {
+    queueTeam(team: Team, timeLimit: boolean): { message?: string; error_message?: string } {
         try {
             // ✅ UTC-21 ID 3: Invalid team object
             if (!this.isTeam(team)) {
                 return { error_message: "Team must consist of exactly 3 valid player sessions" };
             }
 
-            const queue = this.queue3v3;
+            const queue = timeLimit ? this.queue3v3Timed : this.queue3v3Normal;
 
             // ✅ UTC-21 ID 2: Duplicate team
             if (queue.has(team.team_id)) {
@@ -143,7 +144,7 @@ export class MatchmakingService {
 
             // ✅ UTC-21 ID 1: Valid team added
             queue.set(team.team_id, team);
-            return { message: "Team added to 3v3 queue successfully" };
+            return { message: `Team added to 3v3 queue ${timeLimit ? "with time limit " : ""}successfully` };
         } catch (err) {
             // ✅ SRS-092: If a server error occurs during matchmaking, the frontend shall display: "Matchmaking service is currently unavailable. Please try again later." [UI-04-06]
             console.error("Matchmaking error:", err);
@@ -155,132 +156,84 @@ export class MatchmakingService {
     }
 
     // ✅ UTC-22: startMatch
-    startMatch1v1(): { message?: string; error_message?: string } {
-        const queue = this.queue1v1;
+    startMatch1v1(timed: boolean = false): { message?: string; error_message?: string } {
+        const queue = timed ? this.queue1v1Timed : this.queue1v1Normal;
         const players = Array.from(queue.values());
 
-        // ✅ UTC-22 ID 2: Not enough players
-        if (players.length < 2) {
-            return { error_message: "Not enough players to start a 1v1 match" };
-        }
+        if (players.length < 2) return { error_message: "Not enough players to start a 1v1 match" };
 
-        // ✅ UTC-22 ID 1: Enough players queued
-        const matchPlayers = Array.from(queue.values())
-            .sort((a, b) => matchmakingScore(b) - matchmakingScore(a))
-            .slice(0, 2);
-
+        const matchPlayers = players.sort((a, b) => matchmakingScore(b) - matchmakingScore(a)).slice(0, 2);
         const [p1, p2] = matchPlayers;
 
-        p1.socket.emit("matchInfo", {
-            you: { player_id: p1.player_id, name: p1.name, email: p1.email, token: null },
-            friends: [],
-            opponents: [{ player_id: p2.player_id, name: p2.name, email: p2.email, token: null }]
-        });
-
-        p2.socket.emit("matchInfo", {
-            you: { player_id: p2.player_id, name: p2.name, email: p2.email, token: null },
-            friends: [],
-            opponents: [{ player_id: p1.player_id, name: p1.name, email: p1.email, token: null }]
-        });
-
-        matchPlayers.forEach(p => {
+        // Emit match info & start
+        [p1, p2].forEach(p => {
+            const opponent = p === p1 ? p2 : p1;
+            p.socket.emit("matchInfo", {
+                you: { player_id: p.player_id, name: p.name, email: p.email, token: null },
+                friends: [],
+                opponents: [{ player_id: opponent.player_id, name: opponent.name, email: opponent.email, token: null }]
+            });
             if (p.queueTimeoutId) clearTimeout(p.queueTimeoutId);
             p.socket.emit("matchStarted", { player_id: p.player_id });
             queue.delete(p.player_id);
         });
-        // Calls game service to create game instance
-        const team1 = createSoloTeam(p1);
-        const team2 = createSoloTeam(p2);
-        this.gameService.createGame(team1, team2);
 
-        // ✅ Emit match started event
+        this.gameService.createGame(createSoloTeam(p1), createSoloTeam(p2));
         return { message: "1v1 match started successfully" };
     }
 
-    startMatch3v3(): { message?: string; error_message?: string } {
-        const queue = this.queue3v3;
+    startMatch3v3(timed: boolean = false): { message?: string; error_message?: string } {
+        const queue = timed ? this.queue3v3Timed : this.queue3v3Normal;
         const teams = Array.from(queue.values());
 
-        // ✅ UTC-22 ID 2: Not enough teams
-        if (teams.length < 2) {
-            return { error_message: "Not enough teams to start a 3v3 match" };
-        }
+        if (teams.length < 2) return { error_message: "Not enough teams to start a 3v3 match" };
 
-        // ✅ UTC-22 ID 1: Enough teams queued
-        const matchTeams = Array.from(queue.values())
-            .sort((a, b) => teamScore(b) - teamScore(a))
-            .slice(0, 2);
-        const [teamA, teamB] = matchTeams;
+        const [teamA, teamB] = teams.sort((a, b) => teamScore(b) - teamScore(a)).slice(0, 2);
 
-        const teamAData = teamA.players.map(p => ({
-            player_id: p.player_id,
-            name: p.name,
-            email: p.email,
-            token: null
-        }));
-        const teamBData = teamB.players.map(p => ({
+        const prepareData = (team: Team) => team.players.map(p => ({
             player_id: p.player_id,
             name: p.name,
             email: p.email,
             token: null
         }));
 
-        teamA.players.forEach(p => {
-            p.socket.emit("matchInfo", {
-                you: { player_id: p.player_id, name: p.name, email: p.email, token: null },
-                friends: teamAData.filter(fp => fp.player_id !== p.player_id),
-                opponents: teamBData
-            });
+        const teamAData = prepareData(teamA);
+        const teamBData = prepareData(teamB);
 
-            p.socket.emit("matchStarted", {
-                player_id: p.player_id,
-                team_id: teamA.team_id
+        const emitMatch = (team: Team, friends: any[], opponents: any[], teamId: string) => {
+            team.players.forEach(p => {
+                p.socket.emit("matchInfo", { you: { player_id: p.player_id, name: p.name, email: p.email, token: null }, friends, opponents });
+                if (p.queueTimeoutId) clearTimeout(p.queueTimeoutId);
+                p.socket.emit("matchStarted", { player_id: p.player_id, team_id: teamId });
+                queue.delete(p.player_id);
             });
-        });
+        };
 
-        teamB.players.forEach(p => {
-            p.socket.emit("matchInfo", {
-                you: { player_id: p.player_id, name: p.name, email: p.email, token: null },
-                friends: teamBData.filter(fp => fp.player_id !== p.player_id),
-                opponents: teamAData
-            });
+        emitMatch(teamA, teamAData.filter(fp => !teamA.players.some(p => p.player_id === fp.player_id)), teamBData, teamA.team_id);
+        emitMatch(teamB, teamBData.filter(fp => !teamB.players.some(p => p.player_id === fp.player_id)), teamAData, teamB.team_id);
 
-            p.socket.emit("matchStarted", {
-                player_id: p.player_id,
-                team_id: teamB.team_id
-            });
-        });
-
-        // Calls game service to create game instance
         this.gameService.createGame(teamA, teamB);
-
-        // ✅ Clear timeouts before removing from queue
-        if (teamA.queueTimeoutId) clearTimeout(teamA.queueTimeoutId);
-        if (teamB.queueTimeoutId) clearTimeout(teamB.queueTimeoutId);
-        
-        // Remove teams from queue
-        queue.delete(teamA.team_id);
-        queue.delete(teamB.team_id);
-
         return { message: "3v3 match started successfully" };
     }
 
     // Cancel queue methods
-    cancelPlayerQueue(playerId: string) {
-        const player = this.queue1v1.get(playerId);
+    cancelPlayerQueue(playerId: string, timed: boolean) {
+        const queue = timed ? this.queue1v1Timed : this.queue1v1Normal;
+        const player = queue.get(playerId);
         if (player) {
             if (player.queueTimeoutId) clearTimeout(player.queueTimeoutId);
-            this.queue1v1.delete(playerId);
+            queue.delete(playerId);
             return { message: `Player ${playerId} removed from matchmaking queue` };
         }
         return { error_message: `Player ${playerId} was not in matchmaking queue` };
     }
 
-    cancelTeamQueue(teamId: string): { message?: string; error_message?: string } {
-        const team = this.queue3v3.get(teamId);
+    cancelTeamQueue(teamId: string, timed: boolean) {
+        const queue = timed ? this.queue3v3Timed : this.queue3v3Normal;
+        const team = queue.get(teamId);
         if (team) {
             if ((team as any).queueTimeoutId) clearTimeout((team as any).queueTimeoutId);
-            this.queue3v3.delete(teamId);
+            queue.delete(teamId);
             return { message: `Team ${teamId} removed from matchmaking queue` };
         }
         return { error_message: `Team ${teamId} was not in matchmaking queue` };

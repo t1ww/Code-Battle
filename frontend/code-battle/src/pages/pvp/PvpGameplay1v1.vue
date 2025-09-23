@@ -46,7 +46,7 @@ const { code, testResults, isLoading, submitCode, forceClearQuestion } = usePvpC
 
 // Timer
 const PVP_TIME_LIMIT = 5400
-const { timeLeft, formattedTime, startTimer, stopTimer } = useTimer(true, PVP_TIME_LIMIT, () => {
+const { timeLeft, formattedTime, startTimer, stopTimer } = useTimer(timeLimitEnabled, timeLimitEnabled ? PVP_TIME_LIMIT : 0, () => {
   // Time's up callback
   triggerNotification("Time's up! We'll end in a draw.", 2500)
   // End game as draw
@@ -233,9 +233,7 @@ const { initPvpSockets } = usePvpSocket({
 
 initPvpSockets()
 onMounted(() => {
-  if (timeLimitEnabled) {
-    startTimer()
-  }
+  startTimer()
 })
 </script>
 
