@@ -3,7 +3,7 @@
 // =============================
 // 📦 Imports
 // =============================
-import { ref, inject } from 'vue'
+import { ref, inject, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePvpGameStore } from '@/stores/game'
 import { getPlayerData } from '@/stores/auth'
@@ -47,7 +47,10 @@ const { code, testResults, isLoading, submitCode, forceClearQuestion } = usePvpC
 // Timer
 const PVP_TIME_LIMIT = 5400
 const { timeLeft, formattedTime, startTimer, stopTimer } = useTimer(true, PVP_TIME_LIMIT, () => {
-  showTimeoutPopup.value = true
+  // Time's up callback
+  triggerNotification("Time's up! We'll end in a draw.", 2500)
+  // End game as draw
+  voteDraw();
 })
 
 // Sabotage
@@ -80,7 +83,6 @@ const showOpponentPanel = ref(false)
 const showVoteDrawPanel = ref(false)
 const showClearedPopup = ref(false)
 const showMessagePopup = ref(false)
-const showTimeoutPopup = ref(false)
 const showResultPopup = ref(false)
 const messagePopupTitle = ref('')
 const messagePopupMessage = ref('')
@@ -193,6 +195,8 @@ function handleGameEnd(data: { winner: 'team1' | 'team2' | 'draw', forfeitBy?: s
   else if (data.leaveBy) reason = 'Opponent disconnected'
 
   gameStore.endReason = reason
+
+  stopTimer()
   triggerNotification(`Game ended — winner: ${data.winner}`, 2500)
 }
 
@@ -228,6 +232,11 @@ const { initPvpSockets } = usePvpSocket({
 })
 
 initPvpSockets()
+onMounted(() => {
+  if (timeLimitEnabled) {
+    startTimer()
+  }
+})
 </script>
 
 <template>
@@ -254,14 +263,14 @@ initPvpSockets()
       <div v-if="!showQuestionsPanel" class="popup-toggle fixed">
         <button @click="showQuestionsPanel = true">▼</button>
       </div>
-      <div class="timer">
-        Time Left:
-        <span>{{ formattedTime }}</span>
-      </div>
     </div>
 
     <!-- Code editor and run/submit buttons -->
     <div class="code-editor-wrapper">
+      <div class="timer">
+        Time Left:
+        <span>{{ formattedTime }}</span>
+      </div>
       <CodeEditor v-model="code" v-model:modelLanguage="selectedLanguage" />
     </div>
 
