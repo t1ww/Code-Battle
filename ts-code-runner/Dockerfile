@@ -1,6 +1,10 @@
+# ts-code-runner\Dockerfile
 # Stage 1 — build
 FROM node:20-alpine AS build
 WORKDIR /app
+
+# install build tools for native deps
+RUN apk add --no-cache python3 make build-base
 
 COPY package*.json ./ 
 COPY ts-code-runner/package*.json ./ts-code-runner/

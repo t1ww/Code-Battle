@@ -3,8 +3,11 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
+# install build tools for native deps
+RUN apk add --no-cache python3 make build-base
+
 # copy root + socket package.json for workspace install
-COPY package*.json ./
+COPY package*.json ./ 
 COPY socket-server/package*.json ./socket-server/
 
 # install dev dependencies for build
@@ -21,7 +24,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # copy package.json for production install
-COPY package*.json ./
+COPY package*.json ./ 
 COPY socket-server/package*.json ./socket-server/
 
 # install only production deps
