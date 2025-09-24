@@ -118,6 +118,27 @@ onBeforeUnmount(() => {
   animation: glowPulse 3s ease-in-out infinite;
 }
 
+/* Laptop / medium screens */
+@media (max-width: 1680px) {
+  .editor-container {
+    height: 24rem;
+  }
+}
+
+/* Tablet / small screens */
+@media (max-width: 1024px) {
+  .editor-container {
+    height: 22rem;
+  }
+}
+
+/* Mobile / very small screens */
+@media (max-width: 768px) {
+  .editor-container {
+    height: 20rem;
+  }
+}
+
 @keyframes glowPulse {
 
   0%,
