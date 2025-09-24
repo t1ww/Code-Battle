@@ -3,8 +3,22 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# install build tools for native deps
-RUN apk add --no-cache python3 make build-base
+# Update package lists and install g++ and a Java JDK
+# For g++, install 'build-essential' which includes g++ and other build tools.
+# For Java JDK, install 'openjdk-17-jdk' (or another desired version like 'openjdk-11-jdk').
+RUN apt-get update && \
+    apt-get install -y build-essential openjdk-17-jdk && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set the JAVA_HOME environment variable (adjust path if using a different JDK version)
+ENV JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
+ENV PATH="$JAVA_HOME/bin:$PATH"
+
+# Verify installations (optional, but good for debugging)
+RUN g++ --version
+RUN java -version
+RUN javac -version
+
 
 COPY package*.json ./ 
 COPY ts-code-runner/package*.json ./ts-code-runner/
