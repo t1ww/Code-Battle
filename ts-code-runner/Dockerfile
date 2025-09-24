@@ -1,44 +1,47 @@
-# ts-code-runner\Dockerfile
+# ts-code-runner/Dockerfile
 # Stage 1 — build
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Update package lists and install g++ and a Java JDK
-# For g++, install 'build-essential' which includes g++ and other build tools.
-# For Java JDK, install 'openjdk-17-jdk' (or another desired version like 'openjdk-11-jdk').
-RUN apt-get update && \
-    apt-get install -y build-essential openjdk-17-jdk && \
-    rm -rf /var/lib/apt/lists/*
+# Install build tools and Java
+RUN apk add --no-cache python3 make build-base openjdk17
 
-# Set the JAVA_HOME environment variable (adjust path if using a different JDK version)
-ENV JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
-ENV PATH="$JAVA_HOME/bin:$PATH"
+# Set JAVA_HOME
+ENV JAVA_HOME="/usr/lib/jvm/default-jvm"
+ENV PATH="$PATH:$JAVA_HOME/bin"
 
-# Verify installations (optional, but good for debugging)
+# Verify installations
 RUN g++ --version
-RUN java -version
+RUN java --version
 RUN javac -version
 
-
+# Copy package files for workspace install
 COPY package*.json ./ 
 COPY ts-code-runner/package*.json ./ts-code-runner/
 
-# Install dev deps to build
+# Install dev dependencies
 RUN npm install --workspace=ts-code-runner --include=dev
 
+# Copy source
 COPY ts-code-runner ./ts-code-runner
 
-# Build TS to dist
+# Build TypeScript
 RUN npm run build --prefix ts-code-runner
 
 # Stage 2 — runtime
 FROM node:20-alpine
 WORKDIR /app
 
+# Install runtime dependencies for g++ (needed for spawning at runtime)
+RUN apk add --no-cache python3 make build-base openjdk17
+
+# Set JAVA_HOME
+ENV JAVA_HOME="/usr/lib/jvm/default-jvm"
+ENV PATH="$PATH:$JAVA_HOME/bin"
+
+# Copy package files and install production deps
 COPY package*.json ./ 
 COPY ts-code-runner/package*.json ./ts-code-runner/
-
-# Install only production deps
 RUN npm install --workspace=ts-code-runner --production
 
 # Copy built JS
