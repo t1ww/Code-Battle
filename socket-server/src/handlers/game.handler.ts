@@ -61,22 +61,99 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
             game.drawVotes?.add(player_id);
 
             const totalPlayers = game.team1.players.length + game.team2.players.length;
+            const playerTeam = gameService.getPlayerTeam(gameId, player_id);
+
+            // Emit current vote count to all players
             io.to(`game-${gameId}`).emit("voteDrawResult", {
                 votes: game.drawVotes?.size ?? 0,
-                totalPlayers
+                totalPlayers,
             });
 
+            // Emit a "draw requested" feedback specifically to the opposite team
+            const oppositeTeam = playerTeam === "team1" ? "team2" : "team1";
+            io.to(`game-${gameId}-${oppositeTeam}`).emit("drawRequested", {
+                byTeam: playerTeam,
+            });
+
+            // All players voted → finish as draw
             if ((game.drawVotes?.size ?? 0) >= totalPlayers) {
+                clearTimeout(game.drawVoteTimeout);
                 game.finished = true;
                 io.to(`game-${gameId}`).emit("gameEnd", {
                     winner: "draw",
-                    progress: game.progress
+                    progress: game.progress,
                 });
+                return;
             }
 
+            // First vote triggers the timeout
+            if (!game.drawVoteTimeout) {
+                game.drawVoteTimeout = setTimeout(() => {
+                    game.forfeitEnabled = true;
+                    io.to(`game-${gameId}`).emit("enableForfeitButton");
+                }, 15000);
+            }
         } catch (err) {
             console.error("Failed to handle voteDraw:", err);
             socket.emit("errorMessage", { message: "Failed to vote draw" });
+        }
+    });
+
+    socket.on("leaveGame", ({ gameId, player_id }) => {
+        try {
+            const game = gameService.getGame(gameId);
+            if (!game || game.finished) return;
+
+            const playerTeam = gameService.getPlayerTeam(gameId, player_id);
+            if (!playerTeam) return;
+
+            const winnerTeam = playerTeam === "team1" ? "team2" : "team1";
+            game.finished = true;
+
+            clearTimeout(game.drawVoteTimeout);
+
+            io.to(`game-${gameId}`).emit("gameEnd", {
+                winner: winnerTeam,
+                progress: game.progress,
+                leaveBy: playerTeam,
+            });
+
+            gameService.deleteGame(gameId);
+        } catch (err) {
+            console.error("Failed to handle leave game:", err);
+            socket.emit("errorMessage", { message: "Failed to leave game" });
+        }
+    });
+
+    socket.on("forfeit", ({ gameId, player_id }) => {
+        try {
+            const game = gameService.getGame(gameId);
+            if (!game || game.finished) return;
+
+            const playerTeam = gameService.getPlayerTeam(gameId, player_id);
+            if (!playerTeam) return;
+
+            // Only allow if forfeit is enabled
+            if (!game.forfeitEnabled) {
+                socket.emit("errorMessage", { message: "Cannot forfeit yet." });
+                return;
+            }
+
+            const winnerTeam = playerTeam === "team1" ? "team2" : "team1";
+            game.finished = true;
+
+            clearTimeout(game.drawVoteTimeout);
+
+            io.to(`game-${gameId}`).emit("gameEnd", {
+                winner: winnerTeam,
+                progress: game.progress,
+                forfeitBy: playerTeam,
+            });
+
+            gameService.deleteGame(gameId);
+        } catch (err) {
+            console.error("Failed to handle forfeit:", err);
+            socket.emit("errorMessage", { message: "Failed to forfeit" });
         }
     });
 

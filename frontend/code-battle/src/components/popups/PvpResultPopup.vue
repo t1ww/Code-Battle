@@ -1,7 +1,7 @@
 <!-- frontend\code-battle\src\components\popups\PvpResultPopup.vue -->
 <script setup lang="ts">
 import { computed, defineProps } from 'vue'
-import { usePvpGameStore } from '@/stores/usePvpGameStore'
+import { usePvpGameStore } from '@/stores/game'
 
 const gameStore = usePvpGameStore()
 
@@ -19,8 +19,16 @@ const props = defineProps<{
     progress: boolean[][]      // per question -> per test
     progressFullPass?: boolean[]
     winner?: 'team1' | 'team2' | 'draw' | null
+    endReason?: string | null
 }>()
 
+const winnerMessages = [
+    "Congratulations on your victory! 🎉",
+    "Well played! You earned this win. 🏆",
+    "Fantastic job! Keep up the great work. 🚀",
+    "You're on fire! Another win in the books. 🔥",
+    "Victory is yours! Celebrate your success. 🎊"
+];
 const loserMessages = [
     "Don't worry, you'll get them next time! 🌟",
     "Keep trying! Practice makes perfect. 💪",
@@ -33,12 +41,16 @@ const isWinner = computed(() => props.winner === gameStore.playerTeam)
 const isLoser = computed(() => props.winner === gameStore.opponentTeam)
 const isDraw = computed(() => props.winner === 'draw')
 
-const loserMessage = computed(() => {
-    if (props.winner && isLoser.value) {
+const cheerupMessage = computed(() => {
+    if (isLoser.value) {
         const index = Math.floor(Math.random() * loserMessages.length);
         return loserMessages[index];
+    } else if (isWinner.value) {
+        const index = Math.floor(Math.random() * winnerMessages.length);
+        return winnerMessages[index];
+    } else {
+        return "";
     }
-    return "";
 });
 
 const emit = defineEmits<{
@@ -62,6 +74,9 @@ function handleClose() {
     <div v-if="show" class="popup-backdrop">
         <div class="popup-content">
             <!-- Winner / Loser / Draw -->
+            <span v-if="endReason" style="font-size: 0.8rem; color: #888; margin-left: 0.5rem;">
+                ({{ endReason }})
+            </span>
             <h2 v-if="winner">
                 <template v-if="isWinner">🎉 You Win! 🎉</template>
                 <template v-else-if="isLoser">💀 You Lose 💀</template>
@@ -69,13 +84,16 @@ function handleClose() {
                 <template v-else>⚠ Unexpected result ⚠</template>
             </h2>
 
-            <p v-if="isLoser" class="loser-message">{{ loserMessage }}</p>
+            <p v-if="isLoser" class="cheerup-message">{{ cheerupMessage }}</p>
+            <p v-else class="hypeup-message">{{ cheerupMessage }}</p>
 
-            <h2 v-else>🧪 Test Results</h2>
+            <h2>🧪 Test Results 🧪</h2>
             <hr>
             <!-- Per-question progress -->
             <div v-for="(question, qIndex) in questions" :key="question.id" class="question-block">
-                <h3>Question {{ qIndex + 1 }} (ID: {{ question.id }})</h3>
+                <h3>Question {{ qIndex + 1 }} (ID: {{ question.id }})
+                    <span v-if="progressFullPass?.[qIndex]" class="test-case status-badge pass">✔ Cleared</span>
+                </h3><!-- Full pass indicator -->
 
                 <div class="progress-bar">
                     <div v-for="(passed, tIndex) in progress[qIndex]" :key="tIndex" class="progress-segment"
@@ -83,11 +101,6 @@ function handleClose() {
                         :title="'Test ' + (tIndex + 1) + (passed ? ': ✅ Passed' : ': ❌ Failed')">
                         <span class="progress-label">Test {{ tIndex + 1 }}</span>
                     </div>
-                </div>
-
-                <!-- Full pass indicator -->
-                <div v-if="progressFullPass?.[qIndex]" class="test-case pass">
-                    <span class="status-badge pass">✔ Cleared</span>
                 </div>
             </div>
 
@@ -101,6 +114,10 @@ function handleClose() {
 
 <!-- Custom styles for progress bars and loser message -->
 <style scoped>
+h2 {
+    margin-block: 0.2rem;
+}
+
 .question-block {
     margin-bottom: 16px;
 }
@@ -121,12 +138,12 @@ function handleClose() {
 
 .progress-segment.passed {
     background: #0f0;
-    color: rgb(29, 58, 75); 
+    color: rgb(29, 58, 75);
 }
 
 .progress-segment.failed {
     background: #f00;
-    color: rgb(255, 198, 123); 
+    color: rgb(255, 198, 123);
 }
 
 .test-case.pass {
@@ -142,7 +159,14 @@ function handleClose() {
     font-size: 0.85rem;
 }
 
-.loser-message {
+.hypeup-message {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: #cfffcb;
+    font-style: italic;
+}
+
+.cheerup-message {
     margin-top: 8px;
     font-size: 0.9rem;
     color: #ffcccb;
@@ -156,7 +180,8 @@ function handleClose() {
     margin-right: 2px;
     border-radius: 2px;
     background: #333;
-    position: relative; /* for text overlay */
+    position: relative;
+    /* for text overlay */
     display: flex;
     align-items: center;
     justify-content: center;

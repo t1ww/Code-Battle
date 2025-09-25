@@ -19,7 +19,7 @@ export function registerMatchmakingHandlers(io: Server, socket: Socket, services
                     socket,
                 };
 
-                const result = matchmakingService.queuePlayer(player);
+                const result = matchmakingService.queuePlayer(player, data.timeLimit);
                 if (result.error_message) {
                     socket.emit("queueResponse", `Matchmaking error with following message: ${result.error_message}`);
                     return;
@@ -35,13 +35,13 @@ export function registerMatchmakingHandlers(io: Server, socket: Socket, services
         }
     });
     // Cancel a player's queue
-    socket.on("cancelQueue", () => {
+    socket.on("cancelQueue", (data) => {
         // Handle 1v1 removal
         const removedPlayer = socket.data.player as PlayerSession;
         if (!removedPlayer) return;
 
         // Cancel the player's matchmaking queue
-        matchmakingService.cancelPlayerQueue(removedPlayer.player_id);
+        matchmakingService.cancelPlayerQueue(removedPlayer.player_id, data.timeLimit);
         // Notify the player that the queue was canceled
         socket.emit("playerQueueCanceled");
     });
@@ -56,7 +56,7 @@ export function registerMatchmakingHandlers(io: Server, socket: Socket, services
                 return;
             }
 
-            const result = matchmakingService.queueTeam(team);
+            const result = matchmakingService.queueTeam(team, data.timeLimit);
             if (result.error_message) {
                 socket.emit("queueResponse", `Matchmaking error with following message: ${result.error_message}`);
                 return;
@@ -71,11 +71,11 @@ export function registerMatchmakingHandlers(io: Server, socket: Socket, services
         }
     });
     // Cancel team's queue
-    socket.on("cancelQueueTeam", () => {
+    socket.on("cancelQueueTeam", (data) => {
         const team = teamService.getTeamBySocket(socket);
         if (!team) return;
         // Cancel the team's matchmaking queue
-        matchmakingService.cancelTeamQueue(team.team_id);
+        matchmakingService.cancelTeamQueue(team.team_id, data.timeLimit);
 
         // Notify all team members that the queue was canceled  
         console.log(`Team queue canceled for team ${team.team_id} by ${socket.data.player?.name || socket.id}`);
@@ -85,16 +85,18 @@ export function registerMatchmakingHandlers(io: Server, socket: Socket, services
 // Start global matchmaking loop
 export function startMatchmakingLoop(services: Services) {
     const { matchmakingService } = services;
-
-    let alternate = true;
     setInterval(() => {
-        if (alternate) {
-            console.log(`Attempt starting match for 1v1`);
-            matchmakingService.startMatch1v1();
-        } else {
-            console.log(`Attempt starting match for 3v3`);
-            matchmakingService.startMatch3v3();
+        // Attempt 1v1 matches
+        const resultNormal1v1 = matchmakingService.startMatch1v1(false);
+        if (resultNormal1v1.error_message) {
+            // Not enough normal players, try timed queue
+            matchmakingService.startMatch1v1(true);
         }
-        alternate = !alternate;
-    }, 6000);
+        // Attempt 3v3 matches
+        const resultNormal3v3 = matchmakingService.startMatch3v3(false);
+        if (resultNormal3v3.error_message) {
+            // Not enough normal teams, try timed queue
+            matchmakingService.startMatch3v3(true);
+        }
+    }, 3000);
 }

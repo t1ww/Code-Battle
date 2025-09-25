@@ -1,6 +1,6 @@
 <!-- frontend\code-battle\src\components\gameplay\QuestionDescriptionPanel.vue -->
 <script setup lang="ts">
-import CheckboxToggle from '../etc/CheckboxToggle.vue';
+import CheckboxToggle from '@/components/etc/CheckboxToggle.vue';
 
 defineProps<{
     show: boolean

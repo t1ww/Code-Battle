@@ -27,6 +27,8 @@ export interface GameRoom {
     progressFullPass: Record<"team1" | "team2", boolean[]>;
     finished: boolean;
     drawVotes?: Set<string>;
+    drawVoteTimeout?: NodeJS.Timeout;
+    forfeitEnabled?: boolean;
 }
 
 export class GameService {
@@ -281,5 +283,12 @@ export class GameService {
                 },
             ];
         }
+    }
+
+    deleteGame(gameId: string) {
+        const game = this.games.get(gameId);
+        if (!game) return;
+        clearTimeout(game.drawVoteTimeout);
+        this.games.delete(gameId);
     }
 }

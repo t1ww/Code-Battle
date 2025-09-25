@@ -50,10 +50,12 @@ const mapToMinimal = (players: PlayerData[]) => {
 }
 
 function cancelMatchmaking() {
-    if (mode.value === '1v1') {
-        socket.emit("cancelQueue")
-    } else if (mode.value === '3v3') {
-        socket.emit("cancelQueueTeam")
+    if (player?.player_id) {
+        if (mode.value === '1v1') {
+            socket.emit("cancelQueue", { player: { player_id: player.player_id, name: player.name, email: player.email }, timeLimit: timeLimit.value })
+        } else if (mode.value === '3v3') {
+            socket.emit("cancelQueueTeam", { player: { player_id: player.player_id, name: player.name, email: player.email }, timeLimit: timeLimit.value })
+        }
     }
 }
 

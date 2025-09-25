@@ -26,10 +26,10 @@ import ConfidentLostPopup from '@/components/popups/ConfidentLostPopup.vue'
 import TimeoutPopup from '@/components/popups/TimeoutPopup.vue'
 import ClearedPopup from '@/components/popups/ClearedPopup.vue'
 import MessagePopup from '@/components/popups/MessagePopup.vue'
-import QuestionBrowser from '@/components/gameplay/QuestionBrowser.vue'
+import QuestionBrowser from '@/components/gameplay/questiondescription/QuestionBrowser.vue'
 
 // Stores
-import { useQuestionStore } from '@/stores/questionStore'
+import { useQuestionStore } from '@/stores/question'
 const { question_data } = useQuestionStore()
 
 // =============================

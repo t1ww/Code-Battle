@@ -12,6 +12,7 @@ export const usePvpGameStore = defineStore('pvpGame', () => {
   const drawVotes = ref<Set<string>>(new Set())
   const finished = ref(false)
   const winner = ref<'team1' | 'team2' | 'draw' | null>(null)
+  const endReason = ref<string | null>(null)
 
   const playerTeam = ref<'team1' | 'team2' | null>(null)
 
@@ -53,6 +54,7 @@ export const usePvpGameStore = defineStore('pvpGame', () => {
     playerTeam, 
     opponentTeam, 
     opponentTeamObj,
-    clearGame 
+    clearGame,
+    endReason
   }
 })

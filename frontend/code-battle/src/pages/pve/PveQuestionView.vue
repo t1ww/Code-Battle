@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router'
 import api from '@/clients/crud.api'
 import type { Question, LeaderboardEntry } from '@/types/types'
 import { getPlayerData } from '@/stores/auth'
-import { useQuestionStore } from '@/stores/questionStore'
+import { useQuestionStore } from '@/stores/question'
 import CheckboxToggle from '@/components/etc/CheckboxToggle.vue'
 
 const route = useRoute()
@@ -39,10 +39,15 @@ async function fetchLevelData(): Promise<Question> {
 
 async function fetchTopScore() {
   try {
-    const response = await api.get(`/scores/topscore?question_id=${question_data.value?.id}`)
-    topScoreEntry.value = response.data as LeaderboardEntry
+    const response = await api.get("/scores/topscore", {
+      params: {
+        player_id: player?.player_id,
+        question_id: question_data.value?.id,
+      },
+    });
+    topScoreEntry.value = response.data as LeaderboardEntry;
   } catch (err) {
-    console.error('[Top Score Fetch Error]', err)
+    console.error("[Top Score Fetch Error]", err);
   }
 }
 

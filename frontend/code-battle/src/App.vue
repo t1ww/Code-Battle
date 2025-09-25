@@ -10,7 +10,7 @@ import { useTeamStore } from "@/stores/team";
 import { getPlayerData } from "@/stores/auth";
 import MusicPlayer from "./components/controller/MusicPlayer.vue";
 import { useRoute } from "vue-router";
-import { usePvpGameStore } from "@/stores/usePvpGameStore";
+import { usePvpGameStore } from "@/stores/game";
 
 const music = ref<any>(null) // get access to MusicPlayer methods
 const route = useRoute();
