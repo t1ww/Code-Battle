@@ -19,6 +19,19 @@ app.use("/api/players", playerRoutes); // Mount player routes
 app.use("/api/questions", questionRoutes); // Mount question routes
 app.use("/api/scores", scoreRoutes); // Mount score routes
 
+// ✅ Root health/env check
+app.get("/", (req, res) => {
+  res.json({
+    status: "ok",
+    env: {
+      PORT: !!process.env.PORT,
+      FRONTEND_URL: !!process.env.FRONTEND_URL,
+      SUPABASE_URL: !!process.env.SUPABASE_URL,
+      SUPABASE_KEY: !!process.env.SUPABASE_KEY,
+    }
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Server running at port:${PORT}`);
 });
