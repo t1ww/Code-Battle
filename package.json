@@ -15,9 +15,11 @@
     "jwt": "node util_scripts/jwt.generator.js --prefix utility",
     "team-bot": "nodemon --watch util_scripts/teamJoinBot.ts --exec \"node --loader ts-node/esm util_scripts/teamJoinBot.ts\"",
     "kill-ports": "node util_scripts/kill-ports.config.js",
+
     "fe": "npm run dev --prefix frontend/code-battle",
     "frontend": "npm run fe",
     "be": "npm run dev --prefix backend",
+
     "be:db:reset": "npm run database:reset --prefix backend",
     "be:db:seed": "npm run database:seed --prefix backend",
     "be:db:migrate": "npx knex migrate:latest --knexfile knexfile.ts --cwd backend",
@@ -27,13 +29,39 @@
     "backend:database:reset": "npm run be:db:reset",
     "backend:database:seed": "npm run be:db:seed",
     "backend:test": "npm run be:test",
+
     "tcr": "npm run dev --prefix ts-code-runner",
     "ts-code-runner": "npm run tcr",
     "ss": "npm run dev --prefix socket-server",
     "socket-server": "npm run ss",
+
     "dev": "npm run kill-ports && concurrently -n BE,FE,TCR,SS -c cyan,green,yellow,magenta \"npm run be\" \"npm run fe\" \"npm run tcr\" \"npm run ss\"",
+    
     "build:backend": "npm run build --workspace backend",
-    "build:frontend": "npm run build --workspace frontend/code-battle"
+    "build:frontend": "npm run build --workspace frontend/code-battle",
+
+
+    "docker:build:fe": "docker build -t t1ww/code-battle-frontend:latest -f frontend/code-battle/Dockerfile .",
+    "docker:build:be": "docker build -t t1ww/code-battle-backend:latest -f backend/Dockerfile .",
+    "docker:build:tcr": "docker build -t t1ww/code-battle-tcr:latest -f ts-code-runner/Dockerfile .",
+    "docker:build:ss": "docker build -t t1ww/code-battle-socket:latest -f socket-server/Dockerfile .",
+    
+    "docker:build:all": "npm run docker:build:fe && npm run docker:build:be && npm run docker:build:tcr && npm run docker:build:ss",
+
+    "docker:build:frontend": "npm run docker:build:fe",
+    "docker:build:backend": "npm run docker:build:be",
+    "docker:build:ts-code-runner": "npm run docker:build:tcr",
+    "docker:build:socket-server": "npm run docker:build:ss",
+
+    "docker:push:fe": "docker push t1ww/code-battle-frontend:latest",
+    "docker:push:be": "docker push t1ww/code-battle-backend:latest",
+    "docker:push:tcr": "docker push t1ww/code-battle-tcr:latest",
+    "docker:push:ss": "docker push t1ww/code-battle-socket:latest",
+
+    "docker:push:frontend": "npm run docker:push:fe",
+    "docker:push:backend": "npm run docker:push:be",
+    "docker:push:ts-code-runner": "npm run docker:push:tcr",
+    "docker:push:socket-server": "npm run docker:push:ss"
   },
   "repository": {
     "type": "git",
