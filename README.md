@@ -218,9 +218,12 @@ This runs all services concurrently. Press Ctrl+C to stop.
 
 ## 📚 More Documentation
 
-* [Command Scripts](commands.md)
-* [API Documentation](API.md)
-* [Tech stacks](TechStack.md)
-* [Submit Issues](https://github.com/t1ww/Code-Battle/issues)
+* [Command Scripts](_md/commands.md)
+* [API Documentation](_md/API.md)
+* [Deployment Documentation](_md/deploy.md)
+* [Tech stacks](_md/TechStack.md)
+
+## 🛠️ Found a problem?
+* Submit Issues: https://github.com/t1ww/Code-Battle/issues
 
 ---
