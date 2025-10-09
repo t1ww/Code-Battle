@@ -216,8 +216,14 @@ export class GameService {
     private checkGameEnd(game: GameRoom) {
         if (game.finished) return;
 
-        const team1Done = game.progress.team1.every(perQuestion => perQuestion.every(Boolean));
-        const team2Done = game.progress.team2.every(perQuestion => perQuestion.every(Boolean));
+        // Count how many questions each team has fully cleared
+        const team1Cleared = game.progress.team1.filter(perQ => perQ.every(Boolean)).length;
+        const team2Cleared = game.progress.team2.filter(perQ => perQ.every(Boolean)).length;
+
+        const requiredToWin = 2; // ← change threshold here
+
+        const team1Done = team1Cleared >= requiredToWin;
+        const team2Done = team2Cleared >= requiredToWin;
 
         if (team1Done || team2Done) {
             game.finished = true;
@@ -229,12 +235,13 @@ export class GameService {
 
             this.io.to(`game-${game.gameId}`).emit("gameEnd", {
                 winner,
-                progress: game.progress
+                progress: game.progress,
             });
 
             this.games.delete(game.gameId);
         }
     }
+
 
     /** Get active game */
     getGame(gameId: string): GameRoom | undefined {
