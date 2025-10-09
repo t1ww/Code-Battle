@@ -31,6 +31,8 @@ function createSoloTeam(player: PlayerSession): Team {
     };
 }
 
+type MatchStatus = "found" | "countdown" | "started" | "canceled";
+
 // Matchmaking Service class
 export class MatchmakingService {
     constructor(private io: Server, private gameService: GameService) { }
@@ -39,6 +41,8 @@ export class MatchmakingService {
     private queue1v1Timed: Map<string, PlayerSession> = new Map();
     private queue3v3Normal: Map<string, Team> = new Map();
     private queue3v3Timed: Map<string, Team> = new Map();
+
+    private pendingMatches: Array<{ players: PlayerSession[]; status: MatchStatus }> = [];
 
     // ✅ Type Guards
     private isPlayerSession(input: any): input is PlayerSession {
@@ -155,8 +159,8 @@ export class MatchmakingService {
         }
     }
 
-    // ✅ UTC-22: startMatch
-    startMatch1v1(timed: boolean = false): { message?: string; error_message?: string } {
+    // UTC-22: startMatch 1v1 with countdown
+    startMatch1v1(timed: boolean = false, countdownMs: number = 5000) {
         const queue = timed ? this.queue1v1Timed : this.queue1v1Normal;
         const players = Array.from(queue.values());
 
@@ -165,7 +169,13 @@ export class MatchmakingService {
         const matchPlayers = players.sort((a, b) => matchmakingScore(b) - matchmakingScore(a)).slice(0, 2);
         const [p1, p2] = matchPlayers;
 
-        // Emit match info & start
+        const pendingMatch: { players: PlayerSession[]; status: MatchStatus } = {
+            players: [p1, p2],
+            status: "found", // TS now knows this is valid MatchStatus
+        };
+        this.pendingMatches.push(pendingMatch);
+
+        // Emit match info
         [p1, p2].forEach(p => {
             const opponent = p === p1 ? p2 : p1;
             p.socket.emit("matchInfo", {
@@ -174,21 +184,35 @@ export class MatchmakingService {
                 opponents: [{ player_id: opponent.player_id, name: opponent.name, email: opponent.email, token: null }]
             });
             if (p.queueTimeoutId) clearTimeout(p.queueTimeoutId);
-            p.socket.emit("matchStarted", { player_id: p.player_id });
             queue.delete(p.player_id);
         });
 
-        this.gameService.createGame(createSoloTeam(p1), createSoloTeam(p2));
-        return { message: "1v1 match started successfully" };
+        // Start countdown
+        setTimeout(() => {
+            if (pendingMatch.status === "found") {
+                pendingMatch.status = "started";
+                [p1, p2].forEach(p => p.socket.emit("matchStarted", { player_id: p.player_id }));
+                this.gameService.createGame(createSoloTeam(p1), createSoloTeam(p2));
+            }
+        }, countdownMs);
+
+        return { message: "1v1 match found successfully, countdown started" };
     }
 
-    startMatch3v3(timed: boolean = false): { message?: string; error_message?: string } {
+    // UTC-22: startMatch 3v3 with countdown
+    startMatch3v3(timed: boolean = false, countdownMs: number = 5000) {
         const queue = timed ? this.queue3v3Timed : this.queue3v3Normal;
         const teams = Array.from(queue.values());
 
         if (teams.length < 2) return { error_message: "Not enough teams to start a 3v3 match" };
 
         const [teamA, teamB] = teams.sort((a, b) => teamScore(b) - teamScore(a)).slice(0, 2);
+        const allPlayers = [...teamA.players, ...teamB.players];
+        const pendingMatch: { players: PlayerSession[]; status: MatchStatus } = {
+            players: allPlayers,
+            status: "found",
+        };
+        this.pendingMatches.push(pendingMatch);
 
         const prepareData = (team: Team) => team.players.map(p => ({
             player_id: p.player_id,
@@ -204,7 +228,6 @@ export class MatchmakingService {
             team.players.forEach(p => {
                 p.socket.emit("matchInfo", { you: { player_id: p.player_id, name: p.name, email: p.email, token: null }, friends, opponents });
                 if (p.queueTimeoutId) clearTimeout(p.queueTimeoutId);
-                p.socket.emit("matchStarted", { player_id: p.player_id, team_id: teamId });
                 queue.delete(p.player_id);
             });
         };
@@ -212,30 +235,83 @@ export class MatchmakingService {
         emitMatch(teamA, teamAData.filter(fp => !teamA.players.some(p => p.player_id === fp.player_id)), teamBData, teamA.team_id);
         emitMatch(teamB, teamBData.filter(fp => !teamB.players.some(p => p.player_id === fp.player_id)), teamAData, teamB.team_id);
 
-        this.gameService.createGame(teamA, teamB);
-        return { message: "3v3 match started successfully" };
+        // Countdown
+        setTimeout(() => {
+            if (pendingMatch.status === "found") {
+                pendingMatch.status = "started";
+                allPlayers.forEach(p => p.socket.emit("matchStarted", { player_id: p.player_id }));
+                this.gameService.createGame(teamA, teamB);
+            }
+        }, countdownMs);
+
+        return { message: "3v3 match found successfully, countdown started" };
     }
 
     // Cancel queue methods
     cancelPlayerQueue(playerId: string, timed: boolean) {
         const queue = timed ? this.queue1v1Timed : this.queue1v1Normal;
         const player = queue.get(playerId);
+
+        // Remove from queue
         if (player) {
             if (player.queueTimeoutId) clearTimeout(player.queueTimeoutId);
             queue.delete(playerId);
-            return { message: `Player ${playerId} removed from matchmaking queue` };
         }
+
+        // Check pending matches
+        const match = this.pendingMatches.find(m => m.players.some(p => p.player_id === playerId) && m.status !== "canceled");
+        if (match) {
+            match.status = "canceled";
+            match.players.forEach(p => {
+                if (p.player_id !== playerId) {
+                    p.socket.emit("matchAbandoned", { abandonedBy: { name: player?.name || "Unknown" } });
+                }
+            });
+            // Remove match from pendingMatches
+            this.pendingMatches = this.pendingMatches.filter(m => m !== match);
+        }
+
+        if (player) return { message: `Player ${playerId} removed from matchmaking queue` };
         return { error_message: `Player ${playerId} was not in matchmaking queue` };
     }
 
     cancelTeamQueue(teamId: string, timed: boolean) {
         const queue = timed ? this.queue3v3Timed : this.queue3v3Normal;
         const team = queue.get(teamId);
+
         if (team) {
             if ((team as any).queueTimeoutId) clearTimeout((team as any).queueTimeoutId);
             queue.delete(teamId);
-            return { message: `Team ${teamId} removed from matchmaking queue` };
         }
+
+        // Check pending matches
+        const match = this.pendingMatches.find(m => m.players.some(p => team?.players.some(tp => tp.player_id === p.player_id)) && m.status !== "canceled");
+        if (match) {
+            match.status = "canceled";
+            match.players.forEach(p => {
+                if (!team?.players.some(tp => tp.player_id === p.player_id)) {
+                    p.socket.emit("matchAbandoned", { abandonedBy: { name: team?.players.map(tp => tp.name).join(", ") || "Unknown" } });
+                }
+            });
+            this.pendingMatches = this.pendingMatches.filter(m => m !== match);
+        }
+
+        if (team) return { message: `Team ${teamId} removed from matchmaking queue` };
         return { error_message: `Team ${teamId} was not in matchmaking queue` };
+    }
+
+    // Return a match that includes this player and is found but not started
+    getPendingMatchForPlayer(playerId: string) {
+        // Check 1v1 queues: pendingMatches could be a new Map storing currently found matches
+        for (const match of this.pendingMatches || []) {
+            if (match.players.some(p => p.player_id === playerId) && match.status === "found") {
+                return match;
+            }
+        }
+        return null;
+    }
+
+    removePendingMatch(match: { players: PlayerSession[]; status: MatchStatus }) {
+        this.pendingMatches = this.pendingMatches.filter(m => m !== match);
     }
 }

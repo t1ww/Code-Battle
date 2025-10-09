@@ -59,6 +59,12 @@ function cancelMatchmaking() {
     }
 }
 
+function abandonMatch() {
+    if (player?.player_id) {
+        socket.emit("abandonMatch", { player_id: player.player_id, mode: mode.value });
+    }
+}
+
 const team1 = computed(() => {
     if (mode.value === '1v1') return mapToMinimal([match.value.you])
     return mapToMinimal([match.value.you, ...match.value.friends])
@@ -70,7 +76,11 @@ const team2 = computed(() => {
 })
 
 const countdown = ref(3)
-let timer: ReturnType<typeof setInterval> | null = null
+let timer: ReturnType<typeof setInterval> | null = null;
+let showFoundTimeout: ReturnType<typeof setTimeout> | null = null;
+let showTeamsTimeout: ReturnType<typeof setTimeout> | null = null;
+let showCountdownTimeout: ReturnType<typeof setTimeout> | null = null;
+let startMatchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 onMounted(() => {
     if (player?.player_id) {
@@ -130,12 +140,12 @@ onMounted(() => {
         // Step 1: Found state
         const showFound = () => {
             state.value = 'found';
-            setTimeout(showTeams, 1800); // 1.8s delay before showing teams
+            showTeamsTimeout = setTimeout(showTeams, 1800); // 1.8s delay before showing teams
         };
         // Step 2: Show teams
         const showTeams = () => {
             state.value = 'showingTeams';
-            setTimeout(showCountdown, 1000); // 1s delay before countdown
+            showCountdownTimeout = setTimeout(showCountdown, 1000); // 1s delay before countdown
         };
         // Step 3: Countdown before match
         const showCountdown = () => {
@@ -151,10 +161,11 @@ onMounted(() => {
                 }
             }, 1000);
         };
+
         // Step 4: Start match and redirect
         const startMatch = () => {
             state.value = 'started';
-            setTimeout(() => {
+            startMatchTimeout = setTimeout(() => {
                 router.push({
                     name: 'PvpGameplay1v1',
                     query: { timeLimitEnabled: String(timeLimit.value) }
@@ -203,16 +214,37 @@ onMounted(() => {
             }
         }
     })
+
+    // Handle match abandoned by other player when already found
+    socket.on("matchAbandoned", (_data: { abandonedBy: { name: string } }) => {
+        triggerNotification(`Opponent abandoned the match, returning to selection screen.`);
+        router.replace({ name: "PvpTypeSelect" });
+    });
 })
 
 onBeforeUnmount(() => {
-    if (timer) clearInterval(timer)
+    if (timer) clearInterval(timer);
+    if (showFoundTimeout) clearTimeout(showFoundTimeout);
+    if (showTeamsTimeout) clearTimeout(showTeamsTimeout);
+    if (showCountdownTimeout) clearTimeout(showCountdownTimeout);
+    if (startMatchTimeout) clearTimeout(startMatchTimeout);
+
+    // Cancel queue if still searching
+    cancelMatchmaking();
+
+    // Inform server we are abandoning mid-match (if match was already found)
+    abandonMatch();
+
     // Clean up socket listeners
-    socket.off("matchInfo")
-    socket.off("queueResponse")
-    socket.off("matchResponse")
-    socket.off("matchStarted")
-})
+    socket.off("matchInfo");
+    socket.off("queueResponse");
+    socket.off("matchResponse");
+    socket.off("matchStarted");
+    socket.off("playerQueueCanceled");
+    socket.off("teamQueueCanceled");
+    socket.off("queueTimeout");
+    socket.off("matchmakingError");
+});
 
 </script>
 
