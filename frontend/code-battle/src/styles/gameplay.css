@@ -1,4 +1,8 @@
 /* frontend\code-battle\src\styles\gameplay.css */
+.error-message {
+    color: var(--theme-darker-color);
+}
+
 .buttons button {
     outline: none;
     border: none;

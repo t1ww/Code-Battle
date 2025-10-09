@@ -31,6 +31,25 @@ watch(selectedLanguage, (lang) => {
   emit('update:modelLanguage', lang)
 })
 
+// Watch for code value changes
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (editor && newVal !== editor.getValue()) {
+      const model = editor.getModel()
+      if (model) {
+        // overwrite current text (keeps undo stack clean)
+        editor.executeEdits('external-update', [
+          {
+            range: model.getFullModelRange(),
+            text: newVal,
+          },
+        ])
+      }
+    }
+  }
+)
+
 // =============================
 onMounted(() => {
   if (DEV) {
