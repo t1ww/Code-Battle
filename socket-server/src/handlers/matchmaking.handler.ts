@@ -81,6 +81,31 @@ export function registerMatchmakingHandlers(io: Server, socket: Socket, services
         console.log(`Team queue canceled for team ${team.team_id} by ${socket.data.player?.name || socket.id}`);
         io.to(team.team_id).emit("teamQueueCanceled", { canceledBy: socket.data.player.name });
     });
+
+    // Handle player abandoning a match after it's found
+    socket.on("abandonMatch", (data: { player_id: string; mode: string }) => {
+        const playerId = data.player_id;
+
+        // Only handle pending matches
+        const pendingMatch = matchmakingService.getPendingMatchForPlayer(playerId);
+        if (!pendingMatch) return; // player isn't in a found match
+
+        pendingMatch.status = "canceled";
+
+        const abandoningPlayer = pendingMatch.players.find(p => p.player_id === playerId);
+        const abandonerName = abandoningPlayer?.name || socket.data.player?.name || "Unknown";
+        
+        pendingMatch.players.forEach(p => {
+            if (p.player_id !== playerId) {
+                p.socket.emit("matchAbandoned", { abandonedBy: { name: abandonerName } });
+            }
+        });
+
+        // Remove the match from pendingMatches
+        matchmakingService.removePendingMatch(pendingMatch);
+
+        console.log(`Player ${abandonerName} abandoned a found match`);
+    });
 }
 // Start global matchmaking loop
 export function startMatchmakingLoop(services: Services) {
