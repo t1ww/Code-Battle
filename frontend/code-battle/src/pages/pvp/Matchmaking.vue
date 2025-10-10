@@ -26,6 +26,7 @@ type MatchState = 'searching' | 'found' | 'showingTeams' | 'countdown' | 'starte
 const route = useRoute()
 const mode = computed(() => route.query.mode)
 const timeLimit = computed(() => route.query.timeLimit === 'true')
+const matchStartedFlag = ref(false);
 
 const errorMessage = ref('')
 const errorPopup = ref<{ title: string; message: string; buttonOnClick: () => void } | null>(null)
@@ -135,6 +136,9 @@ onMounted(() => {
     })
 
     socket.on("matchStarted", (data: { player_id: any }) => {
+        if (matchStartedFlag.value) return; // already started, ignore
+        matchStartedFlag.value = true;
+        
         console.log("Match started for player:", data.player_id);
 
         // Step 1: Found state
