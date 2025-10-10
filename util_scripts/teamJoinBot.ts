@@ -1,15 +1,17 @@
 // teamJoinBot.ts
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 import readline from "readline";
 
 interface BotInfo {
     player_id: string;
     name: string;
     email: string;
+    socket: Socket;
 }
 
 const SERVER_URL = "http://localhost:3001"; // your socket server
 let botCounter = 0;
+const bots: BotInfo[] = [];
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -19,14 +21,16 @@ const rl = readline.createInterface({
 
 function spawnBot(linkOrId: string) {
     const inviteId = linkOrId.split('/').pop()!;
+    const socket = io(SERVER_URL);
+
     const bot: BotInfo = {
         player_id: `bot_${botCounter}_${Date.now()}`,
         name: `Bot_${botCounter}`,
         email: `bot${botCounter}@example.com`,
+        socket,
     };
+    bots.push(bot);
     botCounter++;
-
-    const socket = io(SERVER_URL);
 
     socket.on("connect", () => {
         console.log(`${bot.name} connected: ${socket.id}`);
@@ -52,9 +56,28 @@ function spawnBot(linkOrId: string) {
     socket.on("error", (err) => console.error(`${bot.name} error:`, err));
 }
 
-console.log("Type an invite link ID to spawn a bot and join that team or room.");
+function clearBots() {
+    if (bots.length > 0) {
+        console.log(`Disconnecting ${bots.length} active bots...`);
+        bots.forEach(bot => bot.socket.disconnect());
+        bots.length = 0; // clear array
+        console.log("All bots disconnected.");
+    }
+    console.clear();
+    botCounter = 0;
+    console.log("Console cleared. Bot counter reset.");
+}
+
+console.log("Type an invite link or ID to spawn a bot. Type 'clear' to remove all bots and reset.");
+
 rl.on("line", (line) => {
     const input = line.trim();
     if (!input) return;
+
+    if (input.toLowerCase() === "clear") {
+        clearBots();
+        return;
+    }
+
     spawnBot(input);
 });
