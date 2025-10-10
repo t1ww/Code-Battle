@@ -224,16 +224,25 @@ export class MatchmakingService {
         const teamAData = prepareData(teamA);
         const teamBData = prepareData(teamB);
 
-        const emitMatch = (team: Team, friends: any[], opponents: any[], teamId: string) => {
+        const emitMatch = (team: Team, opponentTeamData: any[]) => {
             team.players.forEach(p => {
-                p.socket.emit("matchInfo", { you: { player_id: p.player_id, name: p.name, email: p.email, token: null }, friends, opponents });
+                const friends = team.players
+                    .filter(fp => fp.player_id !== p.player_id)
+                    .map(fp => ({ player_id: fp.player_id, name: fp.name, email: fp.email, token: null }));
+
+                p.socket.emit("matchInfo", {
+                    you: { player_id: p.player_id, name: p.name, email: p.email, token: null },
+                    friends,
+                    opponents: opponentTeamData
+                });
+
                 if (p.queueTimeoutId) clearTimeout(p.queueTimeoutId);
                 queue.delete(p.player_id);
             });
         };
 
-        emitMatch(teamA, teamAData.filter(fp => !teamA.players.some(p => p.player_id === fp.player_id)), teamBData, teamA.team_id);
-        emitMatch(teamB, teamBData.filter(fp => !teamB.players.some(p => p.player_id === fp.player_id)), teamAData, teamB.team_id);
+        emitMatch(teamA, teamBData);
+        emitMatch(teamB, teamAData);
 
         // Countdown
         setTimeout(() => {

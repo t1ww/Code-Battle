@@ -19,6 +19,15 @@ const rl = readline.createInterface({
     terminal: false,
 });
 
+// Helper to return only serializable bot data
+function botData(bot: BotInfo) {
+    return {
+        player_id: bot.player_id,
+        name: bot.name,
+        email: bot.email
+    };
+}
+
 function spawnBot(linkOrId: string) {
     const inviteId = linkOrId.split('/').pop()!;
     const socket = io(SERVER_URL);
@@ -35,16 +44,15 @@ function spawnBot(linkOrId: string) {
     socket.on("connect", () => {
         console.log(`${bot.name} connected: ${socket.id}`);
 
-        // detect type based on URL
         if (linkOrId.includes("/join/")) {
-            socket.emit("joinTeamWithInvite", { invite_id: inviteId, player: bot });
+            socket.emit("joinTeamWithInvite", { invite_id: inviteId, player: botData(bot) });
             console.log(`${bot.name} trying to join team with invite ${inviteId}`);
         } else if (linkOrId.includes("/privateRoom/")) {
-            socket.emit("joinPrivateRoom", { inviteId, player: bot });
+            socket.emit("joinPrivateRoom", { inviteId, player: botData(bot) });
             console.log(`${bot.name} trying to join private room ${inviteId}`);
         } else {
             console.warn("Unknown invite type. Defaulting to team join.");
-            socket.emit("joinTeamWithInvite", { invite_id: inviteId, player: bot });
+            socket.emit("joinTeamWithInvite", { invite_id: inviteId, player: botData(bot) });
         }
     });
 
@@ -60,7 +68,7 @@ function clearBots() {
     if (bots.length > 0) {
         console.log(`Disconnecting ${bots.length} active bots...`);
         bots.forEach(bot => bot.socket.disconnect());
-        bots.length = 0; // clear array
+        bots.length = 0;
         console.log("All bots disconnected.");
     }
     console.clear();

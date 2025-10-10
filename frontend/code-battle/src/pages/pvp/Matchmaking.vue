@@ -166,7 +166,7 @@ onMounted(() => {
         const startMatch = () => {
             state.value = 'started';
             startMatchTimeout = setTimeout(() => {
-                router.push({
+                router.replace({
                     name: 'PvpGameplay1v1',
                     query: { timeLimitEnabled: String(timeLimit.value) }
                 });
