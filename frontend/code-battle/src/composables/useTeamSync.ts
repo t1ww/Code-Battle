@@ -1,5 +1,5 @@
 // frontend\code-battle\src\composables\useTeamSync.ts
-import { watch, type Ref } from 'vue'
+import { watch, nextTick, type Ref } from 'vue'
 import { socket } from '@/clients/socket.api'
 import { usePvpGameStore } from '@/stores/game'
 import debounce from 'lodash/debounce'
@@ -16,12 +16,19 @@ export function useTeamSync({ playerId, teamKey, codes }: UseTeamSyncOptions) {
     // -----------------------
     // Receive teammate updates
     // -----------------------
+    let isApplyingExternal = false;
     const handleTeamCodeUpdate = (payload: { questionIndex: number, code: string, playerId: string }) => {
-        if (payload.playerId === playerId) return // ignore updates from self
-        const { questionIndex, code } = payload
-        if (!codes.value[questionIndex]) return
-        codes.value[questionIndex].value = code
-        console.log("Recieved team code update.")
+        if (payload.playerId === playerId) return;
+        const { questionIndex, code } = payload;
+        if (!codes.value[questionIndex]) return;
+
+        isApplyingExternal = true;
+        codes.value[questionIndex].value = code;
+        nextTick(() => {
+            isApplyingExternal = false;
+        });
+        
+        console.log("Received team code update.")
     }
 
     socket.on('teamCodeUpdate', handleTeamCodeUpdate)
@@ -50,6 +57,8 @@ export function useTeamSync({ playerId, teamKey, codes }: UseTeamSyncOptions) {
     // -----------------------
     codes.value.forEach((c, idx) => {
         watch(() => c.value, (newCode) => {
+            // Skip emitting if it's from a teammate update
+            if (isApplyingExternal) return;
             pendingUpdates[idx] = newCode;
             flushUpdates();
         });
