@@ -1,5 +1,4 @@
 <!-- frontend\code-battle\src\pages\pvp\PvpGameplay1v1.vue -->
-
 <script setup lang="ts">
 // =============================
 // 📦 Imports
@@ -58,7 +57,7 @@ const timeLimitEnabled = route.query.timeLimitEnabled === 'true'
 
 // PvP code composable
 const { codes, testResults, isLoading, submitCode, forceClearQuestion } = usePvpCode()
-
+const code = codes.value[0];
 // Timer
 const PVP_TIME_LIMIT = 5400
 const { timeLeft, formattedTime, startTimer, stopTimer } = useTimer(timeLimitEnabled, timeLimitEnabled ? PVP_TIME_LIMIT : 0, () => {
@@ -69,27 +68,7 @@ const { timeLeft, formattedTime, startTimer, stopTimer } = useTimer(timeLimitEna
 })
 
 // Sabotage
-const doSabotageAll = false;
-const sabotageInstances = codes.value.map(c => useSabotage(c, triggerNotification))
-// Random sabotage
-function sabotageRandom() {
-    const randomIndex = Math.floor(Math.random() * sabotageInstances.length)
-    sabotageInstances[randomIndex].sabotageOnce()
-}
-// All sabotage
-function sabotageAll() {
-    sabotageInstances.forEach(s => s.sabotageOnce())
-}
-
-// Hooker
-function sabotageOnce() {
-  if (doSabotageAll) {
-    sabotageAll();
-  } else {
-    sabotageRandom();
-  }
-}
-
+const { sabotageOnce } = useSabotage(code, triggerNotification)
 const {
   sabotagePoint,
   lockDrawVoteButton,
@@ -105,11 +84,11 @@ const { codeTerminal, startSession, sendInput, stopSession } = useTerminal();
 const terminalOpen = ref(false)
 
 const runCodeInteractive = () => {
-  if (!codes.value[currentQuestionIndex.value].value.trim()) return
+  if (!code.value.trim()) return
   stopSession()
   terminalOpen.value = true
   codeTerminal.value?.pushOutput("> New session started")
-  startSession(codes.value[currentQuestionIndex.value].value)
+  startSession(code.value)
 }
 
 // Toggle helpers
@@ -290,7 +269,7 @@ onMounted(() => {
         Time Left:
         <span>{{ formattedTime }}</span>
       </div>
-      <CodeEditor v-model="codes[0].value" v-model:modelLanguage="selectedLanguage" />
+      <CodeEditor v-model="code" v-model:modelLanguage="selectedLanguage" />
     </div>
 
     <div class="buttons">
