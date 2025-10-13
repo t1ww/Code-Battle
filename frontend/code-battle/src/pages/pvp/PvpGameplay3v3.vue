@@ -3,7 +3,7 @@
 // =============================
 // 📦 Imports
 // =============================
-import { ref, inject, onMounted } from 'vue'
+import { ref, inject, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePvpGameStore } from '@/stores/game'
 import { getPlayerData } from '@/stores/auth'
@@ -57,7 +57,10 @@ const timeLimitEnabled = route.query.timeLimitEnabled === 'true'
 
 // PvP code composable
 const { codes, testResults, isLoading, submitCode, forceClearQuestion } = usePvpCode()
-
+const code = computed({
+  get: () => codes.value[currentQuestionIndex.value].value,
+  set: (val: string) => { codes.value[currentQuestionIndex.value].value = val }
+})
 // Timer
 const PVP_TIME_LIMIT = 5400
 const { timeLeft, formattedTime, startTimer, stopTimer } = useTimer(timeLimitEnabled, timeLimitEnabled ? PVP_TIME_LIMIT : 0, () => {
@@ -104,11 +107,11 @@ const { codeTerminal, startSession, sendInput, stopSession } = useTerminal();
 const terminalOpen = ref(false)
 
 const runCodeInteractive = () => {
-  if (!codes.value[currentQuestionIndex.value].value.trim()) return
+  if (!code.value.trim()) return
   stopSession()
   terminalOpen.value = true
   codeTerminal.value?.pushOutput("> New session started")
-  startSession(codes.value[currentQuestionIndex.value].value)
+  startSession(code.value)
 }
 
 // Toggle helpers
@@ -289,7 +292,7 @@ onMounted(() => {
         Time Left:
         <span>{{ formattedTime }}</span>
       </div>
-      <CodeEditor v-model="codes[0].value" v-model:modelLanguage="selectedLanguage" />
+      <CodeEditor v-model="code" v-model:modelLanguage="selectedLanguage" />
     </div>
 
     <div class="buttons">
