@@ -172,10 +172,17 @@ onMounted(() => {
             state.value = 'started';
             startMatchTimeout = setTimeout(() => {
                 enteredGameplayFlag.value = true;
-                router.replace({
-                    name: 'PvpGameplay1v1',
-                    query: { timeLimitEnabled: String(timeLimit.value) }
-                });
+                if (mode.value === '3v3') {
+                    router.replace({
+                        name: 'PvpGameplay3v3',
+                        query: { timeLimitEnabled: String(timeLimit.value) }
+                    });
+                } else {
+                    router.replace({
+                        name: 'PvpGameplay1v1',
+                        query: { timeLimitEnabled: String(timeLimit.value) }
+                    });
+                }
             }, 1500); // 1.5s delay to show "MATCH START!"
         };
 

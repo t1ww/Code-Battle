@@ -3,7 +3,7 @@
 // =============================
 // 📦 Imports
 // =============================
-import { ref, inject, onMounted, computed } from 'vue'
+import { ref, inject, onMounted, computed, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePvpGameStore } from '@/stores/game'
 import { getPlayerData } from '@/stores/auth'
@@ -26,6 +26,8 @@ import { usePvpAction } from '@/composables/usePvpAction'
 import { useTerminal } from "@/composables/useTerminal";
 import { usePvpCode } from '@/composables/usePvpCode'
 
+// - This is for 3v3
+import { useTeamSync } from '@/composables/useTeamSync'
 
 // =============================
 // 🔁 Reactive State & Composables
@@ -228,6 +230,13 @@ function endGame() {
   router.replace({ name: 'PvpTypeSelect' });
 }
 
+// For 3v3
+const { destroy: destroyTeamSync } = useTeamSync({
+    playerId: player?.player_id,
+    teamKey: gameStore.playerTeam!,
+    codes
+})
+
 // =============================
 // 🚀 Lifecycle Hooks
 // =============================
@@ -257,6 +266,9 @@ const { initPvpSockets } = usePvpSocket({
 initPvpSockets()
 onMounted(() => {
   startTimer()
+})
+onUnmounted(() => {
+  destroyTeamSync()
 })
 </script>
 

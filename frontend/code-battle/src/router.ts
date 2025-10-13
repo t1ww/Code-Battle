@@ -16,6 +16,7 @@ import "nprogress/nprogress.css"; // import nprogress style
 import PveLevelSelect from "@/pages/pve/PveLevelSelect.vue";
 import PveQuestionView from "@/pages/pve/PveQuestionView.vue";
 import PveGameplay from "@/pages/pve/PveGameplay.vue";
+
 // PVP
 import PvpTypeSelect from "@/pages/pvp/PvpTypeSelect.vue";
 import PvpTimeSelect from "@/pages/pvp/PvpTimeSelect.vue";
@@ -23,6 +24,7 @@ import JoinTeamPage from "@/components/pvp/JoinTeamPage.vue";
 import Matchmaking from "@/pages/pvp/Matchmaking.vue";
 import PrivateRoom from "@/pages/pvp/PrivateRoom.vue";
 import PvpGameplay1v1 from "@/pages/pvp/PvpGameplay1v1.vue";
+import PvpGameplay3v3 from "@/pages/pvp/PvpGameplay3v3.vue";
 
 import { isAuthenticated } from "@/stores/auth";
 
@@ -61,7 +63,7 @@ const routes = [
     props: true  // so route.params.inviteId is passed as a prop
   },
   { name: "PvpGameplay1v1", path: "/pvpGameplay1v1", component: PvpGameplay1v1, meta: { requiresAuth: true, disableNavbar: true, online: true } },
-
+  { name: "PvpGameplay3v3", path: "/pvpGameplay3v3", component: PvpGameplay3v3, meta: { requiresAuth: true, disableNavbar: true, online: true } },
 
   // Account
   { name: "Login", path: "/login", component: Login, meta: { hideAuth: true } },

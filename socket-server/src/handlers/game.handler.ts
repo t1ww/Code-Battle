@@ -50,7 +50,14 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
         });
     });
 
-    socket.on("voteDraw", ({ gameId, player_id }) => {
+    // When a teammate updates code
+    socket.on("updateTeamCode", ({ gameId, playerId, questionIndex, code }) => {
+        // Broadcast to all teammates **except sender**
+        const playerTeam = gameService.getPlayerTeam(gameId, playerId);
+        socket.to(`game-${gameId}-${playerTeam}`).emit("teamCodeUpdate", { questionIndex, code })
+    })
+
+    socket.on("voteDraw", ({ gameId, player_id: playerId }) => {
         try {
             const game = gameService.getGame(gameId);
             if (!game) {
@@ -58,10 +65,10 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
                 return;
             }
 
-            game.drawVotes?.add(player_id);
+            game.drawVotes?.add(playerId);
 
             const totalPlayers = game.team1.players.length + game.team2.players.length;
-            const playerTeam = gameService.getPlayerTeam(gameId, player_id);
+            const playerTeam = gameService.getPlayerTeam(gameId, playerId);
 
             // Emit current vote count to all players
             io.to(`game-${gameId}`).emit("voteDrawResult", {
