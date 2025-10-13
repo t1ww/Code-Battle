@@ -21,6 +21,7 @@ export function useTeamSync({ playerId, teamKey, codes }: UseTeamSyncOptions) {
         const { questionIndex, code } = payload
         if (!codes.value[questionIndex]) return
         codes.value[questionIndex].value = code
+        console.log("Recieved team code update.")
     }
 
     socket.on('teamCodeUpdate', handleTeamCodeUpdate)
@@ -28,25 +29,31 @@ export function useTeamSync({ playerId, teamKey, codes }: UseTeamSyncOptions) {
     // -----------------------
     // Emit own updates (debounced)
     // -----------------------
-    const emitCodeUpdate = debounce((questionIndex: number, code: string) => {
-        if (!gameStore.gameId || !playerId) return
-        socket.emit('updateTeamCode', {
-            gameId: gameStore.gameId,
-            playerId,
-            team: teamKey,
-            questionIndex,
-            code
-        })
-    }, 0) // ms debounce to reduce spam
+    const pendingUpdates: Record<number, string> = {};
+    const flushUpdates = debounce(() => {
+        if (!gameStore.gameId || !playerId) return;
+        for (const [questionIndex, code] of Object.entries(pendingUpdates)) {
+            socket.emit('updateTeamCode', {
+                gameId: gameStore.gameId,
+                playerId,
+                team: teamKey,
+                questionIndex: Number(questionIndex),
+                code,
+            });
+        }
+        // clear buffer
+        Object.keys(pendingUpdates).forEach(k => delete pendingUpdates[+k]);
+    }, 100); // batch every 100ms
 
     // -----------------------
     // Watch local code changes
     // -----------------------
     codes.value.forEach((c, idx) => {
         watch(() => c.value, (newCode) => {
-            emitCodeUpdate(idx, newCode)
-        })
-    })
+            pendingUpdates[idx] = newCode;
+            flushUpdates();
+        });
+    });
 
     // -----------------------
     // Cleanup
