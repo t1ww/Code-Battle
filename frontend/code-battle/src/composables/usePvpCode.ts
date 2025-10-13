@@ -8,7 +8,13 @@ import { triggerNotification } from './notificationService'
 
 export function usePvpCode() {
     const gameStore = usePvpGameStore()
-    const code = ref('// Write code here')
+    const codes = ref([
+        ref('// Write code for Q1'),
+        ref('// Write code for Q2'),
+        ref('// Write code for Q3')
+    ])
+
+
     const testResults = ref<any>(null)
     const isLoading = ref(false)
 
@@ -65,6 +71,7 @@ export function usePvpCode() {
         isLoading.value = true
         try {
             const currentQuestion = gameStore.questions[currentQuestionIndex]
+            const currentQuestionCode = codes.value[currentQuestionIndex].value;
             if (!currentQuestion) return null
 
             const teamKey = gameStore.playerTeam
@@ -72,7 +79,7 @@ export function usePvpCode() {
                 return { resultsForCurrent: null, alreadyCompleted: true }
             }
 
-            const data = await runCodeOnApi(code.value, currentQuestion.test_cases, selectedLanguage)
+            const data = await runCodeOnApi(currentQuestionCode, currentQuestion.test_cases, selectedLanguage)
 
             const errorResult = data.results.find(r =>
                 r.output.startsWith('[Compilation Error]') || r.output.startsWith('[Runtime Error]')
@@ -137,7 +144,7 @@ export function usePvpCode() {
     }
 
     return {
-        code,
+        codes,
         isLoading,
         testResults,
         submitCode,

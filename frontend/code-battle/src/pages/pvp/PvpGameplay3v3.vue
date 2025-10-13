@@ -1,5 +1,4 @@
-<!-- frontend\code-battle\src\pages\pvp\PvpGameplay1v1.vue -->
-
+<!-- frontend\code-battle\src\pages\pvp\PvpGameplay3v3.vue -->
 <script setup lang="ts">
 // =============================
 // 📦 Imports
