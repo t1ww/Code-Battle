@@ -16,7 +16,8 @@ export function useTeamSync({ playerId, teamKey, codes }: UseTeamSyncOptions) {
     // -----------------------
     // Receive teammate updates
     // -----------------------
-    const handleTeamCodeUpdate = (payload: { questionIndex: number, code: string }) => {
+    const handleTeamCodeUpdate = (payload: { questionIndex: number, code: string, playerId: string }) => {
+        if (payload.playerId === playerId) return // ignore updates from self
         const { questionIndex, code } = payload
         if (!codes.value[questionIndex]) return
         codes.value[questionIndex].value = code
@@ -36,7 +37,7 @@ export function useTeamSync({ playerId, teamKey, codes }: UseTeamSyncOptions) {
             questionIndex,
             code
         })
-    }, 150) // 150ms debounce to reduce spam
+    }, 0) // ms debounce to reduce spam
 
     // -----------------------
     // Watch local code changes

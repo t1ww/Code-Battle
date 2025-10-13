@@ -2,22 +2,17 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch, inject } from 'vue'
 import * as monaco from 'monaco-editor'
-import { triggerNotification } from '@/composables/notificationService';
+import { triggerNotification } from '@/composables/notificationService'
 
 // =============================
 // Props / Emits
 // =============================
 const DEV = inject('DEV') as boolean
-// Accept v-model
-const props = defineProps<{ modelValue: string, modelLanguage?: string }>()
+const props = defineProps<{ modelValue: string; modelLanguage?: string }>()
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
   (e: 'update:modelLanguage', value: string): void
 }>()
-
-const editorContainer = ref<HTMLDivElement | null>(null)
-let editor: monaco.editor.IStandaloneCodeEditor | null = null
-const selectedLanguage = ref(props.modelLanguage || 'cpp')
 
 // Supported languages
 const languages = ref([
@@ -25,31 +20,22 @@ const languages = ref([
   { label: 'Java', value: 'java' }
 ])
 
-// Watch for language changes and emit to parent
+const editorContainer = ref<HTMLDivElement | null>(null)
+let editor: monaco.editor.IStandaloneCodeEditor | null = null
+const selectedLanguage = ref(props.modelLanguage || 'cpp')
+
+let isApplyingExternal = false
+
+// =============================
+// Watch: language
+// =============================
 watch(selectedLanguage, (lang) => {
   if (editor) monaco.editor.setModelLanguage(editor.getModel()!, lang)
   emit('update:modelLanguage', lang)
 })
 
-// Watch for code value changes
-watch(
-  () => props.modelValue,
-  (newVal) => {
-    if (editor && newVal !== editor.getValue()) {
-      const model = editor.getModel()
-      if (model) {
-        // overwrite current text (keeps undo stack clean)
-        editor.executeEdits('external-update', [
-          {
-            range: model.getFullModelRange(),
-            text: newVal,
-          },
-        ])
-      }
-    }
-  }
-)
-
+// =============================
+// Mount
 // =============================
 onMounted(() => {
   if (DEV) {
@@ -62,9 +48,9 @@ onMounted(() => {
     ; (window as any).MonacoEnvironment = {
       getWorker: (_: any, label: string) => {
         if (label === 'json') return new Worker('/monaco/language/json/json.worker.js', { type: 'module' })
-        if (label === 'css' || label === 'scss' || label === 'less') return new Worker('/monaco/language/css/css.worker.js', { type: 'module' })
+        if (['css', 'scss', 'less'].includes(label)) return new Worker('/monaco/language/css/css.worker.js', { type: 'module' })
         if (label === 'html') return new Worker('/monaco/language/html/html.worker.js', { type: 'module' })
-        if (label === 'typescript' || label === 'javascript') return new Worker('/monaco/language/typescript/ts.worker.js', { type: 'module' })
+        if (['typescript', 'javascript'].includes(label)) return new Worker('/monaco/language/typescript/ts.worker.js', { type: 'module' })
         return new Worker('/monaco/editor/editor.worker.js', { type: 'module' })
       },
     }
@@ -81,27 +67,52 @@ onMounted(() => {
     contextmenu: false,
   })
 
-  // Sync editor changes to parent
+  // -------------------------
+  // Local typing → emit change
+  // -------------------------
   editor.onDidChangeModelContent(() => {
+    if (isApplyingExternal) return
     emit('update:modelValue', editor!.getValue())
   })
 
-  // Replace your editorDom paste listener with this:
+  // -------------------------
+  // Paste prevention
+  // -------------------------
   editor.onDidPaste(() => {
     if (!DEV) {
-      console.log('Paste blocked!')
       triggerNotification('Clipboard paste prevented!', 800)
-
-      const model = editor!.getModel()
-      if (!model) return
-
-      // simple approach: undo the paste
       editor!.trigger('preventPaste', 'undo', null)
     }
   })
-
 })
 
+// =============================
+// External updates (prop-driven)
+// =============================
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (!editor) return
+    const current = editor.getValue()
+    if (newVal !== current) {
+      const model = editor.getModel()
+      if (!model) return
+      isApplyingExternal = true
+      const selection = editor.getSelection()
+      editor.executeEdits('external', [
+        { range: model.getFullModelRange(), text: newVal },
+      ])
+      if (selection) {
+        editor.setSelection(selection)
+      }
+      isApplyingExternal = false
+    }
+  }
+)
+
+// =============================
+// Cleanup
+// =============================
 onBeforeUnmount(() => {
   editor?.dispose()
 })

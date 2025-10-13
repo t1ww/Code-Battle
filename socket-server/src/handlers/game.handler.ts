@@ -54,7 +54,7 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
     socket.on("updateTeamCode", ({ gameId, playerId, questionIndex, code }) => {
         // Broadcast to all teammates **except sender**
         const playerTeam = gameService.getPlayerTeam(gameId, playerId);
-        socket.to(`game-${gameId}-${playerTeam}`).emit("teamCodeUpdate", { questionIndex, code })
+        socket.to(`game-${gameId}-${playerTeam}`).emit("teamCodeUpdate", { questionIndex, code, playerId })
     })
 
     socket.on("voteDraw", ({ gameId, player_id: playerId }) => {
