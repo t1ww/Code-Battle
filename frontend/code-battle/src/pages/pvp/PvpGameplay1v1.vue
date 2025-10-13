@@ -3,7 +3,7 @@
 // =============================
 // 📦 Imports
 // =============================
-import { ref, inject, onMounted } from 'vue'
+import { ref, inject, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePvpGameStore } from '@/stores/game'
 import { getPlayerData } from '@/stores/auth'
@@ -57,7 +57,10 @@ const timeLimitEnabled = route.query.timeLimitEnabled === 'true'
 
 // PvP code composable
 const { codes, testResults, isLoading, submitCode, forceClearQuestion } = usePvpCode()
-const code = codes.value[0];
+const code = computed({
+  get: () => codes.value[currentQuestionIndex.value].value,
+  set: (val: string) => { codes.value[currentQuestionIndex.value].value = val }
+})
 // Timer
 const PVP_TIME_LIMIT = 5400
 const { timeLeft, formattedTime, startTimer, stopTimer } = useTimer(timeLimitEnabled, timeLimitEnabled ? PVP_TIME_LIMIT : 0, () => {
