@@ -62,7 +62,7 @@ export function registerMatchmakingHandlers(io: Server, socket: Socket, services
                 return;
             }
             // Bring team members to matchmaking page
-            socket.to(data.team_id).emit("teamMembersJoinMatchmaking", data.timeLimit);
+            socket.to(data.team_id).emit("teamMembersJoinMatchmaking", { timeLimit: data.timeLimit });
             // Successful queue
             io.to(data.team_id).emit("queueResponse", result);
         } catch (err) {
