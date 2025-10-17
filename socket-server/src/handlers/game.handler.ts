@@ -58,10 +58,11 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
     })
 
     // 🖱️ When a teammate moves their cursor
-    socket.on("updateCursor", ({ gameId, playerId, playerName, team, questionIndex, cursorIndex }) => {
+    socket.on("updateCursor", ({ gameId, playerId, playerName, questionIndex, cursorIndex }) => {
         try {
+            const playerTeam = gameService.getPlayerTeam(gameId, playerId);
             // Broadcast cursor position to all teammates except sender
-            socket.to(`game-${gameId}-${team}`).emit("teamCursorUpdate", {
+            socket.to(`game-${gameId}-${playerTeam}`).emit("teamCursorUpdate", {
                 playerId,
                 playerName,
                 questionIndex,

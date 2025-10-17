@@ -16,6 +16,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
   (e: 'update:modelLanguage', value: string): void
+  (e: 'cursorMove', offset: number): void
 }>()
 
 // =============================
@@ -191,6 +192,13 @@ onMounted(() => {
     }
   })
 
+  // Emit cursor position
+  editor.onDidChangeCursorPosition((e) => {
+    emit('cursorMove', editor!.getModel()!.getOffsetAt(e.position))
+  })
+
+  updateCursorWidgets()
+
   // Force a test cursor for debug
   ensureLineExists()
   const testWidget = createCursorWidget('TestCursor')
@@ -321,22 +329,5 @@ onBeforeUnmount(() => {
   pointer-events: none;
   color: #ccc;
   font-size: 0.85rem;
-}
-
-/* Teammate cursor */
-.teammate-cursor {
-  display: inline-flex;
-  align-items: center;
-  border-left: .5rem solid #ff4081;
-  height: 1.2em;
-  pointer-events: none;
-  margin-left: -0.1rem;
-}
-
-.teammate-cursor-label {
-  color: #ffffff;
-  font-weight: bold;
-  margin-left: 1rem;
-  pointer-events: none;
 }
 </style>
