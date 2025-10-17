@@ -54,9 +54,25 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
     socket.on("updateTeamCode", ({ gameId, playerId, questionIndex, code }) => {
         // Broadcast to all teammates **except sender**
         const playerTeam = gameService.getPlayerTeam(gameId, playerId);
-        console.log(`Player team in updateTeamCode: ${playerTeam}`);
         socket.to(`game-${gameId}-${playerTeam}`).emit("teamCodeUpdate", { questionIndex, code, playerId })
     })
+
+    // 🖱️ When a teammate moves their cursor
+    socket.on("updateCursor", ({ gameId, playerId, playerName, team, questionIndex, cursorIndex }) => {
+        try {
+            // Broadcast cursor position to all teammates except sender
+            socket.to(`game-${gameId}-${team}`).emit("teamCursorUpdate", {
+                playerId,
+                playerName,
+                questionIndex,
+                cursorIndex,
+            });
+        } catch (err) {
+            console.error("Error handling cursor update:", err);
+            socket.emit("errorMessage", { message: "Failed to update cursor position" });
+        }
+    });
+
 
     socket.on("voteDraw", ({ gameId, player_id: playerId }) => {
         try {

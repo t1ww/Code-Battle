@@ -77,12 +77,12 @@ const doSabotageAll = false;
 const sabotageInstances = codes.value.map(c => useSabotage(c, triggerNotification))
 // Random sabotage
 function sabotageRandom() {
-    const randomIndex = Math.floor(Math.random() * sabotageInstances.length)
-    sabotageInstances[randomIndex].sabotageOnce()
+  const randomIndex = Math.floor(Math.random() * sabotageInstances.length)
+  sabotageInstances[randomIndex].sabotageOnce()
 }
 // All sabotage
 function sabotageAll() {
-    sabotageInstances.forEach(s => s.sabotageOnce())
+  sabotageInstances.forEach(s => s.sabotageOnce())
 }
 
 // Hooker
@@ -231,10 +231,10 @@ function endGame() {
 }
 
 // For 3v3
-const { destroy: destroyTeamSync } = useTeamSync({
-    playerId: player?.player_id,
-    teamKey: gameStore.playerTeam!,
-    codes
+const { destroy: destroyTeamSync, localCursorIndex, teammateCursors } = useTeamSync({
+  playerId: player?.player_id,
+  teamKey: gameStore.playerTeam!,
+  codes
 })
 
 // =============================
@@ -304,7 +304,8 @@ onUnmounted(() => {
         Time Left:
         <span>{{ formattedTime }}</span>
       </div>
-      <CodeEditor v-model="code" v-model:modelLanguage="selectedLanguage" />
+      <CodeEditor v-model="code" v-model:modelLanguage="selectedLanguage" @cursorMove="localCursorIndex = $event"
+        :teammateCursors="teammateCursors" />
     </div>
 
     <div class="buttons">

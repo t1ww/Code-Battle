@@ -1,8 +1,9 @@
 // frontend\code-battle\src\composables\useTeamSync.ts
-import { watch, nextTick, type Ref } from 'vue'
+import { watch, nextTick, ref, type Ref } from 'vue'
 import { socket } from '@/clients/socket.api'
 import { usePvpGameStore } from '@/stores/game'
 import debounce from 'lodash/debounce'
+import { getPlayerData } from '@/stores/auth'
 
 interface UseTeamSyncOptions {
     playerId: string | null | undefined
@@ -12,10 +13,17 @@ interface UseTeamSyncOptions {
 
 export function useTeamSync({ playerId, teamKey, codes }: UseTeamSyncOptions) {
     const gameStore = usePvpGameStore()
+    const player = getPlayerData();
 
-    // -----------------------
-    // Receive teammate updates
-    // -----------------------
+    // ===================================================
+    // 🧠 STATE: teammate cursors
+    // ===================================================
+    const teammateCursors = ref<Record<string, number>>({}) // playerName → cursor index
+    const localCursorIndex = ref(0)
+
+    // ===================================================
+    // 📨 RECEIVE teammate code updates
+    // ===================================================
     let isApplyingExternal = false;
     const handleTeamCodeUpdate = (payload: { questionIndex: number, code: string, playerId: string }) => {
         if (payload.playerId === playerId) return;
@@ -24,18 +32,14 @@ export function useTeamSync({ playerId, teamKey, codes }: UseTeamSyncOptions) {
 
         isApplyingExternal = true;
         codes.value[questionIndex].value = code;
-        nextTick(() => {
-            isApplyingExternal = false;
-        });
-        
-        console.log("Received team code update.")
+        nextTick(() => { isApplyingExternal = false });
     }
 
     socket.on('teamCodeUpdate', handleTeamCodeUpdate)
 
-    // -----------------------
-    // Emit own updates (debounced)
-    // -----------------------
+    // ===================================================
+    // 📤 EMIT code updates (debounced)
+    // ===================================================
     const pendingUpdates: Record<number, string> = {};
     const flushUpdates = debounce(() => {
         if (!gameStore.gameId || !playerId) return;
@@ -48,28 +52,58 @@ export function useTeamSync({ playerId, teamKey, codes }: UseTeamSyncOptions) {
                 code,
             });
         }
-        // clear buffer
         Object.keys(pendingUpdates).forEach(k => delete pendingUpdates[+k]);
-    }, 100); // batch every 100ms
+    }, 100);
 
-    // -----------------------
-    // Watch local code changes
-    // -----------------------
     codes.value.forEach((c, idx) => {
         watch(() => c.value, (newCode) => {
-            // Skip emitting if it's from a teammate update
             if (isApplyingExternal) return;
             pendingUpdates[idx] = newCode;
             flushUpdates();
         });
     });
 
-    // -----------------------
-    // Cleanup
-    // -----------------------
-    const destroy = () => {
-        socket.off('teamCodeUpdate', handleTeamCodeUpdate)
+    // ===================================================
+    // 🖱️ CURSOR SYNC
+    // ===================================================
+
+    // Emit local cursor change (debounced to reduce spam)
+    const emitCursorUpdate = debounce((index: number, questionIndex: number) => {
+        if (!gameStore.gameId || !playerId || !player) return;
+        socket.emit('updateCursor', {
+            gameId: gameStore.gameId,
+            playerId,
+            playerName: player.name || 'Unknown',
+            team: teamKey,
+            questionIndex,
+            cursorIndex: index
+        });
+    }, 50);
+
+    watch(localCursorIndex, (newIndex) => {
+        emitCursorUpdate(newIndex, 0); // later we can change 0 → currentQuestionIndex
+    });
+
+    // Receive teammate cursor updates
+    const handleCursorUpdate = (payload: {
+        playerId: string
+        playerName: string
+        cursorIndex: number
+        questionIndex: number
+    }) => {
+        if (payload.playerId === playerId) return;
+        teammateCursors.value[payload.playerName] = payload.cursorIndex;
     }
 
-    return { destroy }
+    socket.on('teamCursorUpdate', handleCursorUpdate);
+
+    // ===================================================
+    // 🧹 Cleanup
+    // ===================================================
+    const destroy = () => {
+        socket.off('teamCodeUpdate', handleTeamCodeUpdate)
+        socket.off('teamCursorUpdate', handleCursorUpdate)
+    }
+
+    return { destroy, localCursorIndex, teammateCursors }
 }
