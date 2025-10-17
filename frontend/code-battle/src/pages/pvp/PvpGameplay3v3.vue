@@ -233,7 +233,6 @@ function endGame() {
 // For 3v3
 const { destroy: destroyTeamSync, localCursorIndex, teammateCursors } = useTeamSync({
   playerId: player?.player_id,
-  teamKey: gameStore.playerTeam!,
   codes
 })
 

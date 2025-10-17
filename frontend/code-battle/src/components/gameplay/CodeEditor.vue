@@ -142,6 +142,9 @@ watch(() => props.modelValue, (newVal) => {
     editor.executeEdits('external', [{ range: model.getFullModelRange(), text: newVal }])
     if (selection) editor.setSelection(selection)
     isApplyingExternal = false
+
+    // <-- update cursors here after applying new code
+    updateCursorWidgets()
   }
 })
 
@@ -197,12 +200,8 @@ onMounted(() => {
     emit('cursorMove', editor!.getModel()!.getOffsetAt(e.position))
   })
 
-  updateCursorWidgets()
-
-  // Force a test cursor for debug
   ensureLineExists()
-  const testWidget = createCursorWidget('TestCursor')
-  if (testWidget) editor.addContentWidget(testWidget)
+  updateCursorWidgets()
 })
 
 // =============================

@@ -7,11 +7,10 @@ import { getPlayerData } from '@/stores/auth'
 
 interface UseTeamSyncOptions {
     playerId: string | null | undefined
-    teamKey: 'team1' | 'team2'
     codes: Ref<{ value: string }[]> // reactive array of codes for each question
 }
 
-export function useTeamSync({ playerId, teamKey, codes }: UseTeamSyncOptions) {
+export function useTeamSync({ playerId, codes }: UseTeamSyncOptions) {
     const gameStore = usePvpGameStore()
     const player = getPlayerData();
 
@@ -47,7 +46,6 @@ export function useTeamSync({ playerId, teamKey, codes }: UseTeamSyncOptions) {
             socket.emit('updateTeamCode', {
                 gameId: gameStore.gameId,
                 playerId,
-                team: teamKey,
                 questionIndex: Number(questionIndex),
                 code,
             });
@@ -74,7 +72,6 @@ export function useTeamSync({ playerId, teamKey, codes }: UseTeamSyncOptions) {
             gameId: gameStore.gameId,
             playerId,
             playerName: player.name || 'Unknown',
-            team: teamKey,
             questionIndex,
             cursorIndex: index
         });
