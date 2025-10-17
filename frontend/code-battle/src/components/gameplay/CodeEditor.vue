@@ -8,11 +8,24 @@ import { triggerNotification } from '@/composables/notificationService'
 // Props / Emits
 // =============================
 const DEV = inject('DEV') as boolean
-const props = defineProps<{ modelValue: string; modelLanguage?: string }>()
+const props = defineProps<{
+  modelValue: string
+  modelLanguage?: string
+  teammateCursors?: Record<string, number> // name → cursorIndex
+}>()
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
   (e: 'update:modelLanguage', value: string): void
 }>()
+
+// =============================
+// Refs & State
+// =============================
+const editorContainer = ref<HTMLDivElement | null>(null)
+let editor: monaco.editor.IStandaloneCodeEditor | null = null
+const selectedLanguage = ref(props.modelLanguage || 'cpp')
+let isApplyingExternal = false
+const cursorWidgets: Record<string, monaco.editor.IContentWidget> = {}
 
 // Supported languages
 const languages = ref([
@@ -20,40 +33,138 @@ const languages = ref([
   { label: 'Java', value: 'java' }
 ])
 
-const editorContainer = ref<HTMLDivElement | null>(null)
-let editor: monaco.editor.IStandaloneCodeEditor | null = null
-const selectedLanguage = ref(props.modelLanguage || 'cpp')
+// =============================
+// Helpers
+// =============================
+const ensureLineExists = (line = 1) => {
+  if (!editor) return
+  const model = editor.getModel()
+  if (!model) return
+  if (model.getLineCount() < line) {
+    model.applyEdits([{ range: new monaco.Range(1, 1, 1, 1), text: '\n' }])
+  }
+}
 
-let isApplyingExternal = false
+// Create a content widget for a teammate cursor
+const createCursorWidget = (playerName: string) => {
+  if (!editor) return null
+
+  const wrapper = document.createElement('div')
+  wrapper.style.position = 'absolute'
+  wrapper.style.pointerEvents = 'none'
+  wrapper.style.height = '1.2em'
+  wrapper.style.display = 'inline-block'
+
+  const caret = document.createElement('div')
+  caret.style.position = 'absolute'
+  caret.style.left = '0'
+  caret.style.top = '0'
+  caret.style.width = '.5rem'
+  caret.style.height = '100%'
+  caret.style.backgroundColor = '#ff4081'
+
+  const label = document.createElement('span')
+  label.textContent = `${playerName} is typing...`
+  label.style.color = '#ff4081'
+  label.style.fontWeight = 'bold'
+  label.style.marginLeft = '0.75rem'
+  label.style.position = 'relative'
+  label.style.top = '-3px'
+  label.style.whiteSpace = 'nowrap'
+
+  wrapper.appendChild(caret)
+  wrapper.appendChild(label)
+
+  // JS blink
+  let visible = true
+  const blink = () => {
+    visible = !visible
+    caret.style.visibility = visible ? 'visible' : 'hidden'
+    requestAnimationFrame(() => setTimeout(blink, 500))
+  }
+  blink()
+
+  return {
+    getId: () => `cursor-${playerName}`,
+    getDomNode: () => wrapper,
+    getPosition: () => ({
+      position: new monaco.Position(1, 1),
+      preference: [monaco.editor.ContentWidgetPositionPreference.EXACT]
+    })
+  } as monaco.editor.IContentWidget
+}
+
+// Update all cursor widgets positions
+const updateCursorWidgets = () => {
+  if (!editor || !props.teammateCursors) return
+
+  for (const [playerName, index] of Object.entries(props.teammateCursors)) {
+    const model = editor.getModel()
+    if (!model) continue
+    const pos = model.getPositionAt(index)
+
+    if (!cursorWidgets[playerName]) {
+      const widget = createCursorWidget(playerName)
+      if (widget) {
+        cursorWidgets[playerName] = widget
+        editor.addContentWidget(widget)
+      }
+    }
+
+    const widget = cursorWidgets[playerName]
+    if (widget) {
+      widget.getPosition = () => ({
+        position: pos,
+        preference: [monaco.editor.ContentWidgetPositionPreference.EXACT]
+      })
+      editor.layoutContentWidget(widget)
+    }
+  }
+}
 
 // =============================
-// Watch: language
+// Watchers
 // =============================
 watch(selectedLanguage, (lang) => {
   if (editor) monaco.editor.setModelLanguage(editor.getModel()!, lang)
   emit('update:modelLanguage', lang)
 })
 
+watch(() => props.modelValue, (newVal) => {
+  if (!editor) return
+  const current = editor.getValue()
+  if (newVal !== current) {
+    const model = editor.getModel()
+    if (!model) return
+    isApplyingExternal = true
+    const selection = editor.getSelection()
+    editor.executeEdits('external', [{ range: model.getFullModelRange(), text: newVal }])
+    if (selection) editor.setSelection(selection)
+    isApplyingExternal = false
+  }
+})
+
+watch(() => props.teammateCursors, updateCursorWidgets, { deep: true })
+
 // =============================
 // Mount
 // =============================
 onMounted(() => {
-  if (DEV) {
-    triggerNotification(
-      "DEV mode is on, you can paste from clipboard. Don't forget to disable it in production."
-    )
-  }
   if (!editorContainer.value) return
 
-    ; (window as any).MonacoEnvironment = {
-      getWorker: (_: any, label: string) => {
-        if (label === 'json') return new Worker('/monaco/language/json/json.worker.js', { type: 'module' })
-        if (['css', 'scss', 'less'].includes(label)) return new Worker('/monaco/language/css/css.worker.js', { type: 'module' })
-        if (label === 'html') return new Worker('/monaco/language/html/html.worker.js', { type: 'module' })
-        if (['typescript', 'javascript'].includes(label)) return new Worker('/monaco/language/typescript/ts.worker.js', { type: 'module' })
-        return new Worker('/monaco/editor/editor.worker.js', { type: 'module' })
-      },
+  if (DEV) {
+    triggerNotification("DEV mode is on, paste enabled")
+  }
+
+  ; (window as any).MonacoEnvironment = {
+    getWorker: (_: any, label: string) => {
+      if (label === 'json') return new Worker('/monaco/language/json/json.worker.js', { type: 'module' })
+      if (['css', 'scss', 'less'].includes(label)) return new Worker('/monaco/language/css/css.worker.js', { type: 'module' })
+      if (label === 'html') return new Worker('/monaco/language/html/html.worker.js', { type: 'module' })
+      if (['typescript', 'javascript'].includes(label)) return new Worker('/monaco/language/typescript/ts.worker.js', { type: 'module' })
+      return new Worker('/monaco/editor/editor.worker.js', { type: 'module' })
     }
+  }
 
   editor = monaco.editor.create(editorContainer.value, {
     value: props.modelValue || '',
@@ -64,57 +175,38 @@ onMounted(() => {
     suggestOnTriggerCharacters: false,
     quickSuggestions: false,
     parameterHints: { enabled: false },
-    contextmenu: false,
+    contextmenu: false
   })
 
-  // -------------------------
-  // Local typing → emit change
-  // -------------------------
+  // Local edits → emit
   editor.onDidChangeModelContent(() => {
     if (isApplyingExternal) return
     emit('update:modelValue', editor!.getValue())
   })
 
-  // -------------------------
-  // Paste prevention
-  // -------------------------
   editor.onDidPaste(() => {
     if (!DEV) {
       triggerNotification('Clipboard paste prevented!', 800)
       editor!.trigger('preventPaste', 'undo', null)
     }
   })
-})
 
-// =============================
-// External updates (prop-driven)
-// =============================
-watch(
-  () => props.modelValue,
-  (newVal) => {
-    if (!editor) return
-    const current = editor.getValue()
-    if (newVal !== current) {
-      const model = editor.getModel()
-      if (!model) return
-      isApplyingExternal = true
-      const selection = editor.getSelection()
-      editor.executeEdits('external', [
-        { range: model.getFullModelRange(), text: newVal },
-      ])
-      if (selection) {
-        editor.setSelection(selection)
-      }
-      isApplyingExternal = false
-    }
-  }
-)
+  // Force a test cursor for debug
+  ensureLineExists()
+  const testWidget = createCursorWidget('TestCursor')
+  if (testWidget) editor.addContentWidget(testWidget)
+})
 
 // =============================
 // Cleanup
 // =============================
 onBeforeUnmount(() => {
-  editor?.dispose()
+  if (editor) {
+    for (const widget of Object.values(cursorWidgets)) {
+      editor.removeContentWidget(widget)
+    }
+    editor.dispose()
+  }
 })
 </script>
 
@@ -229,5 +321,22 @@ onBeforeUnmount(() => {
   pointer-events: none;
   color: #ccc;
   font-size: 0.85rem;
+}
+
+/* Teammate cursor */
+.teammate-cursor {
+  display: inline-flex;
+  align-items: center;
+  border-left: .5rem solid #ff4081;
+  height: 1.2em;
+  pointer-events: none;
+  margin-left: -0.1rem;
+}
+
+.teammate-cursor-label {
+  color: #ffffff;
+  font-weight: bold;
+  margin-left: 1rem;
+  pointer-events: none;
 }
 </style>
