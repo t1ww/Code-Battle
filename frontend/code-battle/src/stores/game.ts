@@ -30,6 +30,15 @@ export const usePvpGameStore = defineStore('pvpGame', () => {
     return null
   })
 
+  // Check for 1v1 or 3v3
+  const is1v1 = computed (() => {
+    if (team1.value.players.length == 1) return true;
+  })
+
+  const is3v3 = computed (() => {
+    if (team1.value.players.length > 1) return true;
+  })
+
   function clearGame() {
     gameId.value = null
     questions.value = []
@@ -55,6 +64,8 @@ export const usePvpGameStore = defineStore('pvpGame', () => {
     opponentTeam, 
     opponentTeamObj,
     clearGame,
-    endReason
+    endReason,
+    is1v1,
+    is3v3,
   }
 })

@@ -15,6 +15,20 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
         }
     });
 
+    // When a player uses sabotage (spends points)
+    socket.on("useSabotage", ({ gameId, playerId }) => {
+        try {
+            const playerTeam = gameService.getPlayerTeam(gameId, playerId);
+            if (!playerTeam) return;
+            const playerName = socket.data.player.name;
+            gameService.handleUseSabotage(gameId, playerName, playerTeam);
+        } catch (err) {
+            console.error("Error using sabotage:", err);
+            socket.emit("errorMessage", { message: "Failed to use sabotage" });
+        }
+    });
+
+
     // When a team finishes a question (or some test-cases)
     socket.on("questionFinished", ({ gameId, team, questionIndex, passedIndices }) => {
         try {

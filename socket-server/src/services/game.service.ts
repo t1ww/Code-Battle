@@ -29,6 +29,8 @@ export interface GameRoom {
     drawVotes?: Set<string>;
     drawVoteTimeout?: NodeJS.Timeout;
     forfeitEnabled?: boolean;
+    // inside GameRoom interface
+    sabotagePoints?: Record<"team1" | "team2", number>;
 }
 
 export class GameService {
@@ -66,6 +68,7 @@ export class GameService {
             progressFullPass,
             finished: false,
             drawVotes: new Set<string>(),
+            sabotagePoints: { team1: 0, team2: 0 },
         };
 
         this.games.set(gameId, game);
@@ -114,6 +117,7 @@ export class GameService {
             progressFullPass,
             finished: false,
             drawVotes: new Set<string>(),
+            sabotagePoints: { team1: 0, team2: 0 },
         };
 
         this.games.set(gameId, game);
@@ -149,12 +153,37 @@ export class GameService {
         return null;
     }
 
-    /** Handle sabotage event: relay to opponent team */
+    // Handle sabotage for solo
     handleSabotage(gameId: string, targetTeam: "team1" | "team2") {
         const game = this.games.get(gameId);
         if (!game || game.finished) return;
         this.io.to(`game-${gameId}-${targetTeam}`).emit("sabotageReceived");
     }
+
+    // Handle sabotage for team
+    handleUseSabotage(gameId: string, useby: string, teamKey: "team1" | "team2") {
+        const game = this.games.get(gameId);
+        if (!game || game.finished) return;
+
+        const opponentTeam = teamKey === "team1" ? "team2" : "team1";
+
+        // Require at least 3 sabotage points to trigger (example)
+        const cost = 3;
+        if ((game.sabotagePoints?.[teamKey] ?? 0) < cost) return;
+
+        // Deduct points
+        game.sabotagePoints![teamKey] -= cost;
+
+        // Notify all teammates of new points
+        this.io.to(`game-${gameId}-${teamKey}`).emit("teamSabotageUpdate", {
+            useby: useby,
+            points: game.sabotagePoints![teamKey],
+        });
+
+        // Perform sabotage on opponent
+        this.handleSabotage(gameId, opponentTeam);
+    }
+
 
     /**
      * Handle when a team finishes (or partially finishes) test cases in a question.
@@ -204,7 +233,22 @@ export class GameService {
 
         // Award sabotage points equal to newly cleared test cases (emit to that team's players)
         if (newlyCleared > 0) {
-            this.io.to(`game-${gameId}-${teamKey}`).emit("awardSabotage", { amount: newlyCleared });
+            // Check if it's a team game (both teams exist and >1 player per team)
+            const isTeamMode = (game.team1.players.length > 1 || game.team2.players.length > 1);
+
+            if (isTeamMode) {
+                // Shared team sabotage points
+                game.sabotagePoints![teamKey] += newlyCleared;
+                this.io.to(`game-${gameId}-${teamKey}`).emit("teamSabotageUpdate", {
+                    team: teamKey,
+                    points: game.sabotagePoints![teamKey],
+                });
+            } else {
+                // Keep original solo logic
+                this.io.to(`game-${gameId}-${teamKey}`).emit("awardSabotage", {
+                    amount: newlyCleared,
+                });
+            }
         }
 
         // If all test-cases in a question are now true, that was already handled by your earlier logic,
