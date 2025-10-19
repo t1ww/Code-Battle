@@ -199,6 +199,13 @@ export class GameService {
      * passedIndices: indices of test cases that were passed in this submission attempt
      */
     handleQuestionFinished(gameId: string, teamKey: "team1" | "team2", questionIndex: number, passedIndices: number[], finishedBy: string) {
+        console.log('handleQuestionFinished', {
+            gameId,
+            teamKey,
+            questionIndex,
+            passedIndices,
+            finishedBy
+        });
         const game = this.games.get(gameId);
         if (!game || game.finished) return;
 

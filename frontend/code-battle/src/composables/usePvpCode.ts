@@ -98,7 +98,7 @@ export function usePvpCode({ singleBufferMode }: { singleBufferMode: boolean }) 
                 .map((r: any, i: number) => (r.passed ? i : -1))
                 .filter(i => i >= 0)
 
-            if (passedIndices.length > 0 && gameStore.gameId && teamKey) {
+            if (gameStore.gameId && teamKey) {
                 socket.emit('questionFinished', {
                     gameId: gameStore.gameId,
                     team: teamKey,
