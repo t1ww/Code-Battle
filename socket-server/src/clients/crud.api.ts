@@ -2,7 +2,7 @@
 import axios, { type AxiosError } from "axios";
 
 const api = axios.create({
-  baseURL: process.env.BACKEND_URL || "http://localhost:5000/api",
+  baseURL: `${process.env.BACKEND_URL}/api` || "http://localhost:5000/api",
   timeout: 10000,
   withCredentials: true,
 });
