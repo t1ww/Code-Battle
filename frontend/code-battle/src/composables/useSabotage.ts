@@ -28,13 +28,13 @@ export function useSabotage(code: Ref<string>, triggerNotification: (msg: string
     }
 
     function sabotageOnce() {
-        if (!code.value.trim()) return
+        if (!code.value.trim()) return;
 
         const index = getMeaningfulIndex(code.value)
         if (index == null) {
             // No meaningful character to remove — sabotage missed
             triggerNotification("Your code has been sabotaged... Luckily they missed!")
-            return
+            return;
         }
 
         triggerNotification('Your code has been sabotaged, find and fix it!')
@@ -46,7 +46,7 @@ export function useSabotage(code: Ref<string>, triggerNotification: (msg: string
         triggerNotification('Sabotage modifier is active, your code will get one of its character removed every 2 minutes.')
 
         sabotageTimer = setInterval(() => {
-            if (!code.value.trim()) return
+            if (!code.value.trim()) return;
             sabotageOnce()
         }, time * unitMinute * unitMillisecond) // time * min * ms 
     }

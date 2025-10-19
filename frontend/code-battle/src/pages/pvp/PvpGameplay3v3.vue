@@ -58,7 +58,7 @@ const selectedModifier = route.query.modifier as string || 'None'
 const timeLimitEnabled = route.query.timeLimitEnabled === 'true'
 
 // PvP code composable
-const { codes, testResults, isLoading, submitCode, forceClearQuestion } = usePvpCode({ singleBufferMode: false})
+const { codes, testResults, isLoading, submitCode, forceClearQuestion } = usePvpCode({ singleBufferMode: false })
 const code = computed({
   get: () => codes.value[currentQuestionIndex.value].value,
   set: (val: string) => { codes.value[currentQuestionIndex.value].value = val }
@@ -189,10 +189,12 @@ function handleQuestionProgress(data: any) {
   const questionFinished = !!gameStore.progressFullPass[data.team][qIndex]
 
   if (testCasesFinished && !questionFinished) {
-    setTimeout(() => triggerNotification(
-      "This question doesn't count yet — all test cases must pass in the same submission.",
-      1800
-    ), 2000)
+    if (data.team === gameStore.playerTeam) {
+      setTimeout(() => triggerNotification(
+        "This question doesn't count yet — all test cases must pass in the same submission.",
+        1800
+      ), 2000)
+    }
   }
 }
 
@@ -277,15 +279,15 @@ const opponentTeamData = computed(() => {
   const opponent = gameStore.opponentTeamObj
   return opponent
     ? {
-        player_id: opponent.players[0]?.player_id || "0",
-        avatar_url: opponent.players[0]?.avatar_url || "",
-        name: "Opponent Team",
-      }
+      player_id: opponent.players[0]?.player_id || "0",
+      avatar_url: opponent.players[0]?.avatar_url || "",
+      name: "Opponent Team",
+    }
     : {
-        player_id: "0",
-        avatar_url: "",
-        name: "Opponent Team not found",
-      }
+      player_id: "0",
+      avatar_url: "",
+      name: "Opponent Team not found",
+    }
 });
 </script>
 
@@ -322,7 +324,7 @@ const opponentTeamData = computed(() => {
         <span>{{ formattedTime }}</span>
       </div>
       <CodeEditor v-model="code" v-model:modelLanguage="selectedLanguage" @cursorMove="localCursorIndex = $event"
-        :teammateCursors="teammateCursors" :currentQuestionIndex="currentQuestionIndex"/>
+        :teammateCursors="teammateCursors" :currentQuestionIndex="currentQuestionIndex" />
     </div>
 
     <div class="buttons">
@@ -348,8 +350,7 @@ const opponentTeamData = computed(() => {
         <OpponentPanel :onClose="toggleOpponentPanel" :sendSabotage="sendSabotage" :opponent="opponentTeamData"
           :questions="gameStore.questions" :progress="gameStore.progress[gameStore.opponentTeam || 'team1'] || []"
           :progressFullPass="gameStore.progressFullPass?.[gameStore.opponentTeam || 'team1'] || []"
-          :sabotagePoints="teamSabotagePoints"
-          :enemySabotagePoints="enemySabotagePoints" />
+          :sabotagePoints="teamSabotagePoints" :enemySabotagePoints="enemySabotagePoints" />
       </div>
     </transition>
 

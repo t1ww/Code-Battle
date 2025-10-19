@@ -80,6 +80,7 @@ export function usePvpCode({ singleBufferMode }: { singleBufferMode: boolean }) 
 
             const teamKey = gameStore.playerTeam
             if (teamKey != null && gameStore.progressFullPass?.[teamKey]?.[currentQuestionIndex]) {
+                triggerNotification('You have already completed this question.');
                 return { resultsForCurrent: null, alreadyCompleted: true }
             }
 

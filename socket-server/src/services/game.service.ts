@@ -242,29 +242,18 @@ export class GameService {
 
         // Award sabotage points equal to newly cleared test cases (emit to that team's players)
         if (newlyCleared > 0) {
-            // Check if it's a team game (both teams exist and >1 player per team)
-            const isTeamMode = (game.team1.players.length > 1 || game.team2.players.length > 1);
-
-            if (isTeamMode) {
-                // Shared team sabotage points
-                game.sabotagePoints![teamKey] += newlyCleared;
-                console.log('Emitting teamSabotageUpdate from handleQuestionFinished')
-                this.io.to(`game-${gameId}-${teamKey}`).emit("teamSabotageUpdate", {
-                    updateMessage: `Awarded sabotage point by ${finishedBy}!`,
-                    points: game.sabotagePoints![teamKey],
-                });
-                const opponentTeam = teamKey === "team1" ? "team2" : "team1";
-                // Also notify enemies of the sabotage points
-                this.io.to(`game-${gameId}-${opponentTeam}`).emit("enemySabotageUpdate", {
-                    points: game.sabotagePoints![teamKey],
-                });
-            } else {
-                // Keep original solo logic
-                console.log('Emitting awardSabotage from handleQuestionFinished')
-                this.io.to(`game-${gameId}-${teamKey}`).emit("awardSabotage", {
-                    amount: newlyCleared,
-                });
-            }
+            // Shared team sabotage points
+            game.sabotagePoints![teamKey] += newlyCleared;
+            console.log('Emitting teamSabotageUpdate from handleQuestionFinished')
+            this.io.to(`game-${gameId}-${teamKey}`).emit("teamSabotageUpdate", {
+                updateMessage: `Awarded sabotage point by ${finishedBy}!`,
+                points: game.sabotagePoints![teamKey],
+            });
+            const opponentTeam = teamKey === "team1" ? "team2" : "team1";
+            // Also notify enemies of the sabotage points
+            this.io.to(`game-${gameId}-${opponentTeam}`).emit("enemySabotageUpdate", {
+                points: game.sabotagePoints![teamKey],
+            });
         }
 
         // If all test-cases in a question are now true, that was already handled by your earlier logic,
@@ -276,11 +265,11 @@ export class GameService {
     private checkGameEnd(game: GameRoom) {
         if (game.finished) return;
 
-        // Count how many questions each team has fully cleared
-        const team1Cleared = game.progress.team1.filter(perQ => perQ.every(Boolean)).length;
-        const team2Cleared = game.progress.team2.filter(perQ => perQ.every(Boolean)).length;
+        // Count how many questions each team has fully passed in a single submission
+        const team1Cleared = game.progressFullPass.team1.filter(Boolean).length;
+        const team2Cleared = game.progressFullPass.team2.filter(Boolean).length;
 
-        const requiredToWin = 2; // ← change threshold here
+        const requiredToWin = 2;
 
         const team1Done = team1Cleared >= requiredToWin;
         const team2Done = team2Cleared >= requiredToWin;
@@ -296,12 +285,12 @@ export class GameService {
             this.io.to(`game-${game.gameId}`).emit("gameEnd", {
                 winner,
                 progress: game.progress,
+                progressFullPass: game.progressFullPass,
             });
 
             this.games.delete(game.gameId);
         }
     }
-
 
     /** Get active game */
     getGame(gameId: string): GameRoom | undefined {

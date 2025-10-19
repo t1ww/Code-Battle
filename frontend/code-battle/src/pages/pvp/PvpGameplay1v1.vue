@@ -56,7 +56,7 @@ const selectedModifier = route.query.modifier as string || 'None'
 const timeLimitEnabled = route.query.timeLimitEnabled === 'true'
 
 // PvP code composable
-const { codes, testResults, isLoading, submitCode, forceClearQuestion } = usePvpCode({ singleBufferMode: true})
+const { codes, testResults, isLoading, submitCode, forceClearQuestion } = usePvpCode({ singleBufferMode: true })
 const code = computed({
   get: () => codes.value[currentQuestionIndex.value].value,
   set: (val: string) => { codes.value[currentQuestionIndex.value].value = val }
@@ -167,10 +167,12 @@ function handleQuestionProgress(data: any) {
   const questionFinished = !!gameStore.progressFullPass[data.team][qIndex]
 
   if (testCasesFinished && !questionFinished) {
-    setTimeout(() => triggerNotification(
-      "This question doesn't count yet — all test cases must pass in the same submission.",
-      1800
-    ), 2000)
+    if (data.team === gameStore.playerTeam) {
+      setTimeout(() => triggerNotification(
+        "This question doesn't count yet — all test cases must pass in the same submission.",
+        1800
+      ), 2000)
+    }
   }
 }
 
@@ -301,8 +303,7 @@ onMounted(() => {
           :opponent="gameStore.opponentTeamObj?.players[0]" :questions="gameStore.questions"
           :progress="gameStore.progress[gameStore.opponentTeam || 'team1'] || []"
           :progressFullPass="gameStore.progressFullPass?.[gameStore.opponentTeam || 'team1'] || []"
-          :sabotagePoints="sabotagePoints"
-          :enemySabotagePoints="enemySabotagePoints" />
+          :sabotagePoints="sabotagePoints" :enemySabotagePoints="enemySabotagePoints" />
       </div>
     </transition>
 
