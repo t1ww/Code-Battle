@@ -56,7 +56,7 @@ const selectedModifier = route.query.modifier as string || 'None'
 const timeLimitEnabled = route.query.timeLimitEnabled === 'true'
 
 // PvP code composable
-const { codes, testResults, isLoading, submitCode, forceClearQuestion } = usePvpCode()
+const { codes, testResults, isLoading, submitCode, forceClearQuestion } = usePvpCode({ singleBufferMode: true})
 const code = computed({
   get: () => codes.value[currentQuestionIndex.value].value,
   set: (val: string) => { codes.value[currentQuestionIndex.value].value = val }

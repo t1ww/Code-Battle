@@ -6,7 +6,7 @@ import { usePvpGameStore } from '@/stores/game'
 import { socket } from '@/clients/socket.api'
 import { triggerNotification } from './notificationService'
 
-export function usePvpCode() {
+export function usePvpCode({ singleBufferMode }: { singleBufferMode: boolean }) {
     const gameStore = usePvpGameStore()
     const codes = ref([
         ref('// Write code for Q1'),
@@ -14,6 +14,10 @@ export function usePvpCode() {
         ref('// Write code for Q3')
     ])
 
+    if (singleBufferMode) {
+        const shared = ref('// Write your code here')
+        codes.value = [shared, shared, shared]
+    }
 
     const testResults = ref<any>(null)
     const isLoading = ref(false)
