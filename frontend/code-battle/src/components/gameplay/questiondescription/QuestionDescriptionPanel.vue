@@ -64,17 +64,23 @@ p {
     top: 2rem;
     left: 0;
     width: 100vw;
+    height: 75vh;
     color: var(--theme-color);
     z-index: 1000;
     font-size: 14px;
     text-align: left;
+
+    display: flex;
+    flex-direction: column;
 }
 
 .description-popup-inner-panel {
-    padding: .5rem;
+    padding: 0.5rem 10rem;
     background-color: #2d3533af;
     border-bottom: 2px solid #ccc;
-    padding-inline: 10rem;
+
+    flex: 1;
+    overflow-y: auto;
 }
 
 .description-popup-content {
@@ -85,7 +91,7 @@ p {
 .description-popup-toggle {
     display: flex;
     justify-content: center;
-    margin-bottom: 1rem;
+    flex-shrink: 0;
 }
 
 .description-popup-toggle button {
