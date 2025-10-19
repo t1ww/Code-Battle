@@ -7,6 +7,17 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
+// ✅ Root health/env check
+app.get("/", (req, res) => {
+  res.json({
+    status: "ok",
+    env: {
+      PORT: !!process.env.PORT,
+      FRONTEND_URL: !!process.env.FRONTEND_URL,
+      BACKEND_URL: !!process.env.BACKEND_URL,
+    }
+  });
+});
 const server = createServer(app);
 
 const io = new Server(server, {
