@@ -234,7 +234,8 @@ function endGame() {
 // For 3v3
 const { destroy: destroyTeamSync, localCursorIndex, teammateCursors } = useTeamSync({
   playerId: player?.player_id,
-  codes
+  codes,
+  currentQuestionIndex
 })
 
 // =============================
@@ -321,7 +322,7 @@ const opponentTeamData = computed(() => {
         <span>{{ formattedTime }}</span>
       </div>
       <CodeEditor v-model="code" v-model:modelLanguage="selectedLanguage" @cursorMove="localCursorIndex = $event"
-        :teammateCursors="teammateCursors" />
+        :teammateCursors="teammateCursors" :currentQuestionIndex="currentQuestionIndex"/>
     </div>
 
     <div class="buttons">

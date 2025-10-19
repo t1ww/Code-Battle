@@ -1,6 +1,6 @@
 <!-- frontend/code-battle/src/components/pve/CodeEditor.vue -->
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, inject } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, inject, computed } from 'vue'
 import * as monaco from 'monaco-editor'
 import { triggerNotification } from '@/composables/notificationService'
 
@@ -9,9 +9,11 @@ import { triggerNotification } from '@/composables/notificationService'
 // =============================
 const DEV = inject('DEV') as boolean
 const props = defineProps<{
+  currentQuestionIndex?: number
   modelValue: string
   modelLanguage?: string
-  teammateCursors?: Record<string, number> // name → cursorIndex
+  // teammateCursors: playerName → { questionIndex, cursorIndex }
+  teammateCursors?: Record<string, { questionIndex: number; cursorIndex: number }>
 }>()
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
@@ -27,6 +29,7 @@ let editor: monaco.editor.IStandaloneCodeEditor | null = null
 const selectedLanguage = ref(props.modelLanguage || 'cpp')
 let isApplyingExternal = false
 const cursorWidgets: Record<string, monaco.editor.IContentWidget> = {}
+const currentQuestionIndex = ref(props.currentQuestionIndex ?? 0)
 
 // Supported languages
 const languages = ref([
@@ -45,6 +48,18 @@ const ensureLineExists = (line = 1) => {
     model.applyEdits([{ range: new monaco.Range(1, 1, 1, 1), text: '\n' }])
   }
 }
+const cursorsForCurrentQuestion = computed(() => {
+  if (props.currentQuestionIndex === undefined) return {}
+  const res: Record<string, number> = {}
+  if (!props.teammateCursors) return res
+
+  for (const [name, cursor] of Object.entries(props.teammateCursors)) {
+    if (cursor.questionIndex === props.currentQuestionIndex) {
+      res[name] = cursor.cursorIndex
+    }
+  }
+  return res
+})
 
 // Create a content widget for a teammate cursor
 const createCursorWidget = (playerName: string) => {
@@ -97,9 +112,13 @@ const createCursorWidget = (playerName: string) => {
 
 // Update all cursor widgets positions
 const updateCursorWidgets = () => {
-  if (!editor || !props.teammateCursors) return
+  if (!editor) return
 
-  for (const [playerName, index] of Object.entries(props.teammateCursors)) {
+  const cursors = cursorsForCurrentQuestion.value
+  if (!cursors) return
+
+  // Add/update widgets for teammates on the current question
+  for (const [playerName, index] of Object.entries(cursors)) {
     const model = editor.getModel()
     if (!model) continue
     const pos = model.getPositionAt(index)
@@ -119,6 +138,14 @@ const updateCursorWidgets = () => {
         preference: [monaco.editor.ContentWidgetPositionPreference.EXACT]
       })
       editor.layoutContentWidget(widget)
+    }
+  }
+
+  // Remove widgets for teammates not on this question
+  for (const name of Object.keys(cursorWidgets)) {
+    if (!(name in cursors)) {
+      editor.removeContentWidget(cursorWidgets[name])
+      delete cursorWidgets[name]
     }
   }
 }
@@ -149,6 +176,11 @@ watch(() => props.modelValue, (newVal) => {
 })
 
 watch(() => props.teammateCursors, updateCursorWidgets, { deep: true })
+if (currentQuestionIndex) {
+  watch(currentQuestionIndex, () => {
+    updateCursorWidgets()
+  })
+}
 
 // =============================
 // Mount

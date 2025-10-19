@@ -8,16 +8,19 @@ import { getPlayerData } from '@/stores/auth'
 interface UseTeamSyncOptions {
     playerId: string | null | undefined
     codes: Ref<{ value: string }[]> // reactive array of codes for each question
+    currentQuestionIndex: Ref<number>
 }
 
-export function useTeamSync({ playerId, codes }: UseTeamSyncOptions) {
+export function useTeamSync({ playerId, codes, currentQuestionIndex }: UseTeamSyncOptions) {
     const gameStore = usePvpGameStore()
     const player = getPlayerData();
 
     // ===================================================
     // 🧠 STATE: teammate cursors
     // ===================================================
-    const teammateCursors = ref<Record<string, number>>({}) // playerName → cursor index
+    // teammateCursors: playerName → { questionIndex, cursorIndex }
+    const teammateCursors = ref<Record<string, { questionIndex: number; cursorIndex: number }>>({})
+    // self cursor
     const localCursorIndex = ref(0)
 
     // ===================================================
@@ -78,7 +81,7 @@ export function useTeamSync({ playerId, codes }: UseTeamSyncOptions) {
     }, 50);
 
     watch(localCursorIndex, (newIndex) => {
-        emitCursorUpdate(newIndex, 0); // later we can change 0 → currentQuestionIndex
+        emitCursorUpdate(newIndex, currentQuestionIndex.value); // <- use reactive ref
     });
 
     // Receive teammate cursor updates
@@ -88,8 +91,11 @@ export function useTeamSync({ playerId, codes }: UseTeamSyncOptions) {
         cursorIndex: number
         questionIndex: number
     }) => {
-        if (payload.playerId === playerId) return;
-        teammateCursors.value[payload.playerName] = payload.cursorIndex;
+        if (payload.playerId === playerId) return
+        teammateCursors.value[payload.playerName] = {
+            questionIndex: payload.questionIndex,
+            cursorIndex: payload.cursorIndex
+        }
     }
 
     socket.on('teamCursorUpdate', handleCursorUpdate);
