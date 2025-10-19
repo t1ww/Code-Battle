@@ -140,6 +140,9 @@ onMounted(() => {
         if (matchStartedFlag.value) return; // already started, ignore
         matchStartedFlag.value = true;
 
+        // Clear existing timeouts
+        if (startMatchTimeout) clearTimeout(startMatchTimeout); 
+
         console.log("Match started for player:", data.player_id);
 
         // Step 1: Found state
@@ -260,6 +263,7 @@ onBeforeUnmount(() => {
     socket.off("teamQueueCanceled");
     socket.off("queueTimeout");
     socket.off("matchmakingError");
+    socket.off("matchAbandoned");
 });
 
 </script>

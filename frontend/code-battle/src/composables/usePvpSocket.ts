@@ -96,6 +96,12 @@ export function usePvpSocket(options: UsePvpSocketOptions) {
             socket.once("gameState", (game) => updateGameState(game))
 
             registerSocketEvents()
+            // Leave game when player refresh
+            window.addEventListener("beforeunload", () => {
+                if (!gameStore.finished && gameStore.gameId && playerId) {
+                    socket.emit("leaveGame", { gameId: gameStore.gameId, player_id: playerId })
+                }
+            })
 
             if (timeLimitEnabled && timeLeft && PVP_TIME_LIMIT) timeLeft.value = PVP_TIME_LIMIT
         })
@@ -105,6 +111,11 @@ export function usePvpSocket(options: UsePvpSocketOptions) {
             if (!gameStore.finished) {
                 leaveGame()
             }
+            window.removeEventListener("beforeunload", () => {
+                if (!gameStore.finished && gameStore.gameId && playerId) {
+                    socket.emit("leaveGame", { gameId: gameStore.gameId, player_id: playerId })
+                }
+            })
         })
     }
 
