@@ -117,6 +117,26 @@ export function usePvpSocket(options: UsePvpSocketOptions) {
                 }
             })
         })
+
+        // === Listen for sabotage updates ===
+        onMounted(() => {
+            // Old 1v1 event (add point)
+            socket.on('awardSabotage', ({ amount }) => {
+                sabotagePoint.value += amount
+                triggerNotification(`You earned ${amount} sabotage!`)
+            })
+
+            // New 3v3 team event (set point)
+            socket.on('teamSabotageUpdate', ({ updateMessage, points }) => {
+                sabotagePoint.value = points
+                triggerNotification(updateMessage)
+            })
+        })
+
+        onUnmounted(() => {
+            socket.off('awardSabotage')
+            socket.off('teamSabotageUpdate')
+        })
     }
 
     const updateGameState = (game: any) => {

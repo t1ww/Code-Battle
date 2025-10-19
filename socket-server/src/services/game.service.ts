@@ -167,16 +167,14 @@ export class GameService {
 
         const opponentTeam = teamKey === "team1" ? "team2" : "team1";
 
-        // Require at least 3 sabotage points to trigger (example)
-        const cost = 3;
-        if ((game.sabotagePoints?.[teamKey] ?? 0) < cost) return;
-
         // Deduct points
+        const cost = 1;
         game.sabotagePoints![teamKey] -= cost;
 
         // Notify all teammates of new points
+        console.log('Emitting teamSabotageUpdate from handleUseSabotage')
         this.io.to(`game-${gameId}-${teamKey}`).emit("teamSabotageUpdate", {
-            useby: useby,
+            updateMessage: `Team sabotage used by ${useby}, ${game.sabotagePoints![teamKey]} points left.`,
             points: game.sabotagePoints![teamKey],
         });
 
@@ -184,12 +182,11 @@ export class GameService {
         this.handleSabotage(gameId, opponentTeam);
     }
 
-
     /**
      * Handle when a team finishes (or partially finishes) test cases in a question.
      * passedIndices: indices of test cases that were passed in this submission attempt
      */
-    handleQuestionFinished(gameId: string, teamKey: "team1" | "team2", questionIndex: number, passedIndices: number[]) {
+    handleQuestionFinished(gameId: string, teamKey: "team1" | "team2", questionIndex: number, passedIndices: number[], finishedBy: string) {
         const game = this.games.get(gameId);
         if (!game || game.finished) return;
 
@@ -239,14 +236,14 @@ export class GameService {
             if (isTeamMode) {
                 // Shared team sabotage points
                 game.sabotagePoints![teamKey] += newlyCleared;
-                console.log('Emitting teamSabotageUpdate')
+                console.log('Emitting teamSabotageUpdate from handleQuestionFinished')
                 this.io.to(`game-${gameId}-${teamKey}`).emit("teamSabotageUpdate", {
-                    team: teamKey,
+                    updateMessage: `Awarded sabotage point by ${finishedBy}!`,
                     points: game.sabotagePoints![teamKey],
                 });
             } else {
                 // Keep original solo logic
-                console.log('Emitting awardSabotage')
+                console.log('Emitting awardSabotage from handleQuestionFinished')
                 this.io.to(`game-${gameId}-${teamKey}`).emit("awardSabotage", {
                     amount: newlyCleared,
                 });

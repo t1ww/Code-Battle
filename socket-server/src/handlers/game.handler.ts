@@ -19,7 +19,10 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
     socket.on("useSabotage", ({ gameId, playerId }) => {
         try {
             const playerTeam = gameService.getPlayerTeam(gameId, playerId);
-            if (!playerTeam) return;
+            if (!playerTeam) { 
+                console.error("Player team not found for useSabotage");
+                return; 
+            }
             const useby = socket.data.player.name;
             gameService.handleUseSabotage(gameId, useby, playerTeam);
         } catch (err) {
@@ -28,14 +31,14 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
         }
     });
 
-
     // When a team finishes a question (or some test-cases)
     socket.on("questionFinished", ({ gameId, team, questionIndex, passedIndices }) => {
         try {
             // ensure types
             const tidx = Number(questionIndex);
             const pIndices: number[] = Array.isArray(passedIndices) ? passedIndices.map(Number) : [];
-            gameService.handleQuestionFinished(gameId, team, tidx, pIndices);
+            const finishedBy = socket.data.player.name;
+            gameService.handleQuestionFinished(gameId, team, tidx, pIndices, finishedBy);
         } catch (err) {
             console.error("Error handling questionFinished:", err);
             socket.emit("errorMessage", { message: "Failed to finish question" });

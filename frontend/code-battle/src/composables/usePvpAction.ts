@@ -1,18 +1,18 @@
 // frontend/code-battle/src/composables/usePvpAction.ts
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { socket } from '@/clients/socket.api'
 import { usePvpGameStore } from '@/stores/game'
 import { triggerNotification } from '@/composables/notificationService'
 import { getPlayerData } from '@/stores/auth'
 
-export function usePvpAction(initialSabotage = 3) {
+export function usePvpAction() {
   const gameStore = usePvpGameStore()
   const player = getPlayerData()
 
   // For 1v1: personal sabotage count
-  const sabotagePoint = ref<number>(initialSabotage)
+  const sabotagePoint = ref<number>(0)
   // For 3v3: team-shared sabotage pool
-  const teamSabotagePoints = ref<number>(0)
+  const teamSabotagePoint = ref<number>(0)
 
   const lockDrawVoteButton = ref<boolean>(false)
   const forfeitEnabled = ref<boolean>(false)
@@ -35,7 +35,7 @@ export function usePvpAction(initialSabotage = 3) {
     }
 
     // For 3v3 → shared pool check
-    if (is3v3 && teamSabotagePoints.value <= 0) {
+    if (is3v3 && teamSabotagePoint.value <= 0) {
       triggerNotification('No team sabotage points left!')
       return
     }
@@ -54,8 +54,8 @@ export function usePvpAction(initialSabotage = 3) {
       })
 
       if (is3v3) {
-        teamSabotagePoints.value--
-        triggerNotification(`Team sabotage sent! (${teamSabotagePoints.value} left)`)
+        teamSabotagePoint.value--
+        triggerNotification(`Team sabotage sent! (${teamSabotagePoint.value} left)`)
       } else {
         sabotagePoint.value--
         triggerNotification(`Sabotage sent! (${sabotagePoint.value} left)`)
@@ -105,29 +105,9 @@ export function usePvpAction(initialSabotage = 3) {
     socket.emit('leaveGame', { gameId: gameStore.gameId, player_id: player.player_id })
   }
 
-  // === Listen for sabotage updates ===
-  onMounted(() => {
-    // Old 1v1 event
-    socket.on('awardSabotage', ({ amount }) => {
-      sabotagePoint.value += amount
-      triggerNotification(`You earned ${amount} sabotage!`)
-    })
-
-    // New 3v3 team event
-    socket.on('teamSabotageUpdate', ({ useby, points }) => {
-      teamSabotagePoints.value = points
-      triggerNotification(`Team sabotage updated: ${points} total, Used by ${useby}`)
-    })
-  })
-
-  onUnmounted(() => {
-    socket.off('awardSabotage')
-    socket.off('teamSabotageUpdate')
-  })
-
   return {
     sabotagePoint,
-    teamSabotagePoints,
+    teamSabotagePoint,
     lockDrawVoteButton,
     forfeitEnabled,
     sendSabotage,
