@@ -250,21 +250,21 @@ onBeforeUnmount(() => {
 /* Laptop / medium screens */
 @media (max-width: 1680px) {
   .editor-container {
-    height: 24rem;
+    height: 30vh;
   }
 }
 
 /* Tablet / small screens */
 @media (max-width: 1024px) {
   .editor-container {
-    height: 22rem;
+    height: 30vh;
   }
 }
 
 /* Mobile / very small screens */
 @media (max-width: 768px) {
   .editor-container {
-    height: 20rem;
+    height: 40vh;
   }
 }
 
