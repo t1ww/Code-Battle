@@ -6,7 +6,7 @@ export function useSabotage(code: Ref<string>, triggerNotification: (msg: string
     let time = 2;
     let unitMinute = 60;
     let unitMillisecond = 1000;
-    
+
     // helper: find an index of a meaningful character
     function getMeaningfulIndex(src: string): number | null {
         // Remove all line & block comments
@@ -31,7 +31,11 @@ export function useSabotage(code: Ref<string>, triggerNotification: (msg: string
         if (!code.value.trim()) return
 
         const index = getMeaningfulIndex(code.value)
-        if (index == null) return
+        if (index == null) {
+            // No meaningful character to remove — sabotage missed
+            triggerNotification("Your code has been sabotaged... Luckily they missed!")
+            return
+        }
 
         triggerNotification('Your code has been sabotaged, find and fix it!')
         console.log("[Sabotage] Deleting char:", code.value[index], "at", index)

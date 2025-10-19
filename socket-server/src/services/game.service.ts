@@ -239,12 +239,14 @@ export class GameService {
             if (isTeamMode) {
                 // Shared team sabotage points
                 game.sabotagePoints![teamKey] += newlyCleared;
+                console.log('Emitting teamSabotageUpdate')
                 this.io.to(`game-${gameId}-${teamKey}`).emit("teamSabotageUpdate", {
                     team: teamKey,
                     points: game.sabotagePoints![teamKey],
                 });
             } else {
                 // Keep original solo logic
+                console.log('Emitting awardSabotage')
                 this.io.to(`game-${gameId}-${teamKey}`).emit("awardSabotage", {
                     amount: newlyCleared,
                 });

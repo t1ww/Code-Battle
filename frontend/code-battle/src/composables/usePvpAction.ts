@@ -23,68 +23,75 @@ export function usePvpAction(initialSabotage = 3) {
     const is3v3 = gameStore?.is3v3;
 
     // For both: ensure game exists
-    if (!gameStore.gameId) {
-      triggerNotification('Game not ready yet!', 1200)
+    if (!gameStore.gameId || !player?.player_id) {
+      triggerNotification('Game not ready yet!')
       return
     }
 
     // For 1v1 → local check
     if (is1v1 && sabotagePoint.value <= 0) {
-      triggerNotification('No sabotage points left!', 1200)
+      triggerNotification('No sabotage points left!')
       return
     }
 
     // For 3v3 → shared pool check
     if (is3v3 && teamSabotagePoints.value <= 0) {
-      triggerNotification('No team sabotage points left!', 1200)
+      triggerNotification('No team sabotage points left!')
       return
     }
 
     try {
+      // Then tell the server to actually apply the sabotage effect
       socket.emit('sabotage', {
         gameId: gameStore.gameId,
         targetTeam: gameStore.opponentTeam,
       })
 
+      // Tell the server: this team is using sabotage, so also deduct the point
+      socket.emit('useSabotage', {
+        gameId: gameStore.gameId,
+        playerId: player.player_id,
+      })
+
       if (is3v3) {
         teamSabotagePoints.value--
-        triggerNotification(`Team sabotage sent! (${teamSabotagePoints.value} left)`, 1200)
+        triggerNotification(`Team sabotage sent! (${teamSabotagePoints.value} left)`)
       } else {
         sabotagePoint.value--
-        triggerNotification(`Sabotage sent! (${sabotagePoint.value} left)`, 1200)
+        triggerNotification(`Sabotage sent! (${sabotagePoint.value} left)`)
       }
     } catch (e) {
       console.error('sendSabotage failed', e)
-      triggerNotification('Failed to send sabotage', 1200)
+      triggerNotification('Failed to send sabotage')
     }
   }
 
   async function voteDraw() {
     if (!gameStore.gameId || !player?.player_id) {
-      triggerNotification('Unable to vote — game or player missing', 1200)
+      triggerNotification('Unable to vote — game or player missing')
       return
     }
     try {
       socket.emit('voteDraw', { gameId: gameStore.gameId, player_id: player.player_id })
       lockDrawVoteButton.value = true
-      triggerNotification('Voted for a draw', 1200)
+      triggerNotification('Voted for a draw')
     } catch (e) {
       console.error('voteDraw failed', e)
-      triggerNotification('Failed to vote draw', 1200)
+      triggerNotification('Failed to vote draw')
     }
   }
 
   async function forfeit() {
     if (!gameStore.gameId || !player?.player_id) {
-      triggerNotification('Unable to forfeit — game or player missing', 1200)
+      triggerNotification('Unable to forfeit — game or player missing')
       return
     }
     try {
       socket.emit('forfeit', { gameId: gameStore.gameId, player_id: player.player_id })
-      triggerNotification('You forfeited.', 1200)
+      triggerNotification('You forfeited.')
     } catch (e) {
       console.error('forfeit failed', e)
-      triggerNotification('Failed to forfeit', 1200)
+      triggerNotification('Failed to forfeit')
     }
   }
 
@@ -103,13 +110,13 @@ export function usePvpAction(initialSabotage = 3) {
     // Old 1v1 event
     socket.on('awardSabotage', ({ amount }) => {
       sabotagePoint.value += amount
-      triggerNotification(`You earned ${amount} sabotage!`, 1200)
+      triggerNotification(`You earned ${amount} sabotage!`)
     })
 
     // New 3v3 team event
     socket.on('teamSabotageUpdate', ({ useby, points }) => {
       teamSabotagePoints.value = points
-      triggerNotification(`Team sabotage updated: ${points} total, Used by ${useby}`, 1000)
+      triggerNotification(`Team sabotage updated: ${points} total, Used by ${useby}`)
     })
   })
 

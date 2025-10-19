@@ -88,7 +88,7 @@ hr {
     position: relative;
     /* removed right/top/transform */
     width: 24rem;
-    height: 34.5rem;
+    height: 75vh;
     background: #8a8a8a;
     color: black;
     padding: 1rem;
