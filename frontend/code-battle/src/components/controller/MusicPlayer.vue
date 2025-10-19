@@ -85,6 +85,7 @@ function playTrack(index?: number) {
     isPlaying.value = true
     audio?.play()
     fade(volume.value)
+    saveState()
 }
 
 function pauseTrack() {
@@ -95,6 +96,7 @@ function pauseTrack() {
     fadeTimeout = window.setTimeout(() => {
         audio?.pause()
         fadeTimeout = null
+        saveState()
     }, fadeDuration * 1000)
 }
 
@@ -106,6 +108,7 @@ function toggleTrack() {
 function setVolume(v: number) {
     volume.value = v
     if (gainNode && isPlaying.value) gainNode.gain.setValueAtTime(v, audioCtx!.currentTime)
+    saveState()
 }
 
 // --- CROSSFADE FUNCTION ---
@@ -154,13 +157,37 @@ function crossfade(toIndex: number) {
         crossfadeAudio = null
         crossfadeGain = null
         fadeTimeout = null
+        saveState()
     }, crossfadeDuration * 1000)
 
     isPlaying.value = true
 }
 
+// --- LOCAL STORAGE ---
+function saveState() {
+    localStorage.setItem("musicPlayerState", JSON.stringify({
+        volume: volume.value,
+        isPlaying: isPlaying.value
+    }))
+}
+
+function loadState() {
+    const saved = localStorage.getItem("musicPlayerState")
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved)
+            if (typeof parsed.volume === "number") volume.value = parsed.volume
+            if (typeof parsed.isPlaying === "boolean") isPlaying.value = parsed.isPlaying
+        } catch { }
+    }
+}
+
 onMounted(() => {
-    window.addEventListener("click", () => playTrack(0), { once: true })
+    loadState()
+    if (isPlaying.value) {
+        // wait for user interaction to resume audio context
+        window.addEventListener("click", () => playTrack(currentTrackIndex.value), { once: true })
+    }
 })
 
 onBeforeUnmount(() => {
@@ -170,7 +197,7 @@ onBeforeUnmount(() => {
     audioCtx?.close()
 })
 
-defineExpose({ playTrack, pauseTrack, toggleTrack, crossfade, currentTrackIndex, isPlaying })
+defineExpose({ playTrack, pauseTrack, toggleTrack, crossfade, currentTrackIndex, isPlaying, volume })
 </script>
 
 <template>

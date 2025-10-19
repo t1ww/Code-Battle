@@ -74,9 +74,11 @@ window.addEventListener("online", () => {
 watch(
   () => route.fullPath,
   () => {
-    // use route.meta.track if defined, otherwise default to 0
     const trackIndex = (route.meta.musicTrack as number | undefined) ?? 0;
-    music.value?.playTrack(trackIndex);
+    // Only auto-play if the saved state isPlaying
+    if (music.value?.isPlaying) {
+      music.value.playTrack(trackIndex);
+    }
   },
   { immediate: true }
 );
