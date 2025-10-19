@@ -47,6 +47,7 @@
     "docker:push:be": "docker push t1ww/code-battle-backend:latest",
     "docker:push:tcr": "docker push t1ww/code-battle-tcr:latest",
     "docker:push:ss": "docker push t1ww/code-battle-socket:latest",
+    "docker:push:all": "npm run docker:push:fe && npm run docker:push:be && npm run docker:push:tcr && npm run docker:push:ss",
     "docker:push:frontend": "npm run docker:push:fe",
     "docker:push:backend": "npm run docker:push:be",
     "docker:push:ts-code-runner": "npm run docker:push:tcr",
