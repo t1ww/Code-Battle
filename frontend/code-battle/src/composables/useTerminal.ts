@@ -27,14 +27,14 @@ export function useTerminal() {
     });
   };
 
-  const startSession = (code: string) => {
+  const startSession = (code: string, selectedLanguage: string) => {
     if (!code.trim()) return;
     connectSocket();
 
     pushOutput("Starting session...");
     sessionId.value = `sess_${Date.now()}`;
 
-    socket.emit("terminal:start", { code, sessionId: sessionId.value });
+    socket.emit("terminal:start", { code, selectedLanguage, sessionId: sessionId.value });
     socket.once("terminal:started", (data: { sessionId: string }) => {
       pushOutput(`Session started: ${data.sessionId}`);
     });

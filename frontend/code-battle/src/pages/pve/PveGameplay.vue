@@ -97,22 +97,15 @@ const selectedLanguage = ref('cpp')
 // =============================
 // Replace Run Code button to just focus the terminal or echo input
 const runCodeInteractive = () => {
-    if (!code.value.trim()) return;
+  if (!code.value.trim()) return;
 
-    // Stop previous session
-    stopSession();
+  stopSession();
+  terminalOpen.value = true;
+  codeTerminal.value?.pushOutput(`> New ${selectedLanguage.value.toUpperCase()} session started`);
 
-    // Log to console for debugging
-    console.log("Running code:", code.value);
-
-    // Open the terminal
-    terminalOpen.value = true;
-    codeTerminal.value?.pushOutput("> New session started");
-
-    // Start a new session
-    startSession(code.value)
+  // Pass selected language here
+  startSession(code.value, selectedLanguage.value);
 };
-
 
 // -----------------
 // 🛠️ Helpers
@@ -178,6 +171,7 @@ const submitCode = async () => {
             code: code.value,
             test_cases: question_data.value.test_cases,
             score_pct: scorePct,
+            language: selectedLanguage.value
         })
 
         const data = res.data as CodeRunResponse
@@ -217,11 +211,10 @@ const submitCode = async () => {
             stopTimer()
             showClearedPopup.value = true
 
-            // Map your internal language keys to display/backend values
+            // Map language for score submission (to be displayed in leaderboards)
             const languageMap: Record<string, string> = {
                 cpp: "C++",
                 java: "Java",
-                py: "Python",
             }
 
             // Get the mapped value

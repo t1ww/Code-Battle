@@ -110,12 +110,15 @@ const { codeTerminal, startSession, sendInput, stopSession } = useTerminal();
 const terminalOpen = ref(false)
 
 const runCodeInteractive = () => {
-  if (!code.value.trim()) return
-  stopSession()
-  terminalOpen.value = true
-  codeTerminal.value?.pushOutput("> New session started")
-  startSession(code.value)
-}
+  if (!code.value.trim()) return;
+
+  stopSession();
+  terminalOpen.value = true;
+  codeTerminal.value?.pushOutput(`> New ${selectedLanguage.value.toUpperCase()} session started`);
+
+  // Pass selected language here
+  startSession(code.value, selectedLanguage.value);
+};
 
 // Toggle helpers
 const toggleOpponentPanel = () => { showOpponentPanel.value = !showOpponentPanel.value }

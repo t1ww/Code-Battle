@@ -12,62 +12,82 @@ interface TerminalSession {
 export class TerminalService {
   private sessions = new Map<string, TerminalSession>();
 
-  createSession(socketId: string, sessionId: string, code: string, emitOutput: (output: string) => void): TerminalSession {
-    // Log received code
-    console.log(`🔹 TerminalService received code for session ${sessionId} from socket ${socketId}:`);
-    console.log(code);
+  createSession(
+    socketId: string,
+    sessionId: string,
+    code: string,
+    selectedLanguage: "cpp" | "java",
+    emitOutput: (output: string) => void
+  ): TerminalSession {
+    console.log(`🔹 TerminalService received code for session ${sessionId} (${selectedLanguage})`);
 
-    // 1️⃣ Write code to a temporary file
-    const tmpDir = "/tmp/code-battle";
+    const tmpDir = path.join(__dirname, "..", "temp");
     if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
-    const codeFile = path.join(tmpDir, `${sessionId}.cpp`);
-    fs.writeFileSync(codeFile, code);
 
-    const binaryFile = path.join(tmpDir, `${sessionId}.out`);
+    let compileProcess: ChildProcessWithoutNullStreams;
+    let runProcess: ChildProcessWithoutNullStreams;
+    let session: TerminalSession;
 
-    // 2️⃣ Compile the C++ code
-    const compile = spawn("g++", [codeFile, "-o", binaryFile]);
+    if (selectedLanguage === "cpp") {
+      const codeFile = path.join(tmpDir, `${sessionId}.cpp`);
+      const binaryFile = path.join(tmpDir, `${sessionId}.out`);
+      fs.writeFileSync(codeFile, code);
 
-    compile.stdout.on("data", (data) => {
-      const output = data.toString();
-      console.log(`📄 [stdout] ${output}`);
-      emitOutput(output);
-    });
-    compile.stderr.on("data", (data) => {
-      const error = data.toString();
-      console.log(`❌ [stderr] ${error}`);
-      emitOutput(`[Compilation Error] ${error}`);
-    });
+      // Compile C++
+      compileProcess = spawn("g++", [codeFile, "-o", binaryFile]);
+      compileProcess.stdout.on("data", (d) => emitOutput(d.toString()));
+      compileProcess.stderr.on("data", (d) => emitOutput(`[Compilation Error] ${d.toString()}`));
 
-    compile.on("close", (codeExit) => {
-      console.log(`🔹 Compilation process exited with code ${codeExit}`);
-      if (codeExit !== 0) {
-        emitOutput("[Compilation Failed]");
-        return;
-      }
+      compileProcess.on("close", (codeExit) => {
+        if (codeExit !== 0) {
+          emitOutput("[Compilation Failed]");
+          return;
+        }
+        emitOutput("[Compilation Success] Running program...");
 
-      emitOutput("[Compilation Success] Running program...");
+        runProcess = spawn(binaryFile);
+        runProcess.stdout.on("data", (d) => emitOutput(d.toString()));
+        runProcess.stderr.on("data", (d) => emitOutput(`[Runtime Error] ${d.toString()}`));
 
-      // 3️⃣ Run the compiled binary
-      const runProcess = spawn(binaryFile);
-
-      runProcess.stdout.on("data", (data) => {
-        const output = data.toString();
-        console.log(`📤 [program stdout] ${output}`);
-        emitOutput(output);
-      });
-      runProcess.stderr.on("data", (data) => {
-        const error = data.toString();
-        console.log(`📤 [program stderr] ${error}`);
-        emitOutput(`[Runtime Error] ${error}`);
+        session = { sessionId, socketId, process: runProcess };
+        this.sessions.set(sessionId, session);
       });
 
-      // 4️⃣ Save the running process to session
-      const session: TerminalSession = { sessionId, socketId, process: runProcess };
-      this.sessions.set(sessionId, session);
-    });
+      return { sessionId, socketId, process: compileProcess }; // temp before compilation finishes
 
-    return { sessionId, socketId, process: compile }; // temporary until compiled
+    } else if (selectedLanguage === "java") {
+      // 1️⃣ Extract class name from code
+      const match = code.match(/public\s+class\s+([A-Za-z_][A-Za-z0-9_]*)/);
+      const className = match ? match[1] : `Main_${sessionId}`;
+
+      const codeFile = path.join(tmpDir, `${className}.java`);
+      fs.writeFileSync(codeFile, code);
+
+      // 2️⃣ Compile
+      compileProcess = spawn("javac", [codeFile]);
+      compileProcess.stdout.on("data", (d) => emitOutput(d.toString()));
+      compileProcess.stderr.on("data", (d) => emitOutput(`[Compilation Error] ${d.toString()}`));
+
+      compileProcess.on("close", (codeExit) => {
+        if (codeExit !== 0) {
+          emitOutput("[Compilation Failed]");
+          return;
+        }
+        emitOutput("[Compilation Success] Running program...");
+
+        // 3️⃣ Run
+        runProcess = spawn("java", ["-cp", tmpDir, className]);
+        runProcess.stdout.on("data", (d) => emitOutput(d.toString()));
+        runProcess.stderr.on("data", (d) => emitOutput(`[Runtime Error] ${d.toString()}`));
+
+        session = { sessionId, socketId, process: runProcess };
+        this.sessions.set(sessionId, session);
+      });
+
+      return { sessionId, socketId, process: compileProcess };
+    }
+
+    throw new Error(`Unsupported language: ${selectedLanguage}`);
   }
 
   getSession(sessionId: string) {
@@ -83,8 +103,8 @@ export class TerminalService {
 
   async removeSessionsBySocket(socketId: string) {
     const sessionsToRemove = Array.from(this.sessions.values())
-      .filter(s => s.socketId === socketId)
-      .map(s => s.sessionId);
+      .filter((s) => s.socketId === socketId)
+      .map((s) => s.sessionId);
 
     for (const id of sessionsToRemove) {
       const session = this.getSession(id);
