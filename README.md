@@ -1,5 +1,10 @@
 # Code Battle
 
+    In this version should be stable enough to play as a demo with matchmaking
+    - No private room
+    - Only c++
+    - Cheesable (using if else if else)
+
 **Senior Project – CAMT SE65**
 A real-time code battle web app with live multiplayer functionality, built as a full-stack monorepo.
 
