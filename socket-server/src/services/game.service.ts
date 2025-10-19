@@ -167,6 +167,13 @@ export class GameService {
 
         const opponentTeam = teamKey === "team1" ? "team2" : "team1";
 
+        // Check if enough points
+        if (game.sabotagePoints![teamKey] <= 0) {
+            this.io.to(`game-${gameId}-${teamKey}`).emit("sabotageFail", {
+                message: `Not enough sabotage points to use sabotage`,
+            });
+            return;
+        }
         // Deduct points
         const cost = 1;
         game.sabotagePoints![teamKey] -= cost;
@@ -175,6 +182,11 @@ export class GameService {
         console.log('Emitting teamSabotageUpdate from handleUseSabotage')
         this.io.to(`game-${gameId}-${teamKey}`).emit("teamSabotageUpdate", {
             updateMessage: `Team sabotage used by ${useby}, ${game.sabotagePoints![teamKey]} points left.`,
+            points: game.sabotagePoints![teamKey],
+        });
+
+        // Also notify enemies of the sabotage points
+        this.io.to(`game-${gameId}-${opponentTeam}`).emit("enemySabotageUpdate", {
             points: game.sabotagePoints![teamKey],
         });
 
@@ -239,6 +251,11 @@ export class GameService {
                 console.log('Emitting teamSabotageUpdate from handleQuestionFinished')
                 this.io.to(`game-${gameId}-${teamKey}`).emit("teamSabotageUpdate", {
                     updateMessage: `Awarded sabotage point by ${finishedBy}!`,
+                    points: game.sabotagePoints![teamKey],
+                });
+                const opponentTeam = teamKey === "team1" ? "team2" : "team1";
+                // Also notify enemies of the sabotage points
+                this.io.to(`game-${gameId}-${opponentTeam}`).emit("enemySabotageUpdate", {
                     points: game.sabotagePoints![teamKey],
                 });
             } else {

@@ -95,7 +95,8 @@ function sabotageOnce() {
 }
 
 const {
-  teamSabotagePoint,
+  teamSabotagePoints,
+  enemySabotagePoints,
   lockDrawVoteButton,
   sendSabotage,
   voteDraw,
@@ -249,7 +250,8 @@ const { initPvpSockets } = usePvpSocket({
   enableForfeit,
   handleQuestionProgress,
   handleGameEnd,
-  sabotagePoint: teamSabotagePoint,
+  sabotagePoints: teamSabotagePoints,
+  enemySabotagePoints: enemySabotagePoints,
   timeLeft,
   timeLimitEnabled,
   PVP_TIME_LIMIT,
@@ -269,6 +271,21 @@ onMounted(() => {
 onUnmounted(() => {
   destroyTeamSync()
 })
+
+const opponentTeamData = computed(() => {
+  const opponent = gameStore.opponentTeamObj
+  return opponent
+    ? {
+        player_id: opponent.players[0]?.player_id || "0",
+        avatar_url: opponent.players[0]?.avatar_url || "",
+        name: "Opponent Team",
+      }
+    : {
+        player_id: "0",
+        avatar_url: "",
+        name: "Opponent Team not found",
+      }
+});
 </script>
 
 <template>
@@ -327,11 +344,11 @@ onUnmounted(() => {
     <!-- Opponent panel with sliding toggle -->
     <transition name="slide-right">
       <div class="opponent-panel-wrapper" v-if="showOpponentPanel">
-        <OpponentPanel :onClose="toggleOpponentPanel" :sendSabotage="sendSabotage"
-          :opponent="gameStore.opponentTeamObj?.players[0]" :questions="gameStore.questions"
-          :progress="gameStore.progress[gameStore.opponentTeam || 'team1'] || []"
+        <OpponentPanel :onClose="toggleOpponentPanel" :sendSabotage="sendSabotage" :opponent="opponentTeamData"
+          :questions="gameStore.questions" :progress="gameStore.progress[gameStore.opponentTeam || 'team1'] || []"
           :progressFullPass="gameStore.progressFullPass?.[gameStore.opponentTeam || 'team1'] || []"
-          :sabotagePoints="teamSabotagePoint" />
+          :sabotagePoints="teamSabotagePoints"
+          :enemySabotagePoints="enemySabotagePoints" />
       </div>
     </transition>
 

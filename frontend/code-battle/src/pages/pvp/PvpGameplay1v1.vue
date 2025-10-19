@@ -73,7 +73,8 @@ const { timeLeft, formattedTime, startTimer, stopTimer } = useTimer(timeLimitEna
 // Sabotage
 const { sabotageOnce } = useSabotage(code, triggerNotification)
 const {
-  sabotagePoint,
+  sabotagePoints,
+  enemySabotagePoints,
   lockDrawVoteButton,
   sendSabotage,
   voteDraw,
@@ -221,7 +222,8 @@ const { initPvpSockets } = usePvpSocket({
   enableForfeit,
   handleQuestionProgress,
   handleGameEnd,
-  sabotagePoint,
+  sabotagePoints: sabotagePoints,
+  enemySabotagePoints: enemySabotagePoints,
   timeLeft,
   timeLimitEnabled,
   PVP_TIME_LIMIT,
@@ -299,7 +301,8 @@ onMounted(() => {
           :opponent="gameStore.opponentTeamObj?.players[0]" :questions="gameStore.questions"
           :progress="gameStore.progress[gameStore.opponentTeam || 'team1'] || []"
           :progressFullPass="gameStore.progressFullPass?.[gameStore.opponentTeam || 'team1'] || []"
-          :sabotagePoints="sabotagePoint" />
+          :sabotagePoints="sabotagePoints"
+          :enemySabotagePoints="enemySabotagePoints" />
       </div>
     </transition>
 

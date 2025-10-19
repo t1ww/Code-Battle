@@ -5,7 +5,7 @@ import { sanitizeTeam } from "@/utils/sanitize";
 import { Team } from "@/types";
 
 export function registerGameHandlers(io: Server, socket: Socket, gameService: GameService) {
-    // Sabotage: one team sends an effect to the other
+    // Sabotage forced, no point check
     socket.on("sabotage", ({ gameId, targetTeam }) => {
         try {
             gameService.handleSabotage(gameId, targetTeam);

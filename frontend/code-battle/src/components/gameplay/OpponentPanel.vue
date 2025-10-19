@@ -12,12 +12,12 @@ const props = defineProps<{
         player_id: string
         avatar_url?: string
         name: string
-        points: number
     }
     questions: Question[]
     progress: any
     progressFullPass?: any
     sabotagePoints: number
+    enemySabotagePoints: number
 }>()
 </script>
 
@@ -31,7 +31,7 @@ const props = defineProps<{
             <!-- use props.opponent here (previously used `opponent`) -->
             <PlayerAvatar :player="props.opponent" size="40" />
             <span class="panel-title">
-                {{ props.opponent?.name }} | Point : {{ props.opponent?.points }}
+                {{ props.opponent?.name }} | Point : {{ props.enemySabotagePoints }}
             </span>
         </div>
 

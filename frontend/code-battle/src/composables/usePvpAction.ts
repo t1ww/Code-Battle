@@ -10,9 +10,11 @@ export function usePvpAction() {
   const player = getPlayerData()
 
   // For 1v1: personal sabotage count
-  const sabotagePoint = ref<number>(0)
+  const sabotagePoints = ref<number>(0)
   // For 3v3: team-shared sabotage pool
-  const teamSabotagePoint = ref<number>(0)
+  const teamSabotagePoints = ref<number>(0)
+  
+  const enemySabotagePoints = ref<number>(0)
 
   const lockDrawVoteButton = ref<boolean>(false)
   const forfeitEnabled = ref<boolean>(false)
@@ -29,36 +31,30 @@ export function usePvpAction() {
     }
 
     // For 1v1 → local check
-    if (is1v1 && sabotagePoint.value <= 0) {
+    if (is1v1 && sabotagePoints.value <= 0) {
       triggerNotification('No sabotage points left!')
       return
     }
 
     // For 3v3 → shared pool check
-    if (is3v3 && teamSabotagePoint.value <= 0) {
+    if (is3v3 && teamSabotagePoints.value <= 0) {
       triggerNotification('No team sabotage points left!')
       return
     }
 
     try {
-      // Then tell the server to actually apply the sabotage effect
-      socket.emit('sabotage', {
-        gameId: gameStore.gameId,
-        targetTeam: gameStore.opponentTeam,
-      })
-
-      // Tell the server: this team is using sabotage, so also deduct the point
+      // Tell the server to perform sabotage
       socket.emit('useSabotage', {
         gameId: gameStore.gameId,
         playerId: player.player_id,
       })
 
       if (is3v3) {
-        teamSabotagePoint.value--
-        triggerNotification(`Team sabotage sent! (${teamSabotagePoint.value} left)`)
+        teamSabotagePoints.value--
+        triggerNotification(`Team sabotage sent! (${teamSabotagePoints.value} left)`)
       } else {
-        sabotagePoint.value--
-        triggerNotification(`Sabotage sent! (${sabotagePoint.value} left)`)
+        sabotagePoints.value--
+        triggerNotification(`Sabotage sent! (${sabotagePoints.value} left)`)
       }
     } catch (e) {
       console.error('sendSabotage failed', e)
@@ -106,8 +102,9 @@ export function usePvpAction() {
   }
 
   return {
-    sabotagePoint,
-    teamSabotagePoint,
+    sabotagePoints,
+    teamSabotagePoints,
+    enemySabotagePoints,
     lockDrawVoteButton,
     forfeitEnabled,
     sendSabotage,

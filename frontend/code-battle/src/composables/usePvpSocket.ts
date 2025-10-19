@@ -13,7 +13,8 @@ interface UsePvpSocketOptions {
     enableForfeit: () => void
     handleQuestionProgress: (data: any) => void
     handleGameEnd: (data: { winner: 'team1' | 'team2' | 'draw' }) => void
-    sabotagePoint: Ref<number>
+    sabotagePoints: Ref<number>
+    enemySabotagePoints: Ref<number>
     timeLeft?: Ref<number>
     timeLimitEnabled?: boolean
     PVP_TIME_LIMIT?: number
@@ -31,7 +32,8 @@ export function usePvpSocket(options: UsePvpSocketOptions) {
         enableForfeit,
         handleQuestionProgress,
         handleGameEnd,
-        sabotagePoint,
+        sabotagePoints: sabotagePoints,
+        enemySabotagePoints: enemySabotagePoints,
         timeLeft,
         timeLimitEnabled,
         PVP_TIME_LIMIT,
@@ -44,7 +46,7 @@ export function usePvpSocket(options: UsePvpSocketOptions) {
 
         socket.on("awardSabotage", (payload: { amount: number }) => {
             if (typeof payload?.amount === "number") {
-                sabotagePoint.value += payload.amount
+                sabotagePoints.value += payload.amount
                 triggerNotification(`+${payload.amount} sabotage point(s)!`, 1200)
             }
         })
@@ -122,15 +124,21 @@ export function usePvpSocket(options: UsePvpSocketOptions) {
         onMounted(() => {
             // Old 1v1 event (add point)
             socket.on('awardSabotage', ({ amount }) => {
-                sabotagePoint.value += amount
+                sabotagePoints.value += amount
                 triggerNotification(`You earned ${amount} sabotage!`)
             })
 
             // New 3v3 team event (set point)
             socket.on('teamSabotageUpdate', ({ updateMessage, points }) => {
-                sabotagePoint.value = points
+                sabotagePoints.value = points
                 triggerNotification(updateMessage)
             })
+
+            // Also listen for enemy sabotage points updates
+            socket.on('enemySabotageUpdate', ({ points }) => {
+                console.log('Received enemy sabotage update:', points);
+                enemySabotagePoints.value = points;
+            });
         })
 
         onUnmounted(() => {
