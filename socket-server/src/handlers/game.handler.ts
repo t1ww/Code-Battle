@@ -20,8 +20,8 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
         try {
             const playerTeam = gameService.getPlayerTeam(gameId, playerId);
             if (!playerTeam) return;
-            const playerName = socket.data.player.name;
-            gameService.handleUseSabotage(gameId, playerName, playerTeam);
+            const useby = socket.data.player.name;
+            gameService.handleUseSabotage(gameId, useby, playerTeam);
         } catch (err) {
             console.error("Error using sabotage:", err);
             socket.emit("errorMessage", { message: "Failed to use sabotage" });
