@@ -319,7 +319,7 @@ onMounted(() => {
     </transition>
 
     <!-- Open buttons -->
-    <div class="side-buttons">
+    <div class="side-buttons" v-if="!showResultPopup">
       <button class="side-button" @click="toggleOpponentPanel"
         :style="{ visibility: showOpponentPanel ? 'hidden' : 'visible' }">◀</button>
       <button class="side-button" @click="toggleVoteDrawPanel"
