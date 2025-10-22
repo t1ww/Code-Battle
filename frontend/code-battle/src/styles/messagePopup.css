@@ -23,6 +23,8 @@ hr {
     border: .2rem solid var(--theme-color);
     padding: 2rem;
     width: 40rem;
+    max-height: 90vh;
+    overflow-y: auto;
     border-radius: 1.2rem;
     text-align: center;
 }
