@@ -381,7 +381,7 @@ const opponentTeamData = computed(() => {
     </transition>
 
     <!-- Open buttons -->
-    <div class="side-buttons">
+    <div class="side-buttons" v-if="!showResultPopup">
       <button class="side-button" @click="toggleOpponentPanel"
         :style="{ visibility: showOpponentPanel || showChatPanel ? 'hidden' : 'visible' }">◀</button>
       <button class="side-button" @click="toggleVoteDrawPanel"
@@ -414,4 +414,28 @@ const opponentTeamData = computed(() => {
 </template>
 
 <style lang="css" src="@/styles/gameplay.css"></style>
-<style scoped></style>
+<style scoped>
+.opponent-panel-wrapper {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    z-index: 1100;
+}
+
+.vote-panel-wrapper {
+    position: fixed;
+    top: calc(50%);
+    right: 0.25rem;
+    transform: translateY(-50%);
+    z-index: 1150;
+}
+
+.chat-panel-wrapper {
+    position: fixed;
+    top: calc(50%);
+    right: 0.25rem;
+    transform: translateY(-50%);
+    z-index: 1150;
+}
+</style>
