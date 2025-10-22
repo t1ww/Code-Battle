@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import type { PlayerSession, Team } from "@/types";
 import { Server, Socket } from "socket.io";
 import { GameService } from "@/services/game.service";
+import { sanitizeTeam } from "@/utils/sanitize";
 
 // PlayerSession includes a Socket, but service should only handle player data.
 // Consider using a type like PlayerData without the socket.
@@ -54,7 +55,7 @@ export class PrivateRoomService {
         return { room, enteredTeam: targetTeam === room.team1 ? "team1" : "team2" };
     }
 
-    startGame(room_id: string) {
+    startGame(room_id: string, timeLimit: boolean) {
         const room = this.rooms.get(room_id);
         if (!room) {
             console.warn(`Attempted to start non-existent room: ${room_id}`);
@@ -63,8 +64,15 @@ export class PrivateRoomService {
         console.log(`[PrivateRoom] Starting game for room ${room_id} (${room.team1.players.length}v${room.team2.players.length})`);
 
         const allPlayers = [...room.team1.players, ...room.team2.players];
+        const sanitizedTeam1 = sanitizeTeam(room.team1);
+        const sanitizedTeam2 = sanitizeTeam(room.team2);
+
         allPlayers.forEach(p => {
-            p.socket.emit("privateMatchStarted", { player_id: p.player_id });
+            p.socket.emit("privateMatchStarted", {
+                team1: sanitizedTeam1.players,
+                team2: sanitizedTeam2.players,
+                timeLimit
+            });
         });
 
         // Create actual game (1v1 or 3v3)

@@ -62,6 +62,11 @@ const routes = [
     meta: { requiresAuth: true, online: true, backTo: "/pvpSelect", musicTrack: 1 },
     props: true  // so route.params.inviteId is passed as a prop
   },
+  {
+    path: '/privateStart',
+    name: 'PrivateStartGame',
+    component: () => import('@/pages/pvp/PrivateStartGame.vue')
+  },
   { name: "PvpGameplay1v1", path: "/pvpGameplay1v1", component: PvpGameplay1v1, meta: { requiresAuth: true, disableNavbar: true, online: true } },
   { name: "PvpGameplay3v3", path: "/pvpGameplay3v3", component: PvpGameplay3v3, meta: { requiresAuth: true, disableNavbar: true, online: true } },
 

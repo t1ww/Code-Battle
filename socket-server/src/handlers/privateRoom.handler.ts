@@ -60,7 +60,7 @@ export function registerPrivateRoomHandlers(io: Server, socket: Socket, services
         }
     });
 
-    socket.on("startPrivateRoomGame", ({ room_id, player_id }: { room_id: string; player_id: string }) => {
+    socket.on("startPrivateRoomGame", ({ room_id, player_id, time_limit}: { room_id: string; player_id: string, time_limit: boolean}) => {
         try {
             const room = privateRoomService.getRoom(room_id);
             if (!room) {
@@ -86,10 +86,10 @@ export function registerPrivateRoomHandlers(io: Server, socket: Socket, services
                 return;
             }
 
-            io.to(room_id).emit("privateRoomCountdown", { countdown: 5000 });
+            io.to(room_id).emit("privateRoomStartCountdown", { countdown: 5000 });
 
             setTimeout(() => {
-                privateRoomService.startGame(room_id);
+                privateRoomService.startGame(room_id, time_limit);
             }, 5000);
         } catch (err: any) {
             socket.emit("error", { error_message: err.message });

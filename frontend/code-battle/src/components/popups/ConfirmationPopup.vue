@@ -4,8 +4,8 @@
         <div class="popup-content">
             <h2>{{ title }}</h2>
             <p>{{ message }}</p>
-            <button v-on:click="buttonOnYes">{{ yesText }}</button>
             <button v-on:click="buttonOnNo">{{ noText }}</button>
+            <button v-on:click="buttonOnYes">{{ yesText }}</button>
         </div>
     </div>
 </template>

@@ -10,6 +10,7 @@ import { socket } from '@/clients/socket.api'
 import ChainCopyIcon from '@/assets/icons.svg/ChainCopyIcon.vue'
 import CheckboxToggle from '@/components/etc/CheckboxToggle.vue'
 import { triggerNotification } from '@/composables/notificationService'
+import ConfirmationPopup from '@/components/popups/ConfirmationPopup.vue'
 
 // Initialize necessary constants
 const privateRoom = usePrivateRoomStore()
@@ -27,6 +28,10 @@ const swapDeclined = ref(false) // To prevent multiple swap requests
 // Countdown timer state
 const swapCountdown = ref<number | null>(null)
 let countdownInterval: ReturnType<typeof setInterval> | null = null
+
+// Starting game state
+const showStartConfirm = ref(false)
+const startCountdown = ref<number | null>(null)
 
 // Function to copy invite link to clipboard
 const copyInviteLink = async () => {
@@ -81,6 +86,25 @@ const swapClear = () => {
   swapCountdown.value = null
 }
 
+// --- Host detection ---
+const player = getPlayerData()
+const isHost = computed(() => {
+  return privateRoom.state.team1?.players[0]?.player_id === player?.player_id
+})
+
+// --- Start game confirmation ---
+const confirmStartGame = () => {
+  const player = getPlayerData()
+  const roomId = privateRoom.state.roomId
+  if (!player || !roomId) return
+
+  socket.emit("startPrivateRoomGame", {
+    room_id: roomId,
+    player_id: player.player_id,
+    time_limit: privateRoom.state.timeLimit,
+  })
+  showStartConfirm.value = false
+}
 
 // Computed properties
 const inviteLinkLabel = computed(() => {
@@ -88,6 +112,12 @@ const inviteLinkLabel = computed(() => {
 })
 const incomingSwapRequesterId = computed(() => {
   return incomingSwapRequester.value || ''
+})
+const canStartGame = computed(() => {
+  const t1 = privateRoom.state.team1?.players.length ?? 0
+  const t2 = privateRoom.state.team2?.players.length ?? 0
+  const validTeamSize = (t1 === 1 && t2 === 1) || (t1 === 3 && t2 === 3)
+  return isHost.value && validTeamSize && !pendingSwapByOpponent.value && !pendingSwapByTeammate.value && !pendingSwapByMe.value
 })
 
 // OnMounted lifecycle hook to handle joining or creating a private room
@@ -144,6 +174,34 @@ onMounted(() => {
   socket.on('privateRoomDeleted', () => {
     console.log('Private room deleted by host.')
     roomDeleted.value = true;
+  })
+
+  // --- When the game officially starts ---
+  socket.on('privateMatchStarted', (data: { team1: any, team2: any, timeLimit: any }) => {
+    const { team1, team2, timeLimit } = data;
+    console.log(data);
+    router.push({
+      name: 'PrivateStartGame',
+      query: {
+        mode: team1.length === 3 ? '3v3' : '1v1',
+        timeLimit: String(timeLimit)
+      },
+      state: { team1, team2 }
+    })
+  })
+
+  // --- Start countdown & match start ---
+  socket.on('privateRoomStartCountdown', ({ countdown }) => {
+    startCountdown.value = countdown / 1000
+    const interval = setInterval(() => {
+      if (startCountdown.value !== null) {
+        startCountdown.value--
+        if (startCountdown.value <= 0) {
+          clearInterval(interval)
+          startCountdown.value = null
+        }
+      }
+    }, 1000)
   })
 
   // Listen for swap requests
@@ -217,6 +275,14 @@ defineProps<{ inviteId?: string }>()
 </script>
 
 <template>
+  <!-- Start count down -->
+  <div v-if="startCountdown !== null" class="countdown-overlay">
+    <h1>Starting in {{ startCountdown }}...</h1>
+  </div>
+  <!-- Confirmation Popup -->
+  <ConfirmationPopup v-if="showStartConfirm" title="Start Match?"
+    message="Are you sure you want to start the private match? Only 1v1 and 3v3 setups are supported." yesText="Start"
+    noText="Cancel" :buttonOnYes="confirmStartGame" :buttonOnNo="() => showStartConfirm = false" />
   <div class="container private-room">
     <div class="teams-grid">
       <PrivateRoomTeamList :team="privateRoom.state.team1 ?? { team_id: '', players: [] }" :teamName="'Team A'"
@@ -251,8 +317,8 @@ defineProps<{ inviteId?: string }>()
         Decline
       </button>
 
-      <!-- Show start button when there's no pending swap -->
-      <button v-if="!pendingSwapByOpponent && !pendingSwapByTeammate && !pendingSwapByMe" class="start-btn">
+      <!-- Start Button -->
+      <button class="start-btn" :disabled="!canStartGame" @click="showStartConfirm = true">
         Start!
       </button>
     </div>
@@ -314,11 +380,12 @@ button {
   color: white;
 }
 
-.start-btn, .swap-btn {
+.start-btn,
+.swap-btn {
   background: rgb(0, 0, 0);
   border: none;
   padding: 0.5rem 1rem;
-  color: white; 
+  color: white;
   border: solid 1px;
   border-color: var(--theme-color);
   cursor: pointer;
@@ -326,12 +393,14 @@ button {
   border-radius: 5px;
 }
 
-.start-btn:hover, .swap-btn:hover {
+.start-btn:hover,
+.swap-btn:hover {
   background: #141414;
   color: white;
 }
 
-.start-btn:active, .swap-btn:active {
+.start-btn:active,
+.swap-btn:active {
   background: var(--theme-darker-color);
   color: white;
 }
@@ -384,5 +453,17 @@ button {
   border: solid 1px red;
   color: white;
   margin-left: 0.5rem;
+}
+
+.start-btn:disabled {
+  background: #333;
+  border-color: #555;
+  color: #888;
+  cursor: not-allowed;
+}
+
+.start-btn:disabled:hover {
+  background: #333;
+  color: #888;
 }
 </style>
