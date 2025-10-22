@@ -5,7 +5,7 @@ import { sanitizeRoom, sanitizeRoomForUpdate } from "@/utils/sanitize";
 
 export function registerPrivateRoomHandlers(io: Server, socket: Socket, services: any) {
     const { privateRoomService, privateRoomInviteService } = services;
-    
+
     // ==== PRIVATE ROOM EVENTS ====
     socket.on("createPrivateRoom", (player: PlayerSession) => {
         try {
@@ -55,6 +55,42 @@ export function registerPrivateRoomHandlers(io: Server, socket: Socket, services
 
             // Notify everyone else already in the room (socket.to instead of io.to to avoid sending to the joiner)
             socket.to(roomId).emit("privateRoomUpdated", sanitizedRoomForUpdate);
+        } catch (err: any) {
+            socket.emit("error", { error_message: err.message });
+        }
+    });
+
+    socket.on("startPrivateRoomGame", ({ room_id, player_id }: { room_id: string; player_id: string }) => {
+        try {
+            const room = privateRoomService.getRoom(room_id);
+            if (!room) {
+                socket.emit("error", { error_message: "Room not found" });
+                return;
+            }
+
+            // Only room creator can start
+            if (room.creatorId !== player_id) {
+                socket.emit("error", { error_message: "Only the room creator can start the game" });
+                return;
+            }
+
+            const team1Count = room.team1.players.length;
+            const team2Count = room.team2.players.length;
+
+            // Allow start only for 1v1 or 3v3 setups
+            const is1v1 = team1Count === 1 && team2Count === 1;
+            const is3v3 = team1Count === 3 && team2Count === 3;
+
+            if (!is1v1 && !is3v3) {
+                socket.emit("error", { error_message: "Game can only start in 1v1 or 3v3 mode" });
+                return;
+            }
+
+            io.to(room_id).emit("privateRoomCountdown", { countdown: 5000 });
+
+            setTimeout(() => {
+                privateRoomService.startGame(room_id);
+            }, 5000);
         } catch (err: any) {
             socket.emit("error", { error_message: err.message });
         }

@@ -54,6 +54,26 @@ export class PrivateRoomService {
         return { room, enteredTeam: targetTeam === room.team1 ? "team1" : "team2" };
     }
 
+    startGame(room_id: string) {
+        const room = this.rooms.get(room_id);
+        if (!room) {
+            console.warn(`Attempted to start non-existent room: ${room_id}`);
+            return;
+        }
+        console.log(`[PrivateRoom] Starting game for room ${room_id} (${room.team1.players.length}v${room.team2.players.length})`);
+
+        const allPlayers = [...room.team1.players, ...room.team2.players];
+        allPlayers.forEach(p => {
+            p.socket.emit("privateMatchStarted", { player_id: p.player_id });
+        });
+
+        // Create actual game (1v1 or 3v3)
+        this.gameService.createGame(room.team1, room.team2);
+
+        // Remove room after start
+        this.rooms.delete(room_id);
+    }
+
     /** Get which team a player is on */
     getPlayerTeam(room_id: string, player_id: string): "team1" | "team2" | null {
         const room = this.rooms.get(room_id);
