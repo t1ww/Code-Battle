@@ -135,7 +135,15 @@ button:active {
 
 .vote-panel-wrapper {
     position: fixed;
-    top: calc(50% + 2.45rem);
+    top: calc(50%);
+    right: 0.25rem;
+    transform: translateY(-50%);
+    z-index: 1150;
+}
+
+.chat-panel-wrapper {
+    position: fixed;
+    top: calc(50%);
     right: 0.25rem;
     transform: translateY(-50%);
     z-index: 1150;

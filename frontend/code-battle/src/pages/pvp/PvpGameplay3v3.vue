@@ -25,6 +25,7 @@ import { useTimer } from '@/composables/useTimer'
 import { usePvpAction } from '@/composables/usePvpAction'
 import { useTerminal } from "@/composables/useTerminal";
 import { usePvpCode } from '@/composables/usePvpCode'
+import { usePvpTeamChat } from '@/composables/usePvpTeamChat'
 
 // - This is for 3v3
 import { useTeamSync } from '@/composables/useTeamSync'
@@ -41,6 +42,7 @@ const DEV = inject('DEV') as boolean
 const showQuestionsPanel = ref(false)
 const showOpponentPanel = ref(false)
 const showVoteDrawPanel = ref(false)
+const showChatPanel = ref(false)
 const showClearedPopup = ref(false)
 const showMessagePopup = ref(false)
 const showResultPopup = ref(false)
@@ -50,6 +52,8 @@ const currentQuestionIndex = ref(0)
 const selectedLanguage = ref('cpp')
 const showDrawFeedback = ref(false)
 const drawRequestedByTeam = ref('')
+// Reactive chat messages
+const { chatMessages, sendMessage: sendChatMessage } = usePvpTeamChat()
 
 // =============================
 // 📍 Query Params
@@ -123,6 +127,7 @@ const runCodeInteractive = () => {
 // Toggle helpers
 const toggleOpponentPanel = () => { showOpponentPanel.value = !showOpponentPanel.value }
 const toggleVoteDrawPanel = () => { showVoteDrawPanel.value = !showVoteDrawPanel.value }
+const toggleChatPanel = () => { showChatPanel.value = !showChatPanel.value }
 
 // Player forfeit wrapper
 async function handleForfeit() {
@@ -247,6 +252,7 @@ const { destroy: destroyTeamSync, localCursorIndex, teammateCursors } = useTeamS
 // 🚀 Lifecycle Hooks
 // =============================
 import { usePvpSocket } from '@/composables/usePvpSocket'
+import ChatPanel from '@/components/gameplay/ChatPanel.vue'
 
 const { initPvpSockets } = usePvpSocket({
   playerId: player?.player_id,
@@ -365,12 +371,23 @@ const opponentTeamData = computed(() => {
       </div>
     </transition>
 
+    <!-- Vote panel component slides in/out -->
+    <transition name="slide-right">
+      <div class="chat-panel-wrapper" v-show="showChatPanel">
+        <ChatPanel :onClose="toggleChatPanel"
+          :user="{ name: player?.name || 'Unknown' }"
+          :messages="chatMessages" :onSendMessage="sendChatMessage" />
+      </div>
+    </transition>
+
     <!-- Open buttons -->
     <div class="side-buttons">
       <button class="side-button" @click="toggleOpponentPanel"
-        :style="{ visibility: showOpponentPanel ? 'hidden' : 'visible' }">◀</button>
+        :style="{ visibility: showOpponentPanel || showChatPanel ? 'hidden' : 'visible' }">◀</button>
       <button class="side-button" @click="toggleVoteDrawPanel"
-        :style="{ visibility: showVoteDrawPanel || showOpponentPanel ? 'hidden' : 'visible' }">⚖</button>
+        :style="{ visibility: showVoteDrawPanel || showOpponentPanel || showChatPanel ? 'hidden' : 'visible' }">⚖</button>
+      <button class="side-button" @click="toggleChatPanel"
+        :style="{ visibility: showChatPanel || showOpponentPanel ? 'hidden' : 'visible' }">✉️</button>
     </div>
   </div>
 

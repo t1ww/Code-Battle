@@ -19,9 +19,9 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
     socket.on("useSabotage", ({ gameId, playerId }) => {
         try {
             const playerTeam = gameService.getPlayerTeam(gameId, playerId);
-            if (!playerTeam) { 
+            if (!playerTeam) {
                 console.error("Player team not found for useSabotage");
-                return; 
+                return;
             }
             const useby = socket.data.player.name;
             gameService.handleUseSabotage(gameId, useby, playerTeam);
@@ -198,6 +198,18 @@ export function registerGameHandlers(io: Server, socket: Socket, gameService: Ga
             socket.emit("errorMessage", { message: "Failed to forfeit" });
         }
     });
+
+    // Team chat message
+    socket.on("teamChatMessage", ({ gameId, text }) => {
+        try {
+            const playerTeam = gameService.getPlayerTeam(gameId, socket.data.player.player_id)
+            const fromName = socket.data.player.name
+            io.to(`game-${gameId}-${playerTeam}`).emit("teamChatMessage", { gameId, text, from: fromName })
+        } catch (err) {
+            console.error("Failed to send team chat:", err)
+            socket.emit("errorMessage", { message: "Failed to send chat" })
+        }
+    })
 
     socket.on("disconnect", () => {
         // Leave general game room
