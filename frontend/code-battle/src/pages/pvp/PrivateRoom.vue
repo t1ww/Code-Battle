@@ -258,17 +258,12 @@ onMounted(() => {
       socket.emit('leavePrivateRoom', { room_id: roomId })
     }
   }
+  
   // Add event listener for beforeunload to handle room deletion
   window.addEventListener('beforeunload', handleUnload)
   onBeforeUnmount(() => {
     window.removeEventListener('beforeunload', handleUnload)
-    // Clean up socket listeners
-    const player = getPlayerData()
-    if (!player) return
-    const roomId = privateRoom.state.roomId
-    if (!roomId) return
-    // Emit leave event
-    socket.emit('leavePrivateRoom', { room_id: roomId })
+    // don’t emit leavePrivateRoom here
   })
 })
 defineProps<{ inviteId?: string }>()

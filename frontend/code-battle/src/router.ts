@@ -65,7 +65,8 @@ const routes = [
   {
     path: '/privateStart',
     name: 'PrivateStartGame',
-    component: () => import('@/pages/pvp/PrivateStartGame.vue')
+    component: () => import('@/pages/pvp/PrivateStartGame.vue'), 
+    meta: { requiresAuth: true, online: true }
   },
   { name: "PvpGameplay1v1", path: "/pvpGameplay1v1", component: PvpGameplay1v1, meta: { requiresAuth: true, disableNavbar: true, online: true } },
   { name: "PvpGameplay3v3", path: "/pvpGameplay3v3", component: PvpGameplay3v3, meta: { requiresAuth: true, disableNavbar: true, online: true } },
