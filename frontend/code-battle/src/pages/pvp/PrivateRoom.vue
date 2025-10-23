@@ -258,7 +258,7 @@ onMounted(() => {
       socket.emit('leavePrivateRoom', { room_id: roomId })
     }
   }
-  
+
   // Add event listener for beforeunload to handle room deletion
   window.addEventListener('beforeunload', handleUnload)
   onBeforeUnmount(() => {
@@ -270,10 +270,6 @@ defineProps<{ inviteId?: string }>()
 </script>
 
 <template>
-  <!-- Start count down -->
-  <div v-if="startCountdown !== null" class="countdown-overlay">
-    <h1>Starting in {{ startCountdown }}...</h1>
-  </div>
   <!-- Confirmation Popup -->
   <ConfirmationPopup v-if="showStartConfirm" title="Start Match?"
     message="Are you sure you want to start the private match? Only 1v1 and 3v3 setups are supported." yesText="Start"
@@ -296,9 +292,10 @@ defineProps<{ inviteId?: string }>()
         </button>
       </div>
 
-      <CheckboxToggle v-model="privateRoom.state.timeLimit" label="Time Limit" />
+      <CheckboxToggle v-model="privateRoom.state.timeLimit" label="Time Limit" :disabled="startCountdown !== null" />
 
-      <button v-if="!pendingSwapByTeammate && !swapDeclined" class="swap-btn" @click="handleSwapClick">
+      <button v-if="!pendingSwapByTeammate && !swapDeclined" class="swap-btn" @click="handleSwapClick"
+        :disabled="startCountdown !== null">
         <template v-if="pendingSwapByMe">
           Cancel ({{ swapCountdown ?? '' }})
         </template>
@@ -313,8 +310,14 @@ defineProps<{ inviteId?: string }>()
       </button>
 
       <!-- Start Button -->
-      <button class="start-btn" :disabled="!canStartGame" @click="showStartConfirm = true">
-        Start!
+      <button class="start-btn" :class="{ counting: startCountdown !== null }"
+        :disabled="!canStartGame || startCountdown !== null" @click="showStartConfirm = true">
+        <template v-if="startCountdown !== null">
+          Starting in {{ startCountdown }}...
+        </template>
+        <template v-else>
+          Start!
+        </template>
       </button>
     </div>
 
@@ -400,6 +403,13 @@ button {
   color: white;
 }
 
+.swap-btn:disabled {
+  background: #333;
+  border-color: #555;
+  color: #888;
+  cursor: not-allowed;
+}
+
 /* Invite link */
 .invite {
   display: flex;
@@ -460,5 +470,28 @@ button {
 .start-btn:disabled:hover {
   background: #333;
   color: #888;
+}
+
+.start-btn.counting {
+  background: var(--theme-darker-color);
+  color: #ccc;
+  animation: pulse 1s infinite alternate;
+}
+
+.start-btn.counting:hover {
+  background: var(--theme-darker-color);
+  color: #ccc;
+  animation: pulse 1s infinite alternate;
+  cursor: default;
+}
+
+@keyframes pulse {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0.6;
+  }
 }
 </style>
