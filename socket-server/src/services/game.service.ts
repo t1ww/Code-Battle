@@ -96,6 +96,83 @@ export class GameService {
         return game;
     }
 
+    /** Create a test game room using predefined questions (no API calls) */
+    async createTestGame(team1: Team, team2: Team): Promise<GameRoom> {
+        const gameId = uuidv4();
+
+        // Static test questions
+        const questions: Question[] = [
+            {
+                id: "q1",
+                question_name: "Sum Two Numbers",
+                description: "Write a program that reads two integers and outputs their sum.",
+                time_limit: 120,
+                test_cases: [
+                    { input: "1 2", expected_output: "3", score: 1 },
+                    { input: "5 7", expected_output: "12", score: 1 },
+                    { input: "10 15", expected_output: "25", score: 1 },
+                ],
+            },
+            {
+                id: "q2",
+                question_name: "Reverse String",
+                description: "Read a string and print its reversed version.",
+                time_limit: 120,
+                test_cases: [
+                    { input: "hello", expected_output: "olleh", score: 1 },
+                    { input: "abc", expected_output: "cba", score: 1 },
+                    { input: "openai", expected_output: "ianepo", score: 1 },
+                ],
+            },
+        ];
+
+        // build per-question per-test-case boolean arrays
+        const progress = {
+            team1: questions.map(q => Array((q.test_cases ?? []).length).fill(false)),
+            team2: questions.map(q => Array((q.test_cases ?? []).length).fill(false)),
+        };
+        const progressFullPass = {
+            team1: questions.map(_ => false),
+            team2: questions.map(_ => false),
+        };
+
+        const game: GameRoom = {
+            gameId,
+            team1,
+            team2,
+            questions,
+            progress,
+            progressFullPass,
+            finished: false,
+            drawVotes: new Set<string>(),
+            sabotagePoints: { team1: 0, team2: 0 },
+        };
+
+        this.games.set(gameId, game);
+
+        // join sockets to rooms
+        for (const player of team1.players) {
+            player.socket.join(`game-${gameId}`);
+            player.socket.join(`game-${gameId}-team1`);
+        }
+        for (const player of team2.players) {
+            player.socket.join(`game-${gameId}`);
+            player.socket.join(`game-${gameId}-team2`);
+        }
+
+        // notify start
+        this.io.to(`game-${gameId}`).emit("gameStart", {
+            gameId,
+            team1: team1.team_id,
+            team2: team2.team_id,
+            questions: game.questions,
+            progress: game.progress,
+            progressFullPass: game.progressFullPass,
+        });
+
+        return game;
+    }
+
     /** Create and register a dev game with provided questions (used by the dev handler) */
     createDevGame(team1: Team, team2: Team, questions: Question[]): GameRoom {
         const gameId = `dev-${Date.now()}`;

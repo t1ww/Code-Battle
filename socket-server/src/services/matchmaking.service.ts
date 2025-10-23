@@ -192,7 +192,7 @@ export class MatchmakingService {
             if (pendingMatch.status === "found") {
                 pendingMatch.status = "started";
                 [p1, p2].forEach(p => p.socket.emit("matchStarted", { player_id: p.player_id }));
-                this.gameService.createGame(createSoloTeam(p1), createSoloTeam(p2));
+                this.gameService.createTestGame(createSoloTeam(p1), createSoloTeam(p2));
             }
         }, countdownMs);
 
