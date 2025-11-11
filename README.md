@@ -1,8 +1,6 @@
 # Code Battle
 
     In this version should be stable enough to play as a demo with matchmaking
-    - No private room
-    - Only c++
     - Cheesable (using if else if else)
 
 **Senior Project – CAMT SE65**
